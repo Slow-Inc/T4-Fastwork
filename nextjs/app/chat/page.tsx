@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageAlternates } from '@/lib/seo';
 import { SiteNav } from '@/components/site/site-nav';
 import { Breadcrumb } from '@/components/site/breadcrumb';
 import { ChatClient } from '@/components/chat/chat-client';
@@ -7,6 +8,7 @@ export const metadata: Metadata = {
   title: 'คุยกับผู้ช่วย AI — T4 Labs',
   description:
     'ผู้ช่วย AI ของ T4 Labs — เล่าโจทย์แล้วรับคำแนะนำเคสงานที่ใกล้เคียง พร้อมประเมินงบเบื้องต้น ตอบทั้งไทยและอังกฤษ',
+  alternates: pageAlternates('/chat'),
 };
 
 export default function ChatPage() {

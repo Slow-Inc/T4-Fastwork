@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageAlternates } from '@/lib/seo';
 import { SiteNav } from '@/components/site/site-nav';
 import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: 'คำถามที่พบบ่อย (FAQ) — T4 Labs',
   description:
     'คำถามที่พบบ่อยเกี่ยวกับการจ้างทำเว็บไซต์ SaaS, Web App และ AI Product กับ T4 Labs — ระยะเวลา ราคา การชำระเงิน เทคโนโลยี และบริการหลังส่งมอบ',
+  alternates: pageAlternates('/faq'),
 };
 
 export default function FaqPage() {

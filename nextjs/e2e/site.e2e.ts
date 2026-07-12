@@ -101,6 +101,19 @@ test('contact form carries a hidden reCAPTCHA token field', async ({ page }) => 
   await expect(token).toHaveAttribute('type', 'hidden');
 });
 
+test('every page declares its own canonical + hreflang alternates', async ({ page }) => {
+  for (const path of ['/about', '/faq', '/blog/rag-chatbot-for-business']) {
+    await page.goto(path, { waitUntil: 'networkidle' });
+    const canonical = await page
+      .locator('link[rel="canonical"]')
+      .getAttribute('href');
+    expect(canonical, `canonical on ${path}`).toContain(path);
+
+    const hreflangCount = await page.locator('link[rel="alternate"][hreflang]').count();
+    expect(hreflangCount, `hreflang alternates on ${path}`).toBeGreaterThanOrEqual(3);
+  }
+});
+
 test('clicking a tracked CTA navigates without console errors', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('/', { waitUntil: 'networkidle' });

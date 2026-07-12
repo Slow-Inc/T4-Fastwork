@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageAlternates } from '@/lib/seo';
 import { SiteNav } from '@/components/site/site-nav';
 import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: 'แนวทางราคา — T4 Labs',
   description:
     'แนวทางราคาการจ้างทำเว็บไซต์และระบบกับ T4 Labs — แพ็กเกจ MVP / Standard / Enterprise สิ่งที่รวม ระยะเวลา และเงื่อนไขการชำระเงินผ่าน Fastwork',
+  alternates: pageAlternates('/pricing-guide'),
 };
 
 export default function PricingGuidePage() {

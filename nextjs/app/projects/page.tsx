@@ -9,11 +9,13 @@ import { ProjectCard } from '@/components/projects/project-card';
 import { FilterBar } from '@/components/projects/filter-bar';
 import { filterProjectList, facetsFor, type ProjectFilter } from '@/content/catalog';
 import { getAllProjects } from '@/lib/projects-repo';
+import { pageAlternates } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: 'ผลงานของเรา — T4 Labs',
   description:
     'รวมผลงาน SaaS, Web Application และ AI Product ที่ T4 Labs ออกแบบและพัฒนา — กรองตามหมวดหมู่ เทคโนโลยี และแท็ก',
+  alternates: pageAlternates('/projects'),
 };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;

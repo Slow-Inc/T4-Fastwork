@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageAlternates } from '@/lib/seo';
 import { SiteNav } from '@/components/site/site-nav';
 import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
@@ -8,6 +9,7 @@ import { Breadcrumb } from '@/components/site/breadcrumb';
 export const metadata: Metadata = {
   title: 'พันธมิตร — T4 Labs',
   description: 'พันธมิตรและเทคโนโลยีที่ T4 Labs ทำงานร่วมด้วยในการส่งมอบผลิตภัณฑ์',
+  alternates: pageAlternates('/bw'),
 };
 
 const partners = [

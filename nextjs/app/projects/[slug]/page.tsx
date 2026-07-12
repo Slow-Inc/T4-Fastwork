@@ -7,6 +7,7 @@ import { RevealObserver } from '@/components/site/reveal-observer';
 import { ProjectDetailContent } from '@/components/pages/project-detail-content';
 import { projects } from '@/content/catalog';
 import { getProjectBySlug } from '@/lib/projects-repo';
+import { pageAlternates } from '@/lib/seo';
 
 type Params = Promise<{ slug: string }>;
 
@@ -31,6 +32,7 @@ export async function generateMetadata({
       description: p.description,
       type: 'article',
     },
+    alternates: pageAlternates(`/projects/${slug}`),
   };
 }
 

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageAlternates } from '@/lib/seo';
 import { SiteNav } from '@/components/site/site-nav';
 import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: 'บทความ — T4 Labs',
   description:
     'บทความเกี่ยวกับการพัฒนาเว็บ, AI, SaaS และการตลาดดิจิทัลจากทีม T4 Labs — เนื้อหาเชิงลึกสำหรับ founder และทีมเทค',
+  alternates: pageAlternates('/blog'),
 };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;

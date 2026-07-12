@@ -7,6 +7,7 @@ import { RevealObserver } from '@/components/site/reveal-observer';
 import { RecommendContent } from '@/components/pages/recommend-content';
 import { getSolutionDetail, solutionSlugs } from '@/content/solution-detail';
 import { filterProjects, projects } from '@/content/catalog';
+import { pageAlternates } from '@/lib/seo';
 
 type Params = Promise<{ type: string }>;
 
@@ -22,6 +23,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: `${d.badge} — T4 Labs`,
     description: d.tagline,
     openGraph: { title: d.headline, description: d.tagline, type: 'website' },
+    alternates: pageAlternates(`/recommend/${type}`),
   };
 }
 

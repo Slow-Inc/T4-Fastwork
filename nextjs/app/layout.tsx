@@ -9,6 +9,7 @@ import './globals.css';
 import { Analytics } from '@/components/site/analytics';
 import { RecaptchaScript } from '@/components/site/recaptcha-script';
 import { LocaleProvider } from '@/i18n/locale-context';
+import { pageAlternates } from '@/lib/seo';
 
 const disp = Space_Grotesk({
   subsets: ['latin'],
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
     siteName: 'T4 Labs',
     url: SITE_URL,
   },
-  alternates: { canonical: '/' },
+  alternates: pageAlternates('/'),
 };
 
 export default function RootLayout({

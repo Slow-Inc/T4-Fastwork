@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageAlternates } from '@/lib/seo';
 import { SiteNav } from '@/components/site/site-nav';
 import { SiteFooter } from '@/components/site/site-footer';
 import { Breadcrumb } from '@/components/site/breadcrumb';
@@ -6,6 +7,7 @@ import { Breadcrumb } from '@/components/site/breadcrumb';
 export const metadata: Metadata = {
   title: 'นโยบายความเป็นส่วนตัว — T4 Labs',
   description: 'นโยบายความเป็นส่วนตัวและการคุ้มครองข้อมูลส่วนบุคคล (PDPA) ของ T4 Labs',
+  alternates: pageAlternates('/privacy'),
 };
 
 export default function PrivacyPage() {

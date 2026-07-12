@@ -7,6 +7,7 @@ import { RevealObserver } from '@/components/site/reveal-observer';
 import { BlogArticleContent } from '@/components/pages/blog-article-content';
 import { blogPosts } from '@/content/blog';
 import { getPostBySlug } from '@/lib/blog-repo';
+import { pageAlternates } from '@/lib/seo';
 
 type Params = Promise<{ slug: string }>;
 
@@ -27,6 +28,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       type: 'article',
       publishedTime: p.publishedAt,
     },
+    alternates: pageAlternates(`/blog/${slug}`),
   };
 }
 
