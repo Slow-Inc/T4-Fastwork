@@ -1677,6 +1677,43 @@ footer {
   text-align: center;
 }
 
+/* ---- FLOATING CHAT PANEL (§4.1.11) ---- */
+.chat-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 84px;
+  z-index: 120;
+  width: min(400px, calc(100vw - 32px));
+  max-height: min(620px, calc(100vh - 120px));
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(244, 242, 237, 0.92);
+  backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 16px 48px rgba(19, 19, 17, 0.18);
+  overflow: hidden;
+}
+.chat-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.chat-panel-expand:hover {
+  color: var(--ink);
+}
+.chat-panel .chat-full {
+  margin-top: 12px;
+  min-height: 0;
+  flex: 1;
+}
+.chat-panel .chat-scroll {
+  max-height: 40vh;
+}
+
 /* ---- SOLUTION LANDING (§4.4) ---- */
 .preview {
   border: 1px solid var(--line);
