@@ -17,7 +17,9 @@ export function FaqAccordion({ items, en = false }: { items: FaqItem[]; en?: boo
               +
             </span>
           </summary>
-          <p className="faq-a">{en && f.answerEn ? f.answerEn : f.answer}</p>
+          <p className="faq-a">
+            <span>{en && f.answerEn ? f.answerEn : f.answer}</span>
+          </p>
         </details>
       ))}
     </div>

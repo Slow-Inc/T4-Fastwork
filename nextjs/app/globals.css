@@ -1264,11 +1264,28 @@ footer {
   transform: rotate(45deg);
 }
 .faq-a {
-  padding: 0 4px 24px;
+  display: grid;
+  grid-template-rows: 0fr;
+  padding: 0 4px;
   max-width: 680px;
   color: var(--muted);
   font-size: 16px;
   line-height: 1.7;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    grid-template-rows 0.3s ease,
+    opacity 0.25s ease,
+    padding-bottom 0.3s ease;
+}
+.faq-a > span {
+  min-height: 0;
+  overflow: hidden;
+}
+.faq-item[open] .faq-a {
+  grid-template-rows: 1fr;
+  padding-bottom: 24px;
+  opacity: 1;
 }
 .faq-cta {
   margin-top: 56px;

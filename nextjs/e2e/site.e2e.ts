@@ -80,6 +80,19 @@ test('navbar keeps its frosted-glass backdrop blur', async ({ page }) => {
   expect(bf, 'navbar backdrop-filter blur is missing').toContain('blur');
 });
 
+test('FAQ list items expand with a smooth transition', async ({ page }) => {
+  await page.goto('/faq', { waitUntil: 'networkidle' });
+  const item = page.locator('.faq-item').first();
+  const answer = item.locator('.faq-a');
+
+  const transition = await answer.evaluate((el) => getComputedStyle(el).transitionDuration);
+  expect(transition, 'faq answer should declare a transition duration').not.toBe('0s');
+
+  await expect(answer).not.toBeVisible();
+  await item.locator('.faq-q').click();
+  await expect(answer).toBeVisible();
+});
+
 test('language switch flips nav + content to English', async ({ page }) => {
   await page.goto('/about', { waitUntil: 'networkidle' });
   const nav = page.locator('nav').first();
