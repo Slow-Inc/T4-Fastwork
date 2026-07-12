@@ -58,7 +58,7 @@ describe('SdlcSection', () => {
 
   it('renders the phases in order (01 → 06)', () => {
     const { container } = render(<SdlcSectionView en={false} />);
-    const indices = Array.from(container.querySelectorAll('.about-steps .t-idx')).map(
+    const indices = Array.from(container.querySelectorAll('.sdlc-row .sdlc-num')).map(
       (el) => el.textContent,
     );
     expect(indices).toEqual(sdlcPhases.map((p) => p.index));

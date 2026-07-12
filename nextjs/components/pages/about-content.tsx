@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/site/breadcrumb';
-import { sdlcPhases } from '@/content/site';
+import { SdlcList } from '@/components/site/sdlc-list';
 import { useLocale } from '@/i18n/locale-context';
 
 const whatWeDo = [
@@ -89,27 +89,19 @@ export function AboutBlocks() {
             </ol>
           </div>
 
-          <div className="about-block rv">
-            <h2>{t('SDLC ที่เราใช้จริง', 'The SDLC we actually run')}</h2>
-            <p className="t-body about-sdlc-lead">
-              {t(
-                'ไม่ใช่แค่ทฤษฎี — นี่คือขั้นตอนวิศวกรรมซอฟต์แวร์ (Software Development Life Cycle) ที่ทีมใช้จริงในทุกโปรเจกต์',
-                'Not just theory — this is the real Software Development Life Cycle the team runs on every project.',
-              )}
-            </p>
-            <ol className="about-steps">
-              {sdlcPhases.map((s) => {
-                const title = en ? s.titleEn : s.title;
-                const desc = en ? s.descriptionEn : s.description;
-                return (
-                  <li key={s.index}>
-                    <span className="t-idx">{s.index}</span>
-                    <h3>{title}</h3>
-                    <p>{desc}</p>
-                  </li>
-                );
-              })}
-            </ol>
+          <div className="about-block sdlc-wrap">
+            <div className="sdlc-head rv">
+              <h2>{t('SDLC ที่เราใช้จริง', 'The SDLC we actually run')}</h2>
+              <p className="t-body">
+                {t(
+                  'ไม่ใช่แค่ทฤษฎี — นี่คือขั้นตอนวิศวกรรมซอฟต์แวร์ (Software Development Life Cycle) ที่ทีมใช้จริงในทุกโปรเจกต์',
+                  'Not just theory — this is the real Software Development Life Cycle the team runs on every project.',
+                )}
+              </p>
+            </div>
+            <div className="rv">
+              <SdlcList en={en} />
+            </div>
           </div>
         </section>
   );

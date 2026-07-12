@@ -1339,10 +1339,6 @@ footer {
   color: var(--muted);
   line-height: 1.6;
 }
-.about-sdlc-lead {
-  margin-bottom: 24px;
-  max-width: 640px;
-}
 .about-steps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1367,6 +1363,99 @@ footer {
 .about-cta {
   border-top: 1px solid var(--line);
   padding-top: 56px;
+}
+
+/* ---- SDLC — editorial list-in-column (§14.4), deliberately distinct from
+   the about-grid/about-steps card patterns nearby. Asymmetric head + a
+   hairline-divided row list, not another grid of uniform boxes. ---- */
+.sdlc-wrap {
+  display: grid;
+  grid-template-columns: 4fr 8fr;
+  gap: clamp(30px, 6vw, 90px);
+  align-items: start;
+}
+.sdlc-head .t-idx {
+  margin-bottom: 14px;
+}
+.sdlc-head h2 {
+  font-size: clamp(24px, 3.2vw, 34px);
+  max-width: 16ch;
+}
+.sdlc-head .t-body {
+  margin-top: 18px;
+  max-width: 40ch;
+}
+.sdlc-list {
+  list-style: none;
+  border-top: 1px solid var(--ink);
+}
+.sdlc-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 24px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line);
+  align-items: baseline;
+  transition:
+    padding-left 0.25s ease,
+    border-color 0.25s ease;
+}
+.sdlc-row:hover {
+  padding-left: 10px;
+  border-color: var(--ink);
+}
+.sdlc-num {
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1;
+  display: inline-block;
+  transition: transform 0.25s ease;
+}
+.sdlc-row:hover .sdlc-num {
+  transform: translateX(3px);
+}
+.sdlc-row-body h3 {
+  font-family: var(--disp);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  transition: color 0.25s ease;
+}
+.sdlc-row:hover .sdlc-row-body h3 {
+  color: var(--accent);
+}
+.sdlc-row-body p {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 60ch;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sdlc-row,
+  .sdlc-num,
+  .sdlc-row-body h3 {
+    transition: none;
+  }
+  .sdlc-row:hover {
+    padding-left: 0;
+  }
+  .sdlc-row:hover .sdlc-num {
+    transform: none;
+  }
+}
+@media (max-width: 720px) {
+  .sdlc-wrap {
+    grid-template-columns: 1fr;
+  }
+  .sdlc-row {
+    grid-template-columns: 40px 1fr;
+    gap: 14px;
+  }
+  .sdlc-num {
+    font-size: 20px;
+  }
 }
 .about-cta h2 {
   font-size: clamp(28px, 4.4vw, 52px);

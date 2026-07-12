@@ -95,6 +95,21 @@ test('homepage also shows the SDLC section', async ({ page }) => {
   await expect(section.getByText('พัฒนา (Development)')).toBeVisible();
 });
 
+test('SDLC rows have a hover micro-transition', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' });
+  const row = page.locator('#sdlc .sdlc-row').first();
+
+  const transition = await row.evaluate((el) => getComputedStyle(el).transitionDuration);
+  expect(transition, 'sdlc row should declare a transition duration').not.toBe('0s');
+
+  const paddingBefore = await row.evaluate((el) => getComputedStyle(el).paddingLeft);
+  await row.hover();
+  await expect(async () => {
+    const paddingAfter = await row.evaluate((el) => getComputedStyle(el).paddingLeft);
+    expect(paddingAfter).not.toBe(paddingBefore);
+  }).toPass({ timeout: 2000 });
+});
+
 test('navbar keeps its frosted-glass backdrop blur', async ({ page }) => {
   // The build (Lightning CSS) can drop the standard `backdrop-filter` when a
   // `-webkit-` copy is hand-written alongside it, leaving Chrome with no blur.
