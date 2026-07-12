@@ -43,6 +43,7 @@ export async function createProject(
   }
 
   revalidatePath('/admin/projects');
+  revalidatePath('/projects');
   redirect('/admin/projects');
 }
 
@@ -52,4 +53,5 @@ export async function deleteProject(formData: FormData) {
   const supabase = await createClient();
   await supabase.from('projects').delete().eq('id', Number(id));
   revalidatePath('/admin/projects');
+  revalidatePath('/projects');
 }

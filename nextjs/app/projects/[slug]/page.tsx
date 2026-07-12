@@ -6,10 +6,12 @@ import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { Breadcrumb } from '@/components/site/breadcrumb';
-import { getProject, projects } from '@/content/catalog';
+import { projects } from '@/content/catalog';
+import { getProjectBySlug } from '@/lib/projects-repo';
 
 type Params = Promise<{ slug: string }>;
 
+// Prerender the curated catalog; CMS-added slugs render on demand (dynamicParams).
 export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }));
 }
@@ -20,7 +22,7 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const p = getProject(slug);
+  const p = await getProjectBySlug(slug);
   if (!p) return { title: 'ไม่พบผลงาน — T4 Labs' };
   return {
     title: `${p.title} — ผลงาน T4 Labs`,
@@ -39,7 +41,7 @@ export default async function ProjectDetailPage({
   params: Params;
 }) {
   const { slug } = await params;
-  const p = getProject(slug);
+  const p = await getProjectBySlug(slug);
   if (!p) notFound();
 
   const jsonLd = {

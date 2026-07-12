@@ -170,10 +170,12 @@ export interface ProjectFilter {
   featured?: boolean;
 }
 
-export function filterProjects(filter: ProjectFilter): Project[] {
+/** Filter an arbitrary project list (used for both the static catalog and the
+ * DB-merged list on /projects). */
+export function filterProjectList(list: Project[], filter: ProjectFilter): Project[] {
   const q = filter.q?.trim().toLowerCase();
   const tech = filter.tech?.trim().toLowerCase();
-  return projects.filter((p) => {
+  return list.filter((p) => {
     if (filter.featured && !p.isFeatured) return false;
     if (filter.category && p.category !== filter.category) return false;
     if (filter.tag && !p.tags.includes(filter.tag)) return false;
@@ -184,6 +186,21 @@ export function filterProjects(filter: ProjectFilter): Project[] {
     }
     return true;
   });
+}
+
+export function filterProjects(filter: ProjectFilter): Project[] {
+  return filterProjectList(projects, filter);
+}
+
+const uniqSorted = (xs: string[]) => Array.from(new Set(xs)).sort();
+
+/** Facets derived from an arbitrary project list. */
+export function facetsFor(list: Project[]) {
+  return {
+    categories: uniqSorted(list.map((p) => p.category).filter(Boolean)),
+    technologies: uniqSorted(list.flatMap((p) => p.technologies)),
+    tags: uniqSorted(list.flatMap((p) => p.tags)),
+  };
 }
 
 const uniq = (xs: string[]) => Array.from(new Set(xs));

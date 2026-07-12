@@ -7,13 +7,8 @@ import { RevealObserver } from '@/components/site/reveal-observer';
 import { Breadcrumb } from '@/components/site/breadcrumb';
 import { ProjectCard } from '@/components/projects/project-card';
 import { FilterBar } from '@/components/projects/filter-bar';
-import {
-  filterProjects,
-  projectCategories,
-  projectTechnologies,
-  projectTags,
-  type ProjectFilter,
-} from '@/content/catalog';
+import { filterProjectList, facetsFor, type ProjectFilter } from '@/content/catalog';
+import { getAllProjects } from '@/lib/projects-repo';
 
 export const metadata: Metadata = {
   title: 'ผลงานของเรา — T4 Labs',
@@ -40,7 +35,9 @@ export default async function ProjectsPage({
     tech: one(sp.tech),
     featured: one(sp.featured) === '1',
   };
-  const results = filterProjects(current);
+  const all = await getAllProjects();
+  const facets = facetsFor(all);
+  const results = filterProjectList(all, current);
 
   return (
     <>
@@ -58,14 +55,7 @@ export default async function ProjectsPage({
             </p>
           </div>
 
-          <FilterBar
-            facets={{
-              categories: projectCategories,
-              technologies: projectTechnologies,
-              tags: projectTags,
-            }}
-            current={current}
-          />
+          <FilterBar facets={facets} current={current} />
 
           <p className="result-count t-meta rv">
             {results.length} ผลงาน
