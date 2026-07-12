@@ -1993,6 +1993,55 @@ footer {
   border-color: var(--ink);
 }
 
+/* ---- FEATURED CAROUSEL (§4.1.4) ---- */
+.carousel-track {
+  margin-top: 28px;
+  display: flex;
+  gap: 22px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 16px;
+  scrollbar-width: thin;
+}
+.carousel-slide {
+  flex: 0 0 clamp(280px, 42vw, 460px);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.carousel-shot {
+  aspect-ratio: 16 / 10;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--disp);
+  font-weight: 600;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.carousel-slide:hover .carousel-shot {
+  transform: scale(1.02);
+}
+.carousel-cap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.carousel-cap .pnm {
+  font-family: var(--disp);
+  font-weight: 600;
+  font-size: 17px;
+}
+.carousel-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
 /* ---- TECH STACK (§4.1.8) ---- */
 .tech-chips {
   margin-top: 32px;

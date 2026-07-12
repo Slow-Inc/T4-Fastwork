@@ -5,8 +5,9 @@ import { ProjectGallery } from '@/components/site/project-gallery';
 import { ServiceList } from '@/components/site/service-list';
 import { ProcessSchematic } from '@/components/site/process-schematic';
 import { TechStack } from '@/components/site/tech-stack';
+import { FeaturedCarousel } from '@/components/site/featured-carousel';
 import { Certificates } from '@/components/site/certificates';
-import { projectTechnologies } from '@/content/catalog';
+import { projectTechnologies, filterProjects } from '@/content/catalog';
 import { CtaSection } from '@/components/site/cta-section';
 import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
@@ -18,6 +19,7 @@ export default function Home() {
       <SiteNav />
       <div className="wrap">
         <Hero />
+        <FeaturedCarousel projects={filterProjects({ featured: true })} />
         <SolutionSelector />
         <ProjectGallery />
         <ServiceList />
