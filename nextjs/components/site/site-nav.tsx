@@ -2,22 +2,24 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
-import { toggleLocale } from '@/i18n/actions';
+import { useUiLocale } from '@/i18n/use-ui-locale';
+import th from '@/messages/th.json';
+import en from '@/messages/en.json';
 
-/** Sticky liquid-glass nav (Requirement §4.1.1): real routes, search, language
- * switch and a mobile hamburger menu. */
+/** Sticky liquid-glass nav (Requirement §4.1.1): real routes, search, a
+ * client-side TH/EN switch (keeps pages static), and a mobile hamburger. */
 export function SiteNav() {
-  const t = useTranslations('nav');
+  const [locale, setLocale] = useUiLocale();
   const [open, setOpen] = useState(false);
+  const t = (locale === 'en' ? en : th).nav;
 
   const links = [
-    { href: '/projects', label: t('work') },
-    { href: '/#services', label: t('services') },
-    { href: '/about', label: t('about') },
-    { href: '/faq', label: t('faq') },
-    { href: '/blog', label: t('blog') },
-    { href: '/chat', label: t('ai') },
+    { href: '/projects', label: t.work },
+    { href: '/#services', label: t.services },
+    { href: '/about', label: t.about },
+    { href: '/faq', label: t.faq },
+    { href: '/blog', label: t.blog },
+    { href: '/chat', label: t.ai },
   ];
 
   return (
@@ -37,15 +39,18 @@ export function SiteNav() {
 
       <div className="nav-actions">
         <form method="get" action="/projects" className="nav-search" role="search">
-          <input type="search" name="q" placeholder={t('search')} aria-label={t('search')} />
+          <input type="search" name="q" placeholder={t.search} aria-label={t.search} />
         </form>
-        <form action={toggleLocale}>
-          <button type="submit" className="lang-switch t-meta" aria-label="Switch language">
-            TH / EN
-          </button>
-        </form>
+        <button
+          type="button"
+          className="lang-switch t-meta"
+          aria-label="Switch language"
+          onClick={() => setLocale(locale === 'th' ? 'en' : 'th')}
+        >
+          {locale === 'th' ? 'TH / en' : 'th / EN'}
+        </button>
         <Link href="/contact" className="btn nav-cta">
-          {t('contact')} <span>&rarr;</span>
+          {t.contact} <span>&rarr;</span>
         </Link>
         <button
           type="button"
@@ -67,7 +72,7 @@ export function SiteNav() {
             </Link>
           ))}
           <Link href="/contact" className="btn" onClick={() => setOpen(false)}>
-            {t('contact')}
+            {t.contact}
           </Link>
         </div>
       )}
