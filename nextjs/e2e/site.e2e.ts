@@ -126,6 +126,29 @@ test('AI greeting popup does not show on /chat', async ({ page }) => {
   await expect(page.locator('.ai-greeting')).toHaveCount(0);
 });
 
+test('AI reply eventually renders streamed text without a stuck typing cursor', async ({
+  page,
+}) => {
+  // route.fulfill() delivers the whole SSE body at once (no real chunk delay), so
+  // this can't reliably catch the cursor mid-stream — that's covered by the
+  // deterministic unit test (lib/chat-message.test.ts: shouldShowTypingCursor).
+  // This checks the cursor doesn't get stuck once streaming legitimately ends.
+  await page.route('**/chat/stream', async (route) => {
+    const body =
+      'event: session\ndata: {"sessionId":"e2e-typing-test"}\n\n' +
+      'event: token\ndata: {"text":"สวัสดีครับ"}\n\n' +
+      'event: done\ndata: {"latencyMs":10}\n\n';
+    await route.fulfill({ status: 200, contentType: 'text/event-stream', body });
+  });
+
+  await page.goto('/chat', { waitUntil: 'networkidle' });
+  await page.getByPlaceholder('พิมพ์ข้อความ…').fill('ทดสอบ');
+  await page.getByRole('button', { name: 'ส่ง' }).click();
+
+  await expect(page.getByText('สวัสดีครับ').last()).toBeVisible();
+  await expect(page.locator('.typing-cursor')).toHaveCount(0);
+});
+
 test('scope summary panel shows a tooltip before any conversation', async ({ page }) => {
   await page.goto('/chat', { waitUntil: 'networkidle' });
   await page.locator('.scope-panel-toggle').click();

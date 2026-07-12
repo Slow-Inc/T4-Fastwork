@@ -1627,6 +1627,18 @@ footer {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }
 }
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  background: var(--ink);
+  vertical-align: text-bottom;
+  animation: typingblink 0.9s steps(1) infinite;
+}
+@keyframes typingblink {
+  50% { opacity: 0; }
+}
 .chat-card {
   display: flex;
   flex-direction: column;

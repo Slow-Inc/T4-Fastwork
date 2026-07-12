@@ -1,5 +1,10 @@
 import { test, expect, describe } from 'bun:test';
-import { appendToken, appendCard, type MessagePart } from './chat-message';
+import {
+  appendToken,
+  appendCard,
+  shouldShowTypingCursor,
+  type MessagePart,
+} from './chat-message';
 
 describe('appendToken', () => {
   test('starts a text part when empty', () => {
@@ -34,5 +39,31 @@ describe('appendCard', () => {
     const parts: MessagePart[] = [{ type: 'text', text: 'x ' }];
     const next = appendCard(parts, { kind: 'service', id: '4' });
     expect(next[1]).toEqual({ type: 'card', card: { kind: 'service', id: '4' } });
+  });
+});
+
+describe('shouldShowTypingCursor', () => {
+  test('shows on the last assistant message while streaming', () => {
+    expect(shouldShowTypingCursor('assistant', true, 'streaming')).toBe(true);
+  });
+
+  test('hides once idle', () => {
+    expect(shouldShowTypingCursor('assistant', true, 'idle')).toBe(false);
+  });
+
+  test('hides while only "thinking" (no tokens yet)', () => {
+    expect(shouldShowTypingCursor('assistant', true, 'thinking')).toBe(false);
+  });
+
+  test('hides on user messages', () => {
+    expect(shouldShowTypingCursor('user', true, 'streaming')).toBe(false);
+  });
+
+  test('hides on an assistant message that is not the last one', () => {
+    expect(shouldShowTypingCursor('assistant', false, 'streaming')).toBe(false);
+  });
+
+  test('hides on error', () => {
+    expect(shouldShowTypingCursor('assistant', true, 'error')).toBe(false);
   });
 });

@@ -21,3 +21,14 @@ export function appendToken(parts: MessagePart[], text: string): MessagePart[] {
 export function appendCard(parts: MessagePart[], card: CardData): MessagePart[] {
   return [...parts, { type: 'card', card }];
 }
+
+export type ChatStatus = 'idle' | 'thinking' | 'streaming' | 'error';
+
+/** A blinking typing cursor only belongs on the assistant's in-progress reply. */
+export function shouldShowTypingCursor(
+  role: 'user' | 'assistant',
+  isLastMessage: boolean,
+  status: ChatStatus,
+): boolean {
+  return role === 'assistant' && isLastMessage && status === 'streaming';
+}

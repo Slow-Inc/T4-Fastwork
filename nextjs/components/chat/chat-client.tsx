@@ -3,7 +3,13 @@
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { SSEParser } from '@/lib/sse-parser';
-import { appendToken, appendCard, type MessagePart } from '@/lib/chat-message';
+import {
+  appendToken,
+  appendCard,
+  shouldShowTypingCursor,
+  type MessagePart,
+  type ChatStatus,
+} from '@/lib/chat-message';
 import { InlineCard, type CardData } from './inline-card';
 import { useChatSession } from './chat-session-context';
 
@@ -15,7 +21,7 @@ interface Message {
   parts: MessagePart[];
 }
 
-type Status = 'idle' | 'thinking' | 'streaming' | 'error';
+type Status = ChatStatus;
 
 const GREETING: Message = {
   role: 'assistant',
@@ -160,6 +166,9 @@ export function ChatClient() {
                 status === 'thinking' && (
                   <span className="chat-thinking">กำลังคิด…</span>
                 )}
+              {shouldShowTypingCursor(m.role, i === messages.length - 1, status) && (
+                <span className="typing-cursor" aria-hidden="true" />
+              )}
             </div>
           </div>
         ))}
