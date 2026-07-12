@@ -9,12 +9,16 @@
  */
 import OpenAI from 'openai';
 import { StreamMarkerParser, type CardRef } from '../chat/marker-parser';
+import { buildSystemPrompt } from '../chat/system-prompt';
 
-const SYSTEM = `คุณคือผู้ช่วยของ T4 Labs (ทีมพัฒนาซอฟต์แวร์). แนะนำผลงานที่ตรงโจทย์ลูกค้า.
-เมื่ออ้างถึงผลงาน ให้ใส่มาร์กเกอร์ inline รูปแบบ [PROJECT:<slug>] และเมื่ออ้างถึงบริการ ให้ใส่ [SERVICE:<id>].
-ผลงานที่มี: [PROJECT:fin-track] (SaaS dashboard การเงินสำหรับ startup), [PROJECT:book-easy] (ระบบจองโรงแรม).
-บริการ: [SERVICE:1] (พัฒนา SaaS Platform).
-ตอบสั้น กระชับ เป็นภาษาไทย และปิดท้ายชวนติดต่อ.`;
+const SYSTEM = buildSystemPrompt({
+  language: 'th',
+  retrieved: [
+    { kind: 'project', ref: 'fin-track', title: 'FinTrack', summary: 'SaaS dashboard การเงินสำหรับ startup' },
+    { kind: 'project', ref: 'book-easy', title: 'BookEasy', summary: 'ระบบจองโรงแรม' },
+    { kind: 'service', ref: '1', title: 'SaaS Platform', summary: 'พัฒนา SaaS Platform ครบวงจร' },
+  ],
+});
 
 const USER = 'อยากได้ระบบ dashboard การเงินสำหรับ startup ทำได้ไหม';
 
