@@ -17,6 +17,8 @@ class ChatRequestDto {
   language?: 'th' | 'en';
   sessionId?: string;
   recaptchaToken?: string;
+  /** Set when the visitor is chatting from a project's detail page (§5.4). */
+  projectSlug?: string;
 }
 
 class ScopeSummaryRequestDto {
@@ -51,6 +53,7 @@ export class ChatController {
         message: body.message,
         language: body.language === 'en' ? 'en' : 'th',
         sessionId: body.sessionId,
+        projectSlug: body.projectSlug,
       })) {
         switch (ev.type) {
           case 'session':

@@ -1712,6 +1712,25 @@ footer {
   display: flex;
   justify-content: center;
 }
+/* ---- ACTIVE PROJECT BANNER (§5.4) ---- */
+.chat-project-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(232, 70, 27, 0.08);
+  border: 1px solid rgba(232, 70, 27, 0.25);
+  font-size: 13px;
+  color: var(--ink);
+}
+.chat-project-banner button {
+  color: var(--muted);
+  cursor: pointer;
+  flex: none;
+}
 .chat-disclaimer {
   text-align: center;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { SSEParser } from '@/lib/sse-parser';
 import {
@@ -10,6 +10,7 @@ import {
   type MessagePart,
   type ChatStatus,
 } from '@/lib/chat-message';
+import { buildProjectGreetingMessage } from '@/lib/project-chat';
 import { InlineCard, type CardData } from './inline-card';
 import { useChatSession } from './chat-session-context';
 
@@ -40,12 +41,22 @@ const QUICK_REPLIES = [
   'ประเมินงบเบื้องต้น',
 ];
 
-export function ChatClient() {
+/**
+ * @param initialProjectSlug When set (Requirement §5.4), grounds every turn in
+ * this exact project (deterministic, not just semantic retrieval) and opens
+ * with a question about it.
+ */
+export function ChatClient({
+  initialProjectSlug,
+  initialProjectTitle,
+}: { initialProjectSlug?: string; initialProjectTitle?: string } = {}) {
   const [messages, setMessages] = useState<Message[]>([GREETING]);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState<Status>('idle');
+  const [projectSlug, setProjectSlug] = useState(initialProjectSlug);
   const sessionId = useRef<string | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const autoSentRef = useRef(false);
   const { reportSession, reportTurnComplete } = useChatSession();
 
   const busy = status === 'thinking' || status === 'streaming';
@@ -90,6 +101,7 @@ export function ChatClient() {
           message: trimmed,
           language: 'th',
           sessionId: sessionId.current,
+          projectSlug,
         }),
       });
 
@@ -146,8 +158,29 @@ export function ChatClient() {
     }
   }
 
+  useEffect(() => {
+    if (initialProjectSlug && initialProjectTitle && !autoSentRef.current) {
+      autoSentRef.current = true;
+      send(buildProjectGreetingMessage(initialProjectTitle));
+    }
+    // Only ever auto-sends once, on mount, guarded by autoSentRef.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="chat-full">
+      {projectSlug && initialProjectTitle && (
+        <div className="chat-project-banner">
+          <span>กำลังคุยเกี่ยวกับผลงาน: {initialProjectTitle}</span>
+          <button
+            type="button"
+            aria-label="เลิกอ้างอิงผลงานนี้"
+            onClick={() => setProjectSlug(undefined)}
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <div className="chat-scroll" ref={scrollRef}>
         {messages.map((m, i) => (
           <div key={i} className={`chat-msg chat-${m.role}`}>

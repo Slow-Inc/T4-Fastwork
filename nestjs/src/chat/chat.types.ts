@@ -4,6 +4,8 @@ export interface ChatInput {
   message: string;
   language: 'th' | 'en';
   sessionId?: string;
+  /** Set when the visitor is chatting from a project's detail page (§5.4). */
+  projectSlug?: string;
 }
 
 /** The SSE event stream the chat endpoint emits. */

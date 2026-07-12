@@ -3,11 +3,24 @@ import {
   buildSystemPrompt,
   type RetrievedItem,
 } from '../src/chat/system-prompt';
+import type { ProjectContextRecord } from '../src/chat/project-context';
 
 const retrieved: RetrievedItem[] = [
   { kind: 'project', ref: 'fin-track', title: 'FinTrack', summary: 'SaaS finance dashboard' },
   { kind: 'service', ref: '1', title: 'SaaS Platform', summary: 'build SaaS platforms' },
 ];
+
+const activeProject: ProjectContextRecord = {
+  slug: 'mangadock',
+  title: 'MangaDock',
+  titleEn: 'MangaDock',
+  description: 'OCR + LLM แปลภาพมังงะอัตโนมัติ',
+  content: null,
+  category: 'AI Product',
+  technologies: ['Next.js'],
+  tags: ['ai'],
+  liveUrl: null,
+};
 
 describe('buildSystemPrompt', () => {
   it('instructs the exact card marker formats', () => {
@@ -38,5 +51,23 @@ describe('buildSystemPrompt', () => {
     const p = buildSystemPrompt({ language: 'th', retrieved: [] });
     expect(typeof p).toBe('string');
     expect(p).toContain('[PROJECT:');
+  });
+
+  it('injects the active project as ground truth when the visitor is viewing it', () => {
+    const p = buildSystemPrompt({ language: 'th', retrieved: [], activeProject });
+    expect(p).toContain('MangaDock');
+    expect(p).toContain('AI Product');
+    expect(p).toContain('OCR + LLM แปลภาพมังงะอัตโนมัติ');
+  });
+
+  it('omits any active-project block when none is viewing', () => {
+    const p = buildSystemPrompt({ language: 'th', retrieved });
+    expect(p).not.toContain('MangaDock');
+  });
+
+  it('renders the active-project block in English for language "en"', () => {
+    const p = buildSystemPrompt({ language: 'en', retrieved: [], activeProject });
+    expect(p).toContain('MangaDock');
+    expect(p.toLowerCase()).toContain('currently viewing');
   });
 });

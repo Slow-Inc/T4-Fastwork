@@ -12,6 +12,7 @@ import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 import { ConversationLogService } from './conversation-log.service';
 import { ScopeSummaryService } from './scope-summary.service';
+import { ProjectContextService } from './project-context.service';
 
 @Module({
   imports: [LlmModule],
@@ -20,6 +21,7 @@ import { ScopeSummaryService } from './scope-summary.service';
     ChatService,
     ConversationLogService,
     ScopeSummaryService,
+    ProjectContextService,
     EmbeddingService,
     // Real pgvector retrieval (query → Jina embed → cosine search).
     { provide: RETRIEVAL_SERVICE, useClass: DrizzleRetrievalService },

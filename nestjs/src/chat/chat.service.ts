@@ -9,6 +9,8 @@ import { StreamMarkerParser, type CardRef } from './marker-parser';
 import { buildSystemPrompt, type RetrievedItem } from './system-prompt';
 import { buildChatMessages } from './build-messages';
 import { ConversationLogService } from './conversation-log.service';
+import { ProjectContextService } from './project-context.service';
+import type { ProjectContextRecord } from './project-context';
 import type { ChatEvent, ChatInput } from './chat.types';
 
 const MODEL = process.env.CUSTOM_OPENAI_MODEL ?? 'qwen3.6-35b-a3b';
@@ -25,6 +27,7 @@ export class ChatService {
     private readonly llm: LlmService,
     @Inject(RETRIEVAL_SERVICE) private readonly retrieval: RetrievalService,
     private readonly log: ConversationLogService,
+    private readonly projectContext: ProjectContextService,
   ) {}
 
   async *streamChat(input: ChatInput): AsyncGenerator<ChatEvent> {
@@ -37,6 +40,17 @@ export class ChatService {
       retrieved = await this.retrieval.retrieve(input.message, input.language);
     } catch {
       retrieved = []; // retrieval failure → answer without grounded context
+    }
+
+    // Deterministic grounding for a project the visitor is already viewing
+    // (#5.4) — independent of whether semantic retrieval above surfaced it.
+    let activeProject: ProjectContextRecord | undefined;
+    if (input.projectSlug) {
+      try {
+        activeProject = (await this.projectContext.getBySlug(input.projectSlug)) ?? undefined;
+      } catch {
+        activeProject = undefined;
+      }
     }
 
     // Prior turns so the assistant can follow up on context (#15). Tolerant:
@@ -67,7 +81,7 @@ export class ChatService {
     try {
       const stream = this.llm.streamChat(
         buildChatMessages(
-          buildSystemPrompt({ language: input.language, retrieved }),
+          buildSystemPrompt({ language: input.language, retrieved, activeProject }),
           history,
           input.message,
         ),

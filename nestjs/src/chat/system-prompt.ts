@@ -4,6 +4,7 @@
  * instructs the inline card markers the StreamMarkerParser extracts, and injects
  * the RAG-retrieved context. Pure function — framework-agnostic.
  */
+import { formatProjectContext, type ProjectContextRecord } from './project-context';
 
 export interface RetrievedItem {
   kind: 'project' | 'service' | 'faq';
@@ -16,6 +17,9 @@ export interface RetrievedItem {
 export interface SystemPromptOptions {
   language: 'th' | 'en';
   retrieved: RetrievedItem[];
+  /** Set when the visitor arrived from a project's detail page (§5.4) — deterministic
+   * ground truth for that exact project, independent of semantic retrieval. */
+  activeProject?: ProjectContextRecord;
 }
 
 function markerFor(item: RetrievedItem): string {
@@ -37,15 +41,33 @@ function contextBlock(retrieved: RetrievedItem[], language: 'th' | 'en'): string
     .join('\n');
 }
 
+function activeProjectBlock(project: ProjectContextRecord, language: 'th' | 'en'): string {
+  const formatted = formatProjectContext(project, language);
+  return language === 'en'
+    ? [
+        "The visitor is currently viewing this exact project's detail page. Treat the record " +
+          'below as ground truth for detailed questions about it — you do not need retrieved ' +
+          'context to answer these, and must not contradict it:',
+        formatted,
+      ].join('\n')
+    : [
+        'ผู้เข้าชมกำลังดูหน้ารายละเอียดผลงานนี้อยู่ ให้ถือว่าข้อมูลด้านล่างเป็นความจริงสำหรับคำถามเชิงลึก ' +
+          'เกี่ยวกับผลงานนี้โดยตรง — ไม่ต้องรอ context ที่ค้นมา และห้ามขัดแย้งกับข้อมูลนี้:',
+        formatted,
+      ].join('\n');
+}
+
 export function buildSystemPrompt(opts: SystemPromptOptions): string {
-  const { language, retrieved } = opts;
+  const { language, retrieved, activeProject } = opts;
   const context = contextBlock(retrieved, language);
+  const projectBlock = activeProject ? [activeProjectBlock(activeProject, language)] : [];
 
   if (language === 'en') {
     return [
       "You are T4 Labs' assistant. T4 Labs is a software team building SaaS, web apps, and AI products.",
       'Recommend the team\'s real work that fits the visitor\'s problem. Stay strictly within T4 Labs\' services — do not answer off-topic questions. Reply in English. Keep answers short and concrete. End every reply with a call-to-contact.',
       'When you recommend a project, cite it inline as [PROJECT:<slug>]. When you recommend a service, cite it as [SERVICE:<id>]. Use ONLY the refs from the context below — never invent one. Do not include raw URLs.',
+      ...projectBlock,
       'Context (retrieved for this question):',
       context,
     ].join('\n\n');
@@ -55,6 +77,7 @@ export function buildSystemPrompt(opts: SystemPromptOptions): string {
     'คุณคือผู้ช่วยของ T4 Labs — ทีมพัฒนาซอฟต์แวร์ที่สร้าง SaaS, Web Application และ AI Product',
     'หน้าที่: แนะนำผลงาน/บริการจริงของทีมที่ตรงกับโจทย์ของผู้เข้าชม ตอบเฉพาะขอบเขตบริการของ T4 Labs เท่านั้น (อย่าตอบนอกเรื่อง) ตอบเป็นภาษาไทย สั้น กระชับ เป็นรูปธรรม และปิดท้ายทุกครั้งด้วยการชวนติดต่อ/จ้างงาน',
     'เมื่อแนะนำผลงาน ให้อ้างอิงแบบ inline ด้วย [PROJECT:<slug>] และเมื่อแนะนำบริการ ให้ใช้ [SERVICE:<id>] โดยใช้เฉพาะ ref จาก context ด้านล่างเท่านั้น ห้ามแต่งขึ้นเอง และห้ามใส่ URL ดิบ',
+    ...projectBlock,
     'ข้อมูลที่ค้นมาสำหรับคำถามนี้ (context):',
     context,
   ].join('\n\n');

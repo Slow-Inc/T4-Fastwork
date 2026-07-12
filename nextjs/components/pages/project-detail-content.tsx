@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/site/breadcrumb';
+import { TrackedLink } from '@/components/site/tracked-link';
 import type { Project } from '@/content/catalog';
 import { useLocale } from '@/i18n/locale-context';
 
@@ -76,7 +77,14 @@ export function ProjectDetailContent({ project: p }: { project: Project }) {
       </div>
 
       <div className="detail-cta rv">
-        <Link href="/chat" className="btn">
+        <TrackedLink
+          href={`/chat?project=${p.slug}`}
+          ctaType="project-ask-ai-details"
+          className="btn"
+        >
+          {t('ถามรายละเอียดผลงานนี้กับ AI', 'Ask AI about this project')}
+        </TrackedLink>
+        <Link href="/chat" className="btn ghost">
           {t('คุยกับ AI ดูงานคล้ายกัน', 'Ask AI for similar work')}
         </Link>
         <Link href="/contact" className="btn ghost">

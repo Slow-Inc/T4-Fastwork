@@ -173,6 +173,39 @@ test('scope summary panel shows a tooltip before any conversation', async ({ pag
   ).toBeVisible();
 });
 
+test('project detail page offers an "ask AI about this project" CTA', async ({ page }) => {
+  await page.goto('/projects/mangadock', { waitUntil: 'networkidle' });
+  const cta = page.getByRole('link', { name: 'ถามรายละเอียดผลงานนี้กับ AI' });
+  await expect(cta).toHaveAttribute('href', '/chat?project=mangadock');
+});
+
+test('arriving at /chat with ?project= shows a banner and grounds the auto-sent question', async ({
+  page,
+}) => {
+  let requestBody: Record<string, unknown> | null = null;
+  await page.route('**/chat/stream', async (route) => {
+    requestBody = route.request().postDataJSON();
+    const body =
+      'event: session\ndata: {"sessionId":"e2e-project-chat"}\n\n' +
+      'event: token\ndata: {"text":"เป็นระบบ OCR ครับ"}\n\n' +
+      'event: done\ndata: {"latencyMs":10}\n\n';
+    await route.fulfill({ status: 200, contentType: 'text/event-stream', body });
+  });
+
+  await page.goto('/chat?project=mangadock', { waitUntil: 'networkidle' });
+
+  await expect(page.locator('.chat-project-banner')).toContainText('MangaDock');
+  await expect(page.getByText('MangaDock', { exact: false }).first()).toBeVisible();
+
+  await expect
+    .poll(() => requestBody?.projectSlug, { timeout: 5000 })
+    .toBe('mangadock');
+  expect((requestBody?.message as string) ?? '').toContain('MangaDock');
+
+  await page.locator('.chat-project-banner button').click();
+  await expect(page.locator('.chat-project-banner')).toHaveCount(0);
+});
+
 test('every page declares its own canonical + hreflang alternates', async ({ page }) => {
   for (const path of ['/about', '/faq', '/blog/rag-chatbot-for-business']) {
     await page.goto(path, { waitUntil: 'networkidle' });
