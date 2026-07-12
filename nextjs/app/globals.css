@@ -1451,3 +1451,133 @@ footer {
     gap: 32px;
   }
 }
+
+/* ---- CHAT PAGE (§5.1) ---- */
+.chat-full {
+  margin-top: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.chat-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: 56vh;
+  overflow-y: auto;
+  padding: 8px 4px;
+}
+.chat-msg {
+  display: flex;
+}
+.chat-user {
+  justify-content: flex-end;
+}
+.chat-assistant {
+  justify-content: flex-start;
+}
+.chat-bubble {
+  max-width: 76%;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 15.5px;
+  line-height: 1.65;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.chat-user .chat-bubble {
+  background: var(--ink);
+  color: var(--paper);
+  border-bottom-right-radius: 4px;
+}
+.chat-assistant .chat-bubble {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 4px;
+}
+.chat-text {
+  white-space: pre-wrap;
+}
+.chat-thinking {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--faint);
+  animation: chatpulse 1.4s ease-in-out infinite;
+}
+@keyframes chatpulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.chat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  transition: 0.2s;
+}
+.chat-card:hover {
+  border-color: var(--accent);
+}
+.chat-card strong {
+  font-family: var(--disp);
+  font-size: 16px;
+  font-weight: 600;
+}
+.chat-card-desc {
+  font-size: 13px;
+  color: var(--muted);
+}
+.chat-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.quick-chip {
+  font-family: var(--body);
+  font-size: 13.5px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: 0.2s;
+}
+.quick-chip:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.quick-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.chat-input-row {
+  display: flex;
+  gap: 12px;
+}
+.chat-input-row input {
+  flex: 1;
+  font-family: var(--body);
+  font-size: 15px;
+  padding: 13px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink);
+}
+.chat-input-row input:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+.chat-error-cta {
+  display: flex;
+  justify-content: center;
+}
+.chat-disclaimer {
+  text-align: center;
+}
