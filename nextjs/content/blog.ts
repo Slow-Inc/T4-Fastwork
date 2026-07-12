@@ -1,0 +1,97 @@
+/**
+ * Blog content (Requirement §4.6 / §6.4) — SEO-oriented articles on web, AI and
+ * digital work. Static layer; swappable for a CMS/DB source later.
+ */
+export interface BlogPost {
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string[];
+  author: string;
+  tags: string[];
+  publishedAt: string;
+  readTimeMin: number;
+  views: number;
+}
+
+export const blogPosts: BlogPost[] = [
+  {
+    slug: 'rag-chatbot-for-business',
+    title: 'ทำ AI Chatbot แบบ RAG ให้ธุรกิจ — เริ่มยังไงให้ตอบแม่น',
+    excerpt:
+      'RAG (Retrieval-Augmented Generation) ทำให้แชทบอทตอบอ้างอิงข้อมูลจริงของธุรกิจได้ บทความนี้อธิบายหลักการและขั้นตอนวางระบบ',
+    content: [
+      'RAG คือการให้ LLM ค้นข้อมูลจากคลังความรู้ของเราก่อนตอบ ทำให้คำตอบอ้างอิงข้อมูลจริงและลดการมั่ว (hallucination)',
+      'องค์ประกอบหลักคือ การทำ embedding เนื้อหา, เก็บใน vector store เช่น pgvector, และดึงชิ้นที่เกี่ยวข้องมาประกอบ prompt',
+      'สำหรับธุรกิจไทย การเลือก embedding model ที่รองรับภาษาไทยดีและการ chunk เนื้อหาให้เหมาะสมคือกุญแจสำคัญของความแม่นยำ',
+    ],
+    author: 'T4 Labs',
+    tags: ['AI', 'RAG', 'Chatbot'],
+    publishedAt: '2026-06-01',
+    readTimeMin: 6,
+    views: 1240,
+  },
+  {
+    slug: 'nextjs-vs-traditional-web',
+    title: 'ทำไมเว็บสมัยใหม่ถึงเลือก Next.js — เร็ว SEO ดี และสเกลได้',
+    excerpt:
+      'Next.js App Router รวมข้อดีของ static, server-render และ client interactivity ไว้ในเฟรมเวิร์กเดียว เหมาะกับเว็บที่ต้องการทั้งความเร็วและ SEO',
+    content: [
+      'Next.js ให้เลือก rendering ได้ตามหน้า — static สำหรับหน้าเนื้อหา, server สำหรับข้อมูลสด, และ client สำหรับส่วน interactive',
+      'ผลลัพธ์คือเว็บที่โหลดไว ติด SEO ง่าย และยังทำ feature ซับซ้อนอย่างแชทเรียลไทม์ได้ในโปรเจกต์เดียว',
+      'สำหรับธุรกิจที่อยากเริ่มเล็กแล้วสเกลต่อ นี่คือรากฐานที่ไม่ต้องรื้อทีหลัง',
+    ],
+    author: 'T4 Labs',
+    tags: ['Next.js', 'Performance', 'SEO'],
+    publishedAt: '2026-05-15',
+    readTimeMin: 5,
+    views: 980,
+  },
+  {
+    slug: 'saas-mvp-in-8-weeks',
+    title: 'สร้าง SaaS MVP ใน 8 สัปดาห์ — โฟกัสอะไรก่อน',
+    excerpt:
+      'การทำ MVP ที่ดีไม่ใช่การทำให้ครบทุกฟีเจอร์ แต่คือการเลือกสิ่งที่พิสูจน์คุณค่าหลักได้เร็วที่สุด',
+    content: [
+      'เริ่มจากนิยาม core value ให้ชัด แล้วตัดทุกอย่างที่ไม่จำเป็นต่อการพิสูจน์มันออกไปก่อน',
+      'วางสถาปัตยกรรมที่สเกลได้ตั้งแต่ต้น (auth, multi-tenant, billing) แม้จะยังทำไม่ครบ เพื่อไม่ต้องรื้อภายหลัง',
+      'ปล่อยเร็ว วัดผลจริงกับผู้ใช้ แล้วค่อย ๆ เพิ่มฟีเจอร์ตาม feedback',
+    ],
+    author: 'T4 Labs',
+    tags: ['SaaS', 'MVP', 'Startup'],
+    publishedAt: '2026-04-20',
+    readTimeMin: 7,
+    views: 1530,
+  },
+  {
+    slug: 'ocr-document-ai-thai',
+    title: 'OCR และ Document AI ภาษาไทย — ดึงข้อมูลจากเอกสารอัตโนมัติ',
+    excerpt:
+      'ระบบ OCR + LLM ช่วยดึงข้อมูลจากใบเสร็จ สัญญา และแบบฟอร์มภาษาไทยได้แม่นขึ้นมาก บทความนี้เล่าแนวทางที่ใช้จริง',
+    content: [
+      'OCR ภาษาไทยมีความท้าทายเรื่องวรรณยุกต์และการเว้นวรรค การรวม OCR กับ LLM ช่วยตรวจแก้และจัดโครงสร้างข้อมูลได้ดีขึ้น',
+      'workflow ที่ใช้จริงคือ สแกน → OCR → LLM ตรวจ/จัดรูปแบบ → ส่งออกเป็น JSON ที่มีโครงสร้าง พร้อม webhook กลับระบบลูกค้า',
+      'เราต่อยอดจากประสบการณ์งานอย่าง MangaDock ที่รวม OCR และ LLM ไว้ใน pipeline เดียว',
+    ],
+    author: 'T4 Labs',
+    tags: ['AI', 'OCR', 'Document AI'],
+    publishedAt: '2026-03-10',
+    readTimeMin: 6,
+    views: 870,
+  },
+];
+
+export function getPost(slug: string): BlogPost | undefined {
+  return blogPosts.find((p) => p.slug === slug);
+}
+
+export function searchPosts(q?: string): BlogPost[] {
+  const query = q?.trim().toLowerCase();
+  const sorted = [...blogPosts].sort((a, b) =>
+    b.publishedAt.localeCompare(a.publishedAt),
+  );
+  if (!query) return sorted;
+  return sorted.filter((p) =>
+    `${p.title} ${p.excerpt} ${p.tags.join(' ')}`.toLowerCase().includes(query),
+  );
+}

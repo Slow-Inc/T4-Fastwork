@@ -28,10 +28,24 @@ const thai = IBM_Plex_Sans_Thai({
   variable: '--font-thai',
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://t4labs.co';
+
 export const metadata: Metadata = {
-  title: 'T4 Labs — Product Engineering Partner',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'T4 Labs — Product Engineering Partner',
+    template: '%s',
+  },
   description:
     'พาร์ตเนอร์ด้านวิศวกรรมซอฟต์แวร์สำหรับ Founder และองค์กร — SaaS, Web App และ AI Product ที่สเกลได้',
+  keywords: ['รับทำเว็บไซต์', 'SaaS', 'Web Application', 'AI Product', 'RAG', 'T4 Labs'],
+  openGraph: {
+    type: 'website',
+    locale: 'th_TH',
+    siteName: 'T4 Labs',
+    url: SITE_URL,
+  },
+  alternates: { canonical: '/' },
 };
 
 export default function RootLayout({
@@ -42,7 +56,30 @@ export default function RootLayout({
       lang="th"
       className={`${disp.variable} ${body.variable} ${mono.variable} ${thai.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([
+              {
+                '@context': 'https://schema.org',
+                '@type': 'Organization',
+                name: 'T4 Labs',
+                url: SITE_URL,
+                description:
+                  'Product engineering partner — SaaS, Web Application และ AI Product',
+              },
+              {
+                '@context': 'https://schema.org',
+                '@type': 'WebSite',
+                name: 'T4 Labs',
+                url: SITE_URL,
+              },
+            ]),
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
