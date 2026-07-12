@@ -868,6 +868,10 @@ footer {
   opacity: 1;
   transform: none;
 }
+/* Downward variant (§4.6 FAQ list): slides down into place instead of up. */
+.rv.rv-down {
+  transform: translateY(-16px);
+}
 @media (prefers-reduced-motion: reduce) {
   .rv {
     opacity: 1;

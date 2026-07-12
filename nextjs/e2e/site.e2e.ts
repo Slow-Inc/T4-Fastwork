@@ -93,6 +93,22 @@ test('FAQ list items expand with a smooth transition', async ({ page }) => {
   await expect(answer).toBeVisible();
 });
 
+test('FAQ items slide down into place with a cascading stagger', async ({ page }) => {
+  await page.goto('/faq', { waitUntil: 'networkidle' });
+  const items = page.locator('.faq-item');
+
+  const delays = await items.evaluateAll((els) =>
+    els.map((el) => getComputedStyle(el).transitionDelay),
+  );
+  expect(delays[0], 'first item should have no delay').toBe('0s');
+  expect(delays[1], 'second item should be staggered after the first').not.toBe(delays[0]);
+
+  // All items settle into their resting position once scrolled into view.
+  await expect(items.first()).toHaveCSS('opacity', '1', { timeout: 3000 });
+  await items.last().scrollIntoViewIfNeeded();
+  await expect(items.last()).toHaveCSS('opacity', '1', { timeout: 3000 });
+});
+
 test('contact form carries a hidden reCAPTCHA token field', async ({ page }) => {
   // Not submitting here — a real submit would insert a lead into the live DB.
   // This just confirms the reCAPTCHA wiring is present in the DOM.
