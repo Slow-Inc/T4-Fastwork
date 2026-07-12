@@ -17,7 +17,8 @@
     "test:watch": "bun test --watch",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "db:seed": "bun src/database/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
