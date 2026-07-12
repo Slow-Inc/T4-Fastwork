@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/server';
 import { validateContact } from '@/lib/contact-validation';
+import { checkRecaptcha, verifyRecaptchaWithGoogle } from '@/lib/recaptcha';
 
 export interface ContactState {
   status: 'idle' | 'success' | 'error';
@@ -22,6 +23,17 @@ export async function submitContact(
 
   if (!result.ok) {
     return { status: 'error', errors: result.errors };
+  }
+
+  const recaptcha = await checkRecaptcha({
+    token: formData.get('recaptchaToken')?.toString(),
+    verify: verifyRecaptchaWithGoogle,
+  });
+  if (!recaptcha.ok) {
+    return {
+      status: 'error',
+      message: 'ยืนยันตัวตนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
+    };
   }
 
   try {

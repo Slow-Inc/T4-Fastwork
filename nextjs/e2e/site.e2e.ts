@@ -93,6 +93,14 @@ test('FAQ list items expand with a smooth transition', async ({ page }) => {
   await expect(answer).toBeVisible();
 });
 
+test('contact form carries a hidden reCAPTCHA token field', async ({ page }) => {
+  // Not submitting here — a real submit would insert a lead into the live DB.
+  // This just confirms the reCAPTCHA wiring is present in the DOM.
+  await page.goto('/contact', { waitUntil: 'networkidle' });
+  const token = page.locator('form.contact-form input[name="recaptchaToken"]');
+  await expect(token).toHaveAttribute('type', 'hidden');
+});
+
 test('language switch flips nav + content to English', async ({ page }) => {
   await page.goto('/about', { waitUntil: 'networkidle' });
   const nav = page.locator('nav').first();

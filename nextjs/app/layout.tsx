@@ -7,6 +7,7 @@ import {
 } from 'next/font/google';
 import './globals.css';
 import { Analytics } from '@/components/site/analytics';
+import { RecaptchaScript } from '@/components/site/recaptcha-script';
 import { LocaleProvider } from '@/i18n/locale-context';
 
 const disp = Space_Grotesk({
@@ -82,6 +83,7 @@ export default function RootLayout({
         />
         <LocaleProvider>{children}</LocaleProvider>
         <Analytics />
+        <RecaptchaScript />
       </body>
     </html>
   );

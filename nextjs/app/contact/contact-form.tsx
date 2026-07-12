@@ -1,16 +1,47 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useRef } from 'react';
 import { submitContact, type ContactState } from './actions';
 import { useLocale } from '@/i18n/locale-context';
 
 const initial: ContactState = { status: 'idle' };
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
+declare global {
+  interface Window {
+    grecaptcha?: {
+      ready(cb: () => void): void;
+      execute(siteKey: string, opts: { action: string }): Promise<string>;
+    };
+  }
+}
 
 export function ContactForm() {
   const [state, formAction, pending] = useActionState(submitContact, initial);
   const { locale } = useLocale();
   const en = locale === 'en';
   const t = (th: string, e: string) => (en ? e : th);
+  const tokenInputRef = useRef<HTMLInputElement>(null);
+  const resubmittingRef = useRef(false);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (resubmittingRef.current) {
+      resubmittingRef.current = false;
+      return; // token already attached — let the native submit proceed
+    }
+    const grecaptcha = RECAPTCHA_SITE_KEY ? window.grecaptcha : undefined;
+    if (!grecaptcha) return; // no site key configured — submit without a token
+
+    e.preventDefault();
+    const token = await new Promise<string>((resolve) => {
+      grecaptcha.ready(() => {
+        grecaptcha.execute(RECAPTCHA_SITE_KEY!, { action: 'contact' }).then(resolve);
+      });
+    });
+    if (tokenInputRef.current) tokenInputRef.current.value = token;
+    resubmittingRef.current = true;
+    e.currentTarget.requestSubmit();
+  }
 
   const projectTypes = [
     { value: '', label: t('เลือกประเภทงาน (ไม่บังคับ)', 'Project type (optional)') },
@@ -37,7 +68,8 @@ export function ContactForm() {
   }
 
   return (
-    <form action={formAction} className="contact-form rv" noValidate>
+    <form action={formAction} onSubmit={handleSubmit} className="contact-form rv" noValidate>
+      <input ref={tokenInputRef} type="hidden" name="recaptchaToken" />
       <label className="field">
         <span className="t-meta">{t('ชื่อ *', 'Name *')}</span>
         <input name="name" type="text" required aria-invalid={!!state.errors?.name} />
