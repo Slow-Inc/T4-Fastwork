@@ -10,12 +10,16 @@ import { createClient } from '@/lib/client';
  */
 export function ImageUpload({
   name,
+  label = 'ภาพปก',
   defaultUrl = '',
   folder = 'uploads',
+  accept = 'image/*',
 }: {
   name: string;
+  label?: string;
   defaultUrl?: string;
   folder?: string;
+  accept?: string;
 }) {
   const [url, setUrl] = useState(defaultUrl);
   const [busy, setBusy] = useState(false);
@@ -43,17 +47,24 @@ export function ImageUpload({
     }
   }
 
+  const isPdfPreview = url.toLowerCase().split('?')[0].endsWith('.pdf');
+
   return (
     <div className="field">
-      <span className="t-meta">ภาพปก</span>
-      <input type="file" accept="image/*" onChange={onChange} disabled={busy} />
+      <span className="t-meta">{label}</span>
+      <input type="file" accept={accept} onChange={onChange} disabled={busy} />
       <input type="hidden" name={name} value={url} />
       {busy && <span className="t-meta">กำลังอัปโหลด…</span>}
       {error && <span className="field-err">{error}</span>}
-      {url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt="preview" className="admin-img-preview" />
-      )}
+      {url &&
+        (isPdfPreview ? (
+          <a href={url} target="_blank" rel="noopener noreferrer" className="t-meta">
+            ดูไฟล์ PDF ที่อัปโหลด ↗
+          </a>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={url} alt="preview" className="admin-img-preview" />
+        ))}
     </div>
   );
 }

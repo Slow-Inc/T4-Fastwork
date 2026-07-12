@@ -38,6 +38,12 @@ export const processSteps = ['Discovery', 'Architecture', 'Build', 'Ship', 'Scal
 export interface Certificate {
   issuer: string;
   title: string;
+  titleEn?: string;
+  issuerLogo?: string;
+  issuedYear?: number;
+  thumbnail?: string;
+  fullImage?: string;
+  verifyUrl?: string;
 }
 export const certificates: Certificate[] = [
   { issuer: 'NVIDIA', title: 'AI for All: From Basics to GenAI Practice' },

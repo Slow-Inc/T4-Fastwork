@@ -6,7 +6,7 @@ export default async function AdminCertificates() {
   const supabase = await createClient();
   const { data: certs } = await supabase
     .from('certificates')
-    .select('id, title, issuer, issued_year, is_featured, sort_order')
+    .select('id, title, issuer, issued_year, thumbnail, full_image, verify_url, is_featured, sort_order')
     .order('sort_order', { ascending: true });
 
   return (
@@ -24,9 +24,11 @@ export default async function AdminCertificates() {
             <thead>
               <tr>
                 <th>#</th>
+                <th>ภาพย่อ</th>
                 <th>หลักสูตร</th>
                 <th>ผู้ออก</th>
                 <th>ปี</th>
+                <th>ไฟล์เต็ม</th>
                 <th>หน้าแรก</th>
                 <th></th>
               </tr>
@@ -35,9 +37,34 @@ export default async function AdminCertificates() {
               {certs.map((c) => (
                 <tr key={c.id}>
                   <td className="t-meta">{c.sort_order}</td>
+                  <td>
+                    {c.thumbnail ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={c.thumbnail} alt="" className="admin-img-preview admin-img-preview-sm" />
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td>{c.title}</td>
                   <td className="t-meta">{c.issuer}</td>
                   <td>{c.issued_year ?? '—'}</td>
+                  <td>
+                    {c.full_image ? (
+                      <a href={c.full_image} target="_blank" rel="noopener noreferrer">
+                        เปิด ↗
+                      </a>
+                    ) : (
+                      '—'
+                    )}
+                    {c.verify_url && (
+                      <>
+                        {' · '}
+                        <a href={c.verify_url} target="_blank" rel="noopener noreferrer">
+                          verify ↗
+                        </a>
+                      </>
+                    )}
+                  </td>
                   <td>{c.is_featured ? '★' : '—'}</td>
                   <td>
                     <form action={deleteCertificate}>

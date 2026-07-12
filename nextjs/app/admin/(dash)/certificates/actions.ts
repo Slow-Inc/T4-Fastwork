@@ -22,8 +22,13 @@ export async function createCertificate(_prev: CertState, formData: FormData): P
   const supabase = await createClient();
   const { error } = await supabase.from('certificates').insert({
     title,
+    title_en: formData.get('title_en')?.toString().trim() || null,
     issuer,
+    issuer_logo: formData.get('issuer_logo')?.toString().trim() || null,
     issued_year: Number(formData.get('issued_year')) || null,
+    thumbnail: formData.get('thumbnail')?.toString().trim() || null,
+    full_image: formData.get('full_image')?.toString().trim() || null,
+    verify_url: formData.get('verify_url')?.toString().trim() || null,
     is_featured: formData.get('is_featured') === 'on',
     sort_order: Number(formData.get('sort_order')) || 0,
   });
