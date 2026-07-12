@@ -11,11 +11,20 @@ type View = 'client' | 'admin';
  * across the client/admin views (per spec only the mockup differs); the tab
  * switches the framing label.
  */
-export function InteractivePreview({ screens }: { screens: PreviewScreen[] }) {
+export function InteractivePreview({
+  screens,
+  en = false,
+}: {
+  screens: PreviewScreen[];
+  en?: boolean;
+}) {
   const [view, setView] = useState<View>('client');
   const [style, setStyle] = useState<1 | 2 | 3>(1);
   const [active, setActive] = useState(0);
   const current = screens[active];
+  const title = en && current.titleEn ? current.titleEn : current.title;
+  const description = en && current.descriptionEn ? current.descriptionEn : current.description;
+  const components = en && current.componentsEn ? current.componentsEn : current.components;
 
   return (
     <div className="preview">
@@ -27,7 +36,7 @@ export function InteractivePreview({ screens }: { screens: PreviewScreen[] }) {
           className={`preview-tab${view === 'client' ? ' is-active' : ''}`}
           onClick={() => setView('client')}
         >
-          หน้าฝั่งลูกค้า
+          {en ? 'Client view' : 'หน้าฝั่งลูกค้า'}
         </button>
         <button
           role="tab"
@@ -36,7 +45,7 @@ export function InteractivePreview({ screens }: { screens: PreviewScreen[] }) {
           className={`preview-tab${view === 'admin' ? ' is-active' : ''}`}
           onClick={() => setView('admin')}
         >
-          หน้าฝั่ง Admin
+          {en ? 'Admin view' : 'หน้าฝั่ง Admin'}
         </button>
         <div className="preview-styles" role="group" aria-label="สไตล์">
           {([1, 2, 3] as const).map((s) => (
@@ -47,7 +56,7 @@ export function InteractivePreview({ screens }: { screens: PreviewScreen[] }) {
               aria-pressed={style === s}
               onClick={() => setStyle(s)}
             >
-              สไตล์ {s}
+              {en ? 'Style' : 'สไตล์'} {s}
             </button>
           ))}
         </div>
@@ -63,7 +72,7 @@ export function InteractivePreview({ screens }: { screens: PreviewScreen[] }) {
                 onClick={() => setActive(i)}
               >
                 <span className="t-meta">{String(i + 1).padStart(2, '0')}</span>
-                {s.title}
+                {en && s.titleEn ? s.titleEn : s.title}
               </button>
             </li>
           ))}
@@ -72,16 +81,16 @@ export function InteractivePreview({ screens }: { screens: PreviewScreen[] }) {
         <div className="preview-stage">
           <div className={`preview-mock preview-mock-s${style}`} aria-hidden="true">
             <span className="t-meta">
-              {view === 'client' ? 'CLIENT VIEW' : 'ADMIN VIEW'} · สไตล์ {style}
+              {view === 'client' ? 'CLIENT VIEW' : 'ADMIN VIEW'} · {en ? 'Style' : 'สไตล์'} {style}
             </span>
-            <strong>{current.title}</strong>
+            <strong>{title}</strong>
           </div>
           <div className="preview-info">
-            <h4>{current.title}</h4>
+            <h4>{title}</h4>
             <p className="t-meta">Role: {current.roles}</p>
-            <p className="preview-desc">{current.description}</p>
+            <p className="preview-desc">{description}</p>
             <ul className="preview-components">
-              {current.components.map((c) => (
+              {components.map((c) => (
                 <li key={c}>{c}</li>
               ))}
             </ul>

@@ -1,22 +1,32 @@
-import type { FeatureGroup } from '@/content/solution-detail';
+interface Group {
+  title: string;
+  items: string[];
+  titleEn?: string;
+  itemsEn?: string[];
+}
 
-/** Feature Checklist — 6 accordion groups (Requirement §4.4.2). */
-export function FeatureChecklist({ groups }: { groups: FeatureGroup[] }) {
+/** Feature Checklist — 6 accordion groups (Requirement §4.4.2), bilingual. */
+export function FeatureChecklist({ groups, en = false }: { groups: Group[]; en?: boolean }) {
   return (
     <div className="checklist rv">
-      {groups.map((g) => (
-        <details key={g.title} className="checklist-group">
-          <summary className="checklist-head">
-            <span className="checklist-title">{g.title}</span>
-            <span className="t-meta">{g.items.length} รายการ</span>
-          </summary>
-          <ul className="checklist-items">
-            {g.items.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </details>
-      ))}
+      {groups.map((g) => {
+        const items = en && g.itemsEn ? g.itemsEn : g.items;
+        return (
+          <details key={g.title} className="checklist-group">
+            <summary className="checklist-head">
+              <span className="checklist-title">{en && g.titleEn ? g.titleEn : g.title}</span>
+              <span className="t-meta">
+                {items.length} {en ? 'items' : 'รายการ'}
+              </span>
+            </summary>
+            <ul className="checklist-items">
+              {items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </details>
+        );
+      })}
     </div>
   );
 }
