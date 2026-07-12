@@ -1,0 +1,18 @@
+{
+  "nav": {
+    "work": "ผลงาน",
+    "services": "บริการ",
+    "about": "เกี่ยวกับเรา",
+    "faq": "FAQ",
+    "blog": "บทความ",
+    "ai": "AI",
+    "search": "ค้นหา…",
+    "contact": "ติดต่อเรา"
+  },
+  "common": {
+    "talkToAi": "คุยกับ AI",
+    "contactUs": "ติดต่อจ้างงาน",
+    "viewAllWork": "ดูผลงานทั้งหมด",
+    "language": "TH / EN"
+  }
+}

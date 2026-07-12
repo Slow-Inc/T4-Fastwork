@@ -1,0 +1,18 @@
+{
+  "nav": {
+    "work": "Work",
+    "services": "Services",
+    "about": "About",
+    "faq": "FAQ",
+    "blog": "Blog",
+    "ai": "AI",
+    "search": "Search…",
+    "contact": "Contact us"
+  },
+  "common": {
+    "talkToAi": "Talk to AI",
+    "contactUs": "Hire us",
+    "viewAllWork": "View all work",
+    "language": "TH / EN"
+  }
+}
