@@ -2,7 +2,8 @@ import { describe, it, expect, afterEach } from 'bun:test';
 import { render, screen, cleanup } from '@testing-library/react';
 import { HeroView } from './hero';
 import { ProcessSchematicView } from './process-schematic';
-import { processNodes, processSteps } from '@/content/site';
+import { SdlcSectionView } from './sdlc-section';
+import { processNodes, processSteps, sdlcPhases } from '@/content/site';
 
 afterEach(cleanup);
 
@@ -37,5 +38,29 @@ describe('ProcessSchematic', () => {
   it('renders each build step', () => {
     render(<ProcessSchematicView en={false} />);
     for (const step of processSteps) expect(screen.getByText(step)).toBeDefined();
+  });
+});
+
+describe('SdlcSection', () => {
+  it('renders every SDLC phase title (Thai)', () => {
+    render(<SdlcSectionView en={false} />);
+    for (const phase of sdlcPhases) {
+      expect(screen.getByText(phase.title)).toBeDefined();
+    }
+  });
+
+  it('renders every SDLC phase title (English)', () => {
+    render(<SdlcSectionView en={true} />);
+    for (const phase of sdlcPhases) {
+      expect(screen.getByText(phase.titleEn)).toBeDefined();
+    }
+  });
+
+  it('renders the phases in order (01 → 06)', () => {
+    const { container } = render(<SdlcSectionView en={false} />);
+    const indices = Array.from(container.querySelectorAll('.about-steps .t-idx')).map(
+      (el) => el.textContent,
+    );
+    expect(indices).toEqual(sdlcPhases.map((p) => p.index));
   });
 });

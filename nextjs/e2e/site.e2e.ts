@@ -88,6 +88,13 @@ test('/about shows the real SDLC alongside the client-facing "how we work" steps
   }
 });
 
+test('homepage also shows the SDLC section', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' });
+  const section = page.locator('#sdlc');
+  await expect(section.getByRole('heading', { name: 'SDLC ที่เราใช้จริง' })).toBeVisible();
+  await expect(section.getByText('พัฒนา (Development)')).toBeVisible();
+});
+
 test('navbar keeps its frosted-glass backdrop blur', async ({ page }) => {
   // The build (Lightning CSS) can drop the standard `backdrop-filter` when a
   // `-webkit-` copy is hand-written alongside it, leaving Chrome with no blur.

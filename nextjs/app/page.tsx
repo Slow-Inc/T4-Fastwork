@@ -4,6 +4,7 @@ import { SolutionSelector } from '@/components/site/solution-selector';
 import { ProjectGallery } from '@/components/site/project-gallery';
 import { ServiceList } from '@/components/site/service-list';
 import { ProcessSchematic } from '@/components/site/process-schematic';
+import { SdlcSection } from '@/components/site/sdlc-section';
 import { TechStack } from '@/components/site/tech-stack';
 import { FeaturedCarousel } from '@/components/site/featured-carousel';
 import { Certificates } from '@/components/site/certificates';
@@ -24,6 +25,7 @@ export default function Home() {
         <ProjectGallery />
         <ServiceList />
         <ProcessSchematic />
+        <SdlcSection />
         <TechStack techs={projectTechnologies} />
         <Certificates />
         <CtaSection />

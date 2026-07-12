@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/site/breadcrumb';
+import { sdlcPhases } from '@/content/site';
 import { useLocale } from '@/i18n/locale-context';
 
 const whatWeDo = [
@@ -23,78 +24,6 @@ const steps = [
   { n: '02', th: ['ประเมินขอบเขต + ราคา', 'สรุป scope และเสนอราคาชัดเจน'], en: ['Scope + quote', 'Clear scope and a firm price'] },
   { n: '03', th: ['ออกแบบและพัฒนา', 'ออกแบบระบบ พัฒนา และรีวิวเป็นรอบ'], en: ['Design & build', 'Architect, build and review in rounds'] },
   { n: '04', th: ['ส่งมอบ ทดสอบ ดูแลต่อ', 'ส่งมอบพร้อมโค้ด และดูแลหลังใช้งาน'], en: ['Ship, test, support', 'Delivered with code, supported after launch'] },
-];
-
-// The real engineering SDLC the team runs on every project — distinct from
-// `steps` above (the client-facing journey), this is the internal process
-// (Requirement §4.6), included for CTO/technical-founder credibility.
-const sdlc = [
-  {
-    n: '01',
-    th: [
-      'วิเคราะห์ความต้องการ (Requirement Analysis)',
-      'เก็บ requirement จริงจากลูกค้า แปลงเป็น user story และประเมินขอบเขต/ความเสี่ยงทางเทคนิคก่อนเริ่มงาน',
-    ],
-    en: [
-      'Requirement Analysis',
-      'Gather real requirements, turn them into user stories, and assess scope and technical risk before work begins',
-    ],
-  },
-  {
-    n: '02',
-    th: [
-      'ออกแบบระบบ (Design & Architecture)',
-      'ออกแบบสถาปัตยกรรม data model และ UI/UX ให้ชัดเจนก่อนลงมือเขียนโค้ดจริง',
-    ],
-    en: [
-      'Design & Architecture',
-      'Design the system architecture, data model, and UI/UX clearly before writing real code',
-    ],
-  },
-  {
-    n: '03',
-    th: [
-      'พัฒนา (Development)',
-      'พัฒนาแบบ Agile เป็นรอบสั้น ๆ เขียนเทสต์ก่อนโค้ด (TDD) สำหรับ logic ที่สำคัญ และรีวิวโค้ดทุก pull request',
-    ],
-    en: [
-      'Development',
-      'Build in short Agile iterations, test-first (TDD) for critical logic, and code review on every pull request',
-    ],
-  },
-  {
-    n: '04',
-    th: [
-      'ทดสอบ (Testing & QA)',
-      'Unit test และ end-to-end test (Playwright) ก่อน merge ทุกครั้ง พร้อม UAT ร่วมกับลูกค้าก่อนส่งมอบ',
-    ],
-    en: [
-      'Testing & QA',
-      'Unit and end-to-end tests (Playwright) before every merge, plus UAT with the client before delivery',
-    ],
-  },
-  {
-    n: '05',
-    th: [
-      'ส่งขึ้นระบบจริง (Deployment)',
-      'Deploy ผ่าน CI/CD ขึ้น staging ก่อนแล้วค่อยขึ้น production พร้อมแผน rollback หากเกิดปัญหา',
-    ],
-    en: [
-      'Deployment',
-      'Deploy via CI/CD to staging first, then production, with a rollback plan ready if something goes wrong',
-    ],
-  },
-  {
-    n: '06',
-    th: [
-      'ดูแลหลังส่งมอบ (Maintenance & Support)',
-      'ติดตามการทำงานของระบบจริง แก้ไขบั๊ก และเพิ่มฟีเจอร์ตาม feedback ตามที่ตกลงกันไว้',
-    ],
-    en: [
-      'Maintenance & Support',
-      'Monitor the live system, fix bugs, and add features based on feedback as agreed',
-    ],
-  },
 ];
 
 export function AboutBlocks() {
@@ -169,11 +98,12 @@ export function AboutBlocks() {
               )}
             </p>
             <ol className="about-steps">
-              {sdlc.map((s) => {
-                const [title, desc] = en ? s.en : s.th;
+              {sdlcPhases.map((s) => {
+                const title = en ? s.titleEn : s.title;
+                const desc = en ? s.descriptionEn : s.description;
                 return (
-                  <li key={s.n}>
-                    <span className="t-idx">{s.n}</span>
+                  <li key={s.index}>
+                    <span className="t-idx">{s.index}</span>
                     <h3>{title}</h3>
                     <p>{desc}</p>
                   </li>

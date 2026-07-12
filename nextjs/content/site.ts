@@ -35,6 +35,69 @@ export const processConns: ProcessConn[] = [
 ];
 export const processSteps = ['Discovery', 'Architecture', 'Build', 'Ship', 'Scale'];
 
+// The real engineering SDLC the team runs on every project (Requirement §4.6).
+export interface SdlcPhase {
+  index: string;
+  title: string;
+  titleEn: string;
+  description: string;
+  descriptionEn: string;
+}
+export const sdlcPhases: SdlcPhase[] = [
+  {
+    index: '01',
+    title: 'วิเคราะห์ความต้องการ (Requirement Analysis)',
+    titleEn: 'Requirement Analysis',
+    description:
+      'เก็บ requirement จริงจากลูกค้า แปลงเป็น user story และประเมินขอบเขต/ความเสี่ยงทางเทคนิคก่อนเริ่มงาน',
+    descriptionEn:
+      'Gather real requirements, turn them into user stories, and assess scope and technical risk before work begins',
+  },
+  {
+    index: '02',
+    title: 'ออกแบบระบบ (Design & Architecture)',
+    titleEn: 'Design & Architecture',
+    description: 'ออกแบบสถาปัตยกรรม data model และ UI/UX ให้ชัดเจนก่อนลงมือเขียนโค้ดจริง',
+    descriptionEn:
+      'Design the system architecture, data model, and UI/UX clearly before writing real code',
+  },
+  {
+    index: '03',
+    title: 'พัฒนา (Development)',
+    titleEn: 'Development',
+    description:
+      'พัฒนาแบบ Agile เป็นรอบสั้น ๆ เขียนเทสต์ก่อนโค้ด (TDD) สำหรับ logic ที่สำคัญ และรีวิวโค้ดทุก pull request',
+    descriptionEn:
+      'Build in short Agile iterations, test-first (TDD) for critical logic, and code review on every pull request',
+  },
+  {
+    index: '04',
+    title: 'ทดสอบ (Testing & QA)',
+    titleEn: 'Testing & QA',
+    description:
+      'Unit test และ end-to-end test (Playwright) ก่อน merge ทุกครั้ง พร้อม UAT ร่วมกับลูกค้าก่อนส่งมอบ',
+    descriptionEn:
+      'Unit and end-to-end tests (Playwright) before every merge, plus UAT with the client before delivery',
+  },
+  {
+    index: '05',
+    title: 'ส่งขึ้นระบบจริง (Deployment)',
+    titleEn: 'Deployment',
+    description:
+      'Deploy ผ่าน CI/CD ขึ้น staging ก่อนแล้วค่อยขึ้น production พร้อมแผน rollback หากเกิดปัญหา',
+    descriptionEn:
+      'Deploy via CI/CD to staging first, then production, with a rollback plan ready if something goes wrong',
+  },
+  {
+    index: '06',
+    title: 'ดูแลหลังส่งมอบ (Maintenance & Support)',
+    titleEn: 'Maintenance & Support',
+    description:
+      'ติดตามการทำงานของระบบจริง แก้ไขบั๊ก และเพิ่มฟีเจอร์ตาม feedback ตามที่ตกลงกันไว้',
+    descriptionEn: 'Monitor the live system, fix bugs, and add features based on feedback as agreed',
+  },
+];
+
 export interface Certificate {
   issuer: string;
   title: string;
