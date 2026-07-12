@@ -1,7 +1,10 @@
-import { services } from '@/content/services';
+'use client';
 
-/** Homepage services (Requirement §4.5). */
-export function ServiceList() {
+import { services, type Service } from '@/content/services';
+import { useLocale } from '@/i18n/locale-context';
+
+/** Presentational services list — pure, unit-testable. */
+export function ServiceListView({ items, en }: { items: Service[]; en: boolean }) {
   return (
     <section id="services" className="section">
       <div className="srv-head rv">
@@ -9,14 +12,20 @@ export function ServiceList() {
         <h2>From one page to a whole platform.</h2>
       </div>
       <div className="rv">
-        {services.map((s) => (
+        {items.map((s) => (
           <div className="srv-row" key={s.no}>
             <span className="t-meta">{s.no}</span>
             <span className="sn">{s.title}</span>
-            <span className="sd">{s.description}</span>
+            <span className="sd">{en ? s.descriptionEn : s.description}</span>
           </div>
         ))}
       </div>
     </section>
   );
+}
+
+/** Homepage services (Requirement §4.5), bilingual (§7.1). */
+export function ServiceList() {
+  const { locale } = useLocale();
+  return <ServiceListView items={services} en={locale === 'en'} />;
 }

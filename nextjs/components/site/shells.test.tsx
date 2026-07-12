@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'bun:test';
 import { render, screen, cleanup } from '@testing-library/react';
 import { HeroView } from './hero';
-import { ProcessSchematic } from './process-schematic';
+import { ProcessSchematicView } from './process-schematic';
 import { processNodes, processSteps } from '@/content/site';
 
 afterEach(cleanup);
@@ -30,12 +30,12 @@ describe('Hero', () => {
 
 describe('ProcessSchematic', () => {
   it('renders each node in the real request path', () => {
-    render(<ProcessSchematic />);
+    render(<ProcessSchematicView en={false} />);
     for (const n of processNodes) expect(screen.getByText(n.name)).toBeDefined();
   });
 
   it('renders each build step', () => {
-    render(<ProcessSchematic />);
+    render(<ProcessSchematicView en={false} />);
     for (const step of processSteps) expect(screen.getByText(step)).toBeDefined();
   });
 });

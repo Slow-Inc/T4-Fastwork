@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'bun:test';
 import { render, screen, cleanup } from '@testing-library/react';
-import { ServiceList } from './service-list';
+import { ServiceListView } from './service-list';
 import { ProjectGallery } from './project-gallery';
 import { CertificatesView } from './certificates';
 import { MetricBand } from './metric-band';
@@ -13,7 +13,7 @@ afterEach(cleanup);
 
 describe('ServiceList', () => {
   it('renders every service', () => {
-    render(<ServiceList />);
+    render(<ServiceListView items={services} en={false} />);
     for (const s of services) expect(screen.getByText(s.title)).toBeDefined();
   });
 });
