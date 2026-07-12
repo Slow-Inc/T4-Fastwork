@@ -45,8 +45,7 @@ Uses **Bun** as the package manager/runtime (per spec §7.0) — commit `bun.loc
 - `bun run dev` — dev server (http://localhost:3000)
 - `bun run build` / `bun run start` — production build / serve
 - `bun run lint` — ESLint (flat config via `eslint.config.mjs`)
-
-There is no test runner configured for the frontend yet.
+- `bun test` — component tests (Bun runner + `@testing-library/react` + happy-dom). `happydom.ts` (preload via `bunfig.toml`) registers the DOM and mocks `next/link`. Test files `*.test.tsx` are excluded from the Next.js build type-check (`tsconfig.json`).
 
 **Backend** (`nestjs/`):
 
