@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useUiLocale } from '@/i18n/use-ui-locale';
+import { useLocale } from '@/i18n/locale-context';
 import th from '@/messages/th.json';
 import en from '@/messages/en.json';
 
 /** Sticky liquid-glass nav (Requirement §4.1.1): real routes, search, a
  * client-side TH/EN switch (keeps pages static), and a mobile hamburger. */
 export function SiteNav() {
-  const [locale, setLocale] = useUiLocale();
+  const { locale, setLocale } = useLocale();
   const [open, setOpen] = useState(false);
   const t = (locale === 'en' ? en : th).nav;
 

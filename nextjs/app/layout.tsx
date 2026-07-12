@@ -7,6 +7,7 @@ import {
 } from 'next/font/google';
 import './globals.css';
 import { Analytics } from '@/components/site/analytics';
+import { LocaleProvider } from '@/i18n/locale-context';
 
 const disp = Space_Grotesk({
   subsets: ['latin'],
@@ -79,7 +80,7 @@ export default function RootLayout({
             ]),
           }}
         />
-        {children}
+        <LocaleProvider>{children}</LocaleProvider>
         <Analytics />
       </body>
     </html>
