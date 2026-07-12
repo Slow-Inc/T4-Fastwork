@@ -4,6 +4,8 @@ Issues and PRDs for this repo live as GitHub issues, under the **Slow-Inc** org 
 
 > **`gh` is not on PATH in this environment.** Call it via full path: `"/c/Program Files/GitHub CLI/gh.exe"` (Git Bash) or `"C:\Program Files\GitHub CLI\gh.exe"` (PowerShell). Authenticated as `xenodeve`, with access to the `Slow-Inc` org.
 
+> **Bilingual reports:** issue comments and PR descriptions must be written in **both Thai and English** (clearly separated **EN:** / **TH:** paragraphs or sections). Commit messages and code stay English-only.
+
 ## Conventions
 
 - **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.

@@ -78,6 +78,10 @@ Nest.js backend, Bun runtime. Feature modules live under `src/<feature>/` (modul
 
 Planned modules per the wayfinder map (#1): `database/` (Drizzle + pgvector), `ingestion/` (chunk→embed→upsert), `rag/` (retrieval), `chat/` (SSE streaming), `content/`. Keep RAG modules framework-agnostic — Nest.js only wires them.
 
+## Writing conventions
+
+**Reports, GitHub issue comments, and PR descriptions must be bilingual — both Thai and English.** Lead with one language and follow with the other (e.g. an **EN:** paragraph and a **TH:** paragraph, or clearly separated sections). This applies to status updates, resolutions, and any narrative written into the tracker. Code, commit messages, identifiers, and inline code comments stay in English.
+
 ## Agent skills
 
 ### Issue tracker
