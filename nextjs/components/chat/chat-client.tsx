@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { SSEParser } from '@/lib/sse-parser';
 import { appendToken, appendCard, type MessagePart } from '@/lib/chat-message';
 import { InlineCard, type CardData } from './inline-card';
+import { useChatSession } from './chat-session-context';
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4100';
@@ -39,6 +40,7 @@ export function ChatClient() {
   const [status, setStatus] = useState<Status>('idle');
   const sessionId = useRef<string | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { reportSession, reportTurnComplete } = useChatSession();
 
   const busy = status === 'thinking' || status === 'streaming';
 
@@ -100,6 +102,7 @@ export function ChatClient() {
           switch (ev.event) {
             case 'session':
               sessionId.current = data.sessionId as string;
+              reportSession(sessionId.current);
               break;
             case 'token':
               setStatus('streaming');
@@ -110,6 +113,7 @@ export function ChatClient() {
               break;
             case 'done':
               setStatus('idle');
+              reportTurnComplete();
               break;
             case 'error':
               updateLastAssistant((p) =>

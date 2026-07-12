@@ -1,7 +1,16 @@
-import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Post,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { RecaptchaGuard } from '../security/recaptcha.guard';
 import { ChatService } from './chat.service';
+import { ScopeSummaryService } from './scope-summary.service';
+import type { ScopeSummary } from './scope-summary.types';
 
 class ChatRequestDto {
   message!: string;
@@ -10,9 +19,16 @@ class ChatRequestDto {
   recaptchaToken?: string;
 }
 
+class ScopeSummaryRequestDto {
+  sessionId!: string;
+}
+
 @Controller('chat')
 export class ChatController {
-  constructor(private readonly chat: ChatService) {}
+  constructor(
+    private readonly chat: ChatService,
+    private readonly scopeSummary: ScopeSummaryService,
+  ) {}
 
   /**
    * SSE streaming chat. POST (fetch-based SSE) rather than GET/EventSource so
@@ -60,5 +76,14 @@ export class ChatController {
     } finally {
       res.end();
     }
+  }
+
+  /** Extracts a project-scope summary from the session's history (§5.4 / FR-08). */
+  @Post('scope-summary')
+  async scopeSummaryFor(
+    @Body() body: ScopeSummaryRequestDto,
+  ): Promise<ScopeSummary> {
+    if (!body.sessionId) throw new BadRequestException('sessionId is required');
+    return this.scopeSummary.summarize(body.sessionId);
   }
 }

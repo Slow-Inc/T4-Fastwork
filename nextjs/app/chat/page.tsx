@@ -3,6 +3,8 @@ import { pageAlternates } from '@/lib/seo';
 import { SiteNav } from '@/components/site/site-nav';
 import { Breadcrumb } from '@/components/site/breadcrumb';
 import { ChatClient } from '@/components/chat/chat-client';
+import { ChatSessionProvider } from '@/components/chat/chat-session-context';
+import { ScopeSummaryPanel } from '@/components/chat/scope-summary-panel';
 
 export const metadata: Metadata = {
   title: 'คุยกับผู้ช่วย AI — T4 Labs',
@@ -26,7 +28,10 @@ export default function ChatPage() {
               และช่วยประเมินเบื้องต้น
             </p>
           </div>
-          <ChatClient />
+          <ChatSessionProvider>
+            <ChatClient />
+            <ScopeSummaryPanel />
+          </ChatSessionProvider>
         </section>
       </div>
     </>

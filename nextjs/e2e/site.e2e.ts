@@ -101,6 +101,39 @@ test('contact form carries a hidden reCAPTCHA token field', async ({ page }) => 
   await expect(token).toHaveAttribute('type', 'hidden');
 });
 
+test('AI greeting popup appears on first visit and "ไว้ก่อน" dismisses without navigating', async ({
+  page,
+}) => {
+  await page.goto('/', { waitUntil: 'networkidle' });
+  const popup = page.locator('.ai-greeting');
+  await expect(popup).toBeVisible({ timeout: 6000 });
+  await popup.getByRole('button', { name: 'ไว้ก่อน' }).click();
+  await expect(popup).toBeHidden();
+  expect(new URL(page.url()).pathname).toBe('/');
+});
+
+test('AI greeting popup "เอาเลย พาชมหน่อย" navigates to /chat', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' });
+  const popup = page.locator('.ai-greeting');
+  await expect(popup).toBeVisible({ timeout: 6000 });
+  await popup.getByRole('link', { name: 'เอาเลย พาชมหน่อย' }).click();
+  await page.waitForURL('**/chat');
+});
+
+test('AI greeting popup does not show on /chat', async ({ page }) => {
+  await page.goto('/chat', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(3000);
+  await expect(page.locator('.ai-greeting')).toHaveCount(0);
+});
+
+test('scope summary panel shows a tooltip before any conversation', async ({ page }) => {
+  await page.goto('/chat', { waitUntil: 'networkidle' });
+  await page.locator('.scope-panel-toggle').click();
+  await expect(
+    page.getByText('เริ่มพูดคุยกับ AI ระบบจะสรุปขอบเขตงานให้อัตโนมัติ'),
+  ).toBeVisible();
+});
+
 test('every page declares its own canonical + hreflang alternates', async ({ page }) => {
   for (const path of ['/about', '/faq', '/blog/rag-chatbot-for-business']) {
     await page.goto(path, { waitUntil: 'networkidle' });

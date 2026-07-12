@@ -8,6 +8,7 @@ import {
 import './globals.css';
 import { Analytics } from '@/components/site/analytics';
 import { RecaptchaScript } from '@/components/site/recaptcha-script';
+import { AiGreetingPopup } from '@/components/site/ai-greeting-popup';
 import { LocaleProvider } from '@/i18n/locale-context';
 import { pageAlternates } from '@/lib/seo';
 
@@ -83,6 +84,7 @@ export default function RootLayout({
           }}
         />
         <LocaleProvider>{children}</LocaleProvider>
+        <AiGreetingPopup />
         <Analytics />
         <RecaptchaScript />
       </body>

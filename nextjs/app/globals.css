@@ -1737,6 +1737,126 @@ footer {
   max-height: 40vh;
 }
 
+/* ---- AI GREETING POPUP (§5.4 / FR-01, FR-02) ---- */
+.ai-greeting {
+  position: fixed;
+  right: 20px;
+  bottom: 84px;
+  z-index: 110;
+  width: min(340px, calc(100vw - 32px));
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(244, 242, 237, 0.96);
+  backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 16px 48px rgba(19, 19, 17, 0.18);
+}
+.ai-greeting-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.ai-greeting-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-right: 18px;
+}
+.ai-greeting-avatar {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ink);
+  position: relative;
+}
+.ai-greeting-avatar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.ai-greeting-head p {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ai-greeting-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.ai-greeting-later {
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 4px;
+}
+
+/* ---- SCOPE SUMMARY PANEL (§5.4 / FR-08) ---- */
+.scope-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 130;
+}
+.scope-panel-toggle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  font-size: 20px;
+  box-shadow: 0 8px 24px rgba(19, 19, 17, 0.16);
+  cursor: pointer;
+}
+.scope-panel-body {
+  position: absolute;
+  right: 0;
+  bottom: 60px;
+  width: min(320px, calc(100vw - 40px));
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(244, 242, 237, 0.96);
+  backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 16px 48px rgba(19, 19, 17, 0.18);
+}
+.scope-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.scope-panel-head h4 {
+  font-family: var(--disp);
+  font-size: 15px;
+}
+.scope-panel-close {
+  color: var(--muted);
+  cursor: pointer;
+}
+.scope-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.scope-panel-row dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.scope-panel-row dd {
+  font-size: 14px;
+  color: var(--ink);
+}
+
 /* ---- SOLUTION LANDING (§4.4) ---- */
 .preview {
   border: 1px solid var(--line);

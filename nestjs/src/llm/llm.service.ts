@@ -42,4 +42,14 @@ export class LlmService {
       if (delta) yield delta;
     }
   }
+
+  /** Non-streaming completion — for one-shot extraction calls (e.g. scope summary). */
+  async complete(messages: ChatMessage[]): Promise<string> {
+    const res = await this.getClient().chat.completions.create({
+      model: this.model,
+      messages,
+      stream: false,
+    });
+    return res.choices[0]?.message?.content ?? '';
+  }
 }
