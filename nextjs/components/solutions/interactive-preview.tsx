@@ -13,6 +13,7 @@ type View = 'client' | 'admin';
  */
 export function InteractivePreview({ screens }: { screens: PreviewScreen[] }) {
   const [view, setView] = useState<View>('client');
+  const [style, setStyle] = useState<1 | 2 | 3>(1);
   const [active, setActive] = useState(0);
   const current = screens[active];
 
@@ -37,6 +38,19 @@ export function InteractivePreview({ screens }: { screens: PreviewScreen[] }) {
         >
           หน้าฝั่ง Admin
         </button>
+        <div className="preview-styles" role="group" aria-label="สไตล์">
+          {([1, 2, 3] as const).map((s) => (
+            <button
+              key={s}
+              type="button"
+              className={`preview-style${style === s ? ' is-active' : ''}`}
+              aria-pressed={style === s}
+              onClick={() => setStyle(s)}
+            >
+              สไตล์ {s}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="preview-body">
@@ -56,9 +70,9 @@ export function InteractivePreview({ screens }: { screens: PreviewScreen[] }) {
         </ul>
 
         <div className="preview-stage">
-          <div className="preview-mock" aria-hidden="true">
+          <div className={`preview-mock preview-mock-s${style}`} aria-hidden="true">
             <span className="t-meta">
-              {view === 'client' ? 'CLIENT VIEW' : 'ADMIN VIEW'}
+              {view === 'client' ? 'CLIENT VIEW' : 'ADMIN VIEW'} · สไตล์ {style}
             </span>
             <strong>{current.title}</strong>
           </div>

@@ -31,7 +31,8 @@ describe('ProjectGallery', () => {
 describe('Certificates', () => {
   it('renders every certificate title', () => {
     render(<Certificates />);
-    for (const c of certificates) expect(screen.getByText(c.title)).toBeDefined();
+    for (const c of certificates)
+      expect(screen.getAllByText(c.title).length).toBeGreaterThan(0);
   });
 });
 

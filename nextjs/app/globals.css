@@ -1756,6 +1756,36 @@ footer {
   font-size: 22px;
   font-weight: 600;
 }
+.preview-mock-s2 {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+.preview-mock-s3 {
+  background: linear-gradient(135deg, #15423b, #1b1b1e);
+  color: #dceae4;
+}
+.preview-styles {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+.preview-style {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: 0.2s;
+}
+.preview-style.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .preview-info h4 {
   font-family: var(--disp);
   font-size: 20px;
@@ -1991,6 +2021,94 @@ footer {
 }
 .partner-cell:hover {
   border-color: var(--ink);
+}
+
+/* ---- CERTIFICATE LIGHTBOX (§4.7) ---- */
+.crow {
+  cursor: pointer;
+}
+.crow-view {
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.crow:hover .crow-view {
+  opacity: 1;
+}
+.cert-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.cert-modal:target {
+  display: flex;
+}
+.cert-modal-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(19, 19, 17, 0.55);
+  backdrop-filter: blur(4px);
+}
+.cert-modal-card {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 100%);
+}
+.cert-preview {
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1b1b1e, #2a2a2e);
+  color: #edebe4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.cert-preview strong {
+  font-family: var(--disp);
+  font-size: clamp(20px, 3vw, 30px);
+  font-weight: 600;
+  max-width: 400px;
+}
+.cert-seal {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  position: relative;
+}
+.cert-seal::after {
+  content: "✓";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 24px;
+}
+.cert-modal-close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
 }
 
 /* ---- FEATURED CAROUSEL (§4.1.4) ---- */
