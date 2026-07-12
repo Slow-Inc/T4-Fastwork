@@ -14,6 +14,11 @@ const fakeLlm = {
 };
 const emptyRetrieval = { retrieve: async () => [] };
 
+function fakeLog() {
+  const calls: unknown[] = [];
+  return { calls, logTurn: async (input: unknown) => void calls.push(input) };
+}
+
 async function collect(gen: AsyncIterable<ChatEvent>): Promise<ChatEvent[]> {
   const out: ChatEvent[] = [];
   for await (const e of gen) out.push(e);
@@ -22,7 +27,11 @@ async function collect(gen: AsyncIterable<ChatEvent>): Promise<ChatEvent[]> {
 
 describe('ChatService.streamChat', () => {
   it('emits session first, tokens + card in order, then done', async () => {
-    const svc = new ChatService(fakeLlm as never, emptyRetrieval as never);
+    const svc = new ChatService(
+      fakeLlm as never,
+      emptyRetrieval as never,
+      fakeLog() as never,
+    );
     const events = await collect(
       svc.streamChat({ message: 'hi', language: 'th' }),
     );
@@ -50,7 +59,11 @@ describe('ChatService.streamChat', () => {
         throw new Error('gateway down');
       },
     };
-    const svc = new ChatService(throwingLlm as never, emptyRetrieval as never);
+    const svc = new ChatService(
+      throwingLlm as never,
+      emptyRetrieval as never,
+      fakeLog() as never,
+    );
     const events = await collect(
       svc.streamChat({ message: 'hi', language: 'th' }),
     );
@@ -60,5 +73,25 @@ describe('ChatService.streamChat', () => {
     );
     expect(err).toBeDefined();
     expect(err!.fallbackText.length).toBeGreaterThan(0);
+  });
+
+  it('logs the completed turn with accumulated text + cards', async () => {
+    const log = fakeLog();
+    const svc = new ChatService(
+      fakeLlm as never,
+      emptyRetrieval as never,
+      log as never,
+    );
+    await collect(svc.streamChat({ message: 'hi', language: 'th' }));
+
+    expect(log.calls).toHaveLength(1);
+    const call = log.calls[0] as {
+      userMessage: string;
+      assistantText: string;
+      cards: { kind: string; slug?: string }[];
+    };
+    expect(call.userMessage).toBe('hi');
+    expect(call.assistantText).toBe('สวัสดี  ครับ');
+    expect(call.cards).toEqual([{ kind: 'project', slug: 'fin-track' }]);
   });
 });

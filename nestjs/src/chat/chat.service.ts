@@ -5,20 +5,25 @@ import {
   RETRIEVAL_SERVICE,
   type RetrievalService,
 } from '../rag/retrieval.service';
-import { StreamMarkerParser } from './marker-parser';
+import { StreamMarkerParser, type CardRef } from './marker-parser';
 import { buildSystemPrompt, type RetrievedItem } from './system-prompt';
+import { ConversationLogService } from './conversation-log.service';
 import type { ChatEvent, ChatInput } from './chat.types';
+
+const MODEL = process.env.CUSTOM_OPENAI_MODEL ?? 'qwen3.6-35b-a3b';
 
 /**
  * Orchestrates a chat turn: retrieve context → build the system prompt →
  * stream the LLM → parse markers into card events → wrap failures in a
- * graceful fallback. Yields a typed event stream the transport maps to SSE.
+ * graceful fallback → log the turn. Yields a typed event stream the transport
+ * maps to SSE.
  */
 @Injectable()
 export class ChatService {
   constructor(
     private readonly llm: LlmService,
     @Inject(RETRIEVAL_SERVICE) private readonly retrieval: RetrievalService,
+    private readonly log: ConversationLogService,
   ) {}
 
   async *streamChat(input: ChatInput): AsyncGenerator<ChatEvent> {
@@ -34,6 +39,23 @@ export class ChatService {
     }
 
     const parser = new StreamMarkerParser();
+    let assistantText = '';
+    const cards: CardRef[] = [];
+    const absorb = function* (
+      this: ChatService,
+      events: ReturnType<StreamMarkerParser['push']>,
+    ): Generator<ChatEvent> {
+      for (const ev of events) {
+        if (ev.type === 'text') {
+          assistantText += ev.value;
+          yield { type: 'token', text: ev.value };
+        } else {
+          cards.push(ev.card);
+          yield { type: 'card', card: ev.card };
+        }
+      }
+    }.bind(this);
+
     try {
       const stream = this.llm.streamChat([
         {
@@ -42,11 +64,20 @@ export class ChatService {
         },
         { role: 'user', content: input.message },
       ]);
-      for await (const delta of stream) {
-        for (const ev of parser.push(delta)) yield this.toEvent(ev);
-      }
-      for (const ev of parser.flush()) yield this.toEvent(ev);
-      yield { type: 'done', latencyMs: Math.round(performance.now() - start) };
+      for await (const delta of stream) yield* absorb(parser.push(delta));
+      yield* absorb(parser.flush());
+
+      const latencyMs = Math.round(performance.now() - start);
+      await this.log.logTurn({
+        sessionId,
+        language: input.language,
+        userMessage: input.message,
+        assistantText,
+        cards,
+        model: MODEL,
+        latencyMs,
+      });
+      yield { type: 'done', latencyMs };
     } catch (e) {
       yield {
         type: 'error',
@@ -57,13 +88,5 @@ export class ChatService {
             : 'Sorry, the assistant is temporarily unavailable — please contact us directly.',
       };
     }
-  }
-
-  private toEvent(
-    ev: ReturnType<StreamMarkerParser['push']>[number],
-  ): ChatEvent {
-    return ev.type === 'text'
-      ? { type: 'token', text: ev.value }
-      : { type: 'card', card: ev.card };
   }
 }
