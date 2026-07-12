@@ -3,6 +3,8 @@ import { mock } from 'bun:test';
 import React from 'react';
 
 // Registers a DOM (window/document) so @testing-library/react can render.
+// Each render test file is responsible for `afterEach(cleanup)` (importing
+// testing-library here — before this registration — would misconfigure it).
 GlobalRegistrator.register();
 
 // next/link relies on Next's router context (hooks) that doesn't exist in unit
