@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { SiteNav } from '@/components/site/site-nav';
 import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
-import { Breadcrumb } from '@/components/site/breadcrumb';
+import { BlogArticleContent } from '@/components/pages/blog-article-content';
 import { blogPosts } from '@/content/blog';
 import { getPostBySlug } from '@/lib/blog-repo';
 
@@ -54,38 +53,7 @@ export default async function BlogDetailPage({ params }: { params: Params }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <div className="wrap">
-        <article className="section section-page blog-article">
-          <Breadcrumb
-            items={[
-              { label: 'หน้าแรก', href: '/' },
-              { label: 'บทความ', href: '/blog' },
-              { label: p.title },
-            ]}
-          />
-          <div className="blog-article-head rv">
-            <div className="blog-card-tags">
-              {p.tags.map((t) => (
-                <span key={t} className="t-meta">{t}</span>
-              ))}
-            </div>
-            <h1>{p.title}</h1>
-            <div className="blog-meta t-meta">
-              {p.author} · {p.publishedAt} · อ่าน {p.readTimeMin} นาที
-            </div>
-          </div>
-
-          <div className="blog-body rv">
-            <p className="blog-lead">{p.excerpt}</p>
-            {p.content.map((para, i) => (
-              <p key={i}>{para}</p>
-            ))}
-          </div>
-
-          <div className="detail-cta rv">
-            <Link href="/chat" className="btn">คุยโจทย์กับ AI</Link>
-            <Link href="/blog" className="btn ghost">← บทความอื่น</Link>
-          </div>
-        </article>
+        <BlogArticleContent post={p} />
         <SiteFooter />
       </div>
       <ChatButton />
