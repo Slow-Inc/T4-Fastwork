@@ -70,6 +70,24 @@ for (const path of PAGES) {
   });
 }
 
+test('/about shows the real SDLC alongside the client-facing "how we work" steps', async ({
+  page,
+}) => {
+  await page.goto('/about', { waitUntil: 'networkidle' });
+  await expect(page.getByRole('heading', { name: 'ขั้นตอนการทำงาน' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'SDLC ที่เราใช้จริง' })).toBeVisible();
+  for (const phase of [
+    'วิเคราะห์ความต้องการ (Requirement Analysis)',
+    'ออกแบบระบบ (Design & Architecture)',
+    'พัฒนา (Development)',
+    'ทดสอบ (Testing & QA)',
+    'ส่งขึ้นระบบจริง (Deployment)',
+    'ดูแลหลังส่งมอบ (Maintenance & Support)',
+  ]) {
+    await expect(page.getByRole('heading', { name: phase })).toBeVisible();
+  }
+});
+
 test('navbar keeps its frosted-glass backdrop blur', async ({ page }) => {
   // The build (Lightning CSS) can drop the standard `backdrop-filter` when a
   // `-webkit-` copy is hand-written alongside it, leaving Chrome with no blur.
