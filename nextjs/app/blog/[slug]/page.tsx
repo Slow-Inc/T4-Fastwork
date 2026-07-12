@@ -6,7 +6,8 @@ import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { Breadcrumb } from '@/components/site/breadcrumb';
-import { getPost, blogPosts } from '@/content/blog';
+import { blogPosts } from '@/content/blog';
+import { getPostBySlug } from '@/lib/blog-repo';
 
 type Params = Promise<{ slug: string }>;
 
@@ -16,7 +17,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
-  const p = getPost(slug);
+  const p = await getPostBySlug(slug);
   if (!p) return { title: 'ไม่พบบทความ — T4 Labs' };
   return {
     title: `${p.title} — T4 Labs`,
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function BlogDetailPage({ params }: { params: Params }) {
   const { slug } = await params;
-  const p = getPost(slug);
+  const p = await getPostBySlug(slug);
   if (!p) notFound();
 
   const jsonLd = {
