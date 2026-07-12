@@ -9,3 +9,6 @@
 # dependencies / build artifacts
 node_modules/
 dist/
+
+# Playwright MCP session artifacts (screenshots, snapshots, console logs)
+/.playwright-mcp/
