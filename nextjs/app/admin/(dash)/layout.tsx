@@ -9,6 +9,8 @@ export const metadata = { title: 'Admin — T4 Labs' };
 const NAV = [
   { href: '/admin', label: 'ภาพรวม' },
   { href: '/admin/projects', label: 'ผลงาน' },
+  { href: '/admin/services', label: 'บริการ' },
+  { href: '/admin/faqs', label: 'FAQ' },
   { href: '/admin/leads', label: 'Leads' },
   { href: '/admin/conversations', label: 'แชท AI' },
 ];

@@ -2240,6 +2240,21 @@ footer {
   width: 16px;
   height: 16px;
 }
+.admin-form-card {
+  margin: 20px 0 32px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.3);
+}
+.admin-inline-form {
+  max-width: 620px;
+}
+.admin-form-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 14px;
+}
 .admin-convos {
   margin-top: 20px;
   display: flex;

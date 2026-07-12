@@ -1,0 +1,38 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { createClient } from '@/lib/server';
+
+export interface FaqFormState {
+  error?: string;
+  ok?: boolean;
+}
+
+export async function createFaq(
+  _prev: FaqFormState,
+  formData: FormData,
+): Promise<FaqFormState> {
+  const question = formData.get('question')?.toString().trim() ?? '';
+  const answer = formData.get('answer')?.toString().trim() ?? '';
+  if (!question || !answer) return { error: 'ต้องมีคำถามและคำตอบ' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('faqs').insert({
+    question,
+    answer,
+    category: formData.get('category')?.toString() || null,
+    sort_order: Number(formData.get('sort_order')) || 0,
+  });
+  if (error) return { error: 'บันทึกไม่สำเร็จ' };
+
+  revalidatePath('/admin/faqs');
+  return { ok: true };
+}
+
+export async function deleteFaq(formData: FormData) {
+  const id = formData.get('id')?.toString();
+  if (!id) return;
+  const supabase = await createClient();
+  await supabase.from('faqs').delete().eq('id', Number(id));
+  revalidatePath('/admin/faqs');
+}
