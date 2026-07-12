@@ -1,12 +1,16 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
-import { DRIZZLE, type DrizzleDB } from '../database/database.module';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from '../database/schema';
 import { EmbeddingService } from '../ingestion/embedding.service';
 import type { RetrievedItem } from '../chat/system-prompt';
 import type { RetrievalService } from './retrieval.service';
 
 const TOP_K = 5;
 const THRESHOLD = 0.5; // cosine similarity cutoff (decision #4)
+
+type DB = ReturnType<typeof drizzle<typeof schema>>;
 
 interface Row {
   source_type: 'project' | 'service' | 'faq';
@@ -17,24 +21,37 @@ interface Row {
 }
 
 /**
- * Real pgvector retrieval (#8). The cosine query below was verified live via the
- * Supabase MCP against the real schema (dummy vectors: nearest ranked first,
- * below-threshold filtered). Not yet wired in ChatModule — needs the DB pooler
- * password (app connection) + bge-m3 (#14) to run. Swap StubRetrievalService for
- * this once both clear.
+ * Real pgvector retrieval (#8). Embeds the query (Jina v3) then cosine-searches
+ * `document_embeddings`, joining to `projects` for the card slug/title. The SQL
+ * was verified live via the Supabase MCP. Self-contained lazy pooler client (no
+ * DatabaseModule) so module boot never needs the DB — retrieve() returns [] if
+ * the DB isn't configured, so chat degrades gracefully.
  */
 @Injectable()
 export class DrizzleRetrievalService implements RetrievalService {
-  constructor(
-    @Inject(DRIZZLE) private readonly db: DrizzleDB,
-    private readonly embedding: EmbeddingService,
-  ) {}
+  private db?: DB | null;
+
+  constructor(private readonly embedding: EmbeddingService) {}
+
+  private getDb(): DB | null {
+    if (this.db === undefined) {
+      const url = process.env.DATABASE_URL;
+      this.db =
+        !url || url.includes('[YOUR-PASSWORD]')
+          ? null
+          : drizzle(postgres(url, { prepare: false }), { schema });
+    }
+    return this.db;
+  }
 
   async retrieve(query: string): Promise<RetrievedItem[]> {
+    const db = this.getDb();
+    if (!db) return [];
+
     const vec = await this.embedding.embed(query);
     const literal = `[${vec.join(',')}]`;
 
-    const rows = (await this.db.execute(sql`
+    const rows = (await db.execute(sql`
       SELECT de.source_type AS source_type,
              de.source_id   AS source_id,
              p.slug         AS slug,
@@ -50,7 +67,6 @@ export class DrizzleRetrievalService implements RetrievalService {
 
     return rows.map((r) => ({
       kind: r.source_type,
-      // project cards cite by slug; services/faqs by their numeric id
       ref: r.source_type === 'project' ? (r.slug ?? '') : String(r.source_id),
       title: r.title ?? '',
       summary: r.chunk_text,

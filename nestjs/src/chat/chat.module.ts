@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { LlmModule } from '../llm/llm.module';
-import {
-  RETRIEVAL_SERVICE,
-  StubRetrievalService,
-} from '../rag/retrieval.service';
+import { RETRIEVAL_SERVICE } from '../rag/retrieval.service';
+import { DrizzleRetrievalService } from '../rag/drizzle-retrieval.service';
+import { EmbeddingService } from '../ingestion/embedding.service';
 import {
   RECAPTCHA_VERIFIER,
   GoogleRecaptchaVerifier,
@@ -19,8 +18,9 @@ import { ConversationLogService } from './conversation-log.service';
   providers: [
     ChatService,
     ConversationLogService,
-    // Placeholder retrieval until #8 lands the real pgvector impl.
-    { provide: RETRIEVAL_SERVICE, useClass: StubRetrievalService },
+    EmbeddingService,
+    // Real pgvector retrieval (query → Jina embed → cosine search).
+    { provide: RETRIEVAL_SERVICE, useClass: DrizzleRetrievalService },
     { provide: RECAPTCHA_VERIFIER, useClass: GoogleRecaptchaVerifier },
     RecaptchaGuard,
   ],
