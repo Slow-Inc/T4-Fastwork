@@ -100,7 +100,10 @@ h3 {
 }
 
 /* ---- NAV ---- */
-nav {
+/* Scoped to the site nav only — a bare `nav {}` also hits the footer's <nav>
+   link groups and the breadcrumb <nav>, fixing them to the top (the reported
+   "navbar ทับกัน" overlap). */
+.site-nav {
   position: fixed;
   top: 14px;
   left: 50%;

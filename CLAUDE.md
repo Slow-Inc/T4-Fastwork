@@ -46,6 +46,9 @@ Uses **Bun** as the package manager/runtime (per spec §7.0) — commit `bun.loc
 - `bun run build` / `bun run start` — production build / serve
 - `bun run lint` — ESLint (flat config via `eslint.config.mjs`)
 - `bun test` — component tests (Bun runner + `@testing-library/react` + happy-dom). `happydom.ts` (preload via `bunfig.toml`) registers the DOM and mocks `next/link`. Test files `*.test.tsx` are excluded from the Next.js build type-check (`tsconfig.json`).
+- `bun run e2e` — **Playwright E2E** (real Chromium). Tests live in `nextjs/e2e/*.e2e.ts` (named `.e2e.ts` so `bun test` ignores them; excluded from the build type-check). Reuses a dev server on :3000 if running, else builds + starts production.
+
+> **⚠️ MANDATORY: run `bun run e2e` to verify every frontend change.** Unit tests (happy-dom) cannot see real layout/hydration — e.g. the "navbar ทับกัน" overlap (a bare `nav {}` CSS rule fixing the footer/breadcrumb `<nav>`s to the top) passed all unit tests but E2E caught it. The E2E suite smoke-checks every public page for: a visible `<h1>` (content didn't collapse), no footer/breadcrumb `<nav>` overlapping the navbar, no console/hydration errors, and a working TH/EN language switch. Add an E2E case when adding a page or interactive UI.
 
 **Backend** (`nestjs/`):
 
@@ -79,7 +82,7 @@ Planned modules per the wayfinder map (#1): `database/` (Drizzle + pgvector), `i
 
 ## Writing conventions
 
-**Reports, GitHub issue comments, and PR descriptions must be bilingual — both Thai and English.** Lead with one language and follow with the other (e.g. an **EN:** paragraph and a **TH:** paragraph, or clearly separated sections). This applies to status updates, resolutions, and any narrative written into the tracker. Code, commit messages, identifiers, and inline code comments stay in English.
+**GitHub issue comments and PR descriptions must be bilingual — both Thai and English.** Lead with one language and follow with the other (e.g. an **EN:** paragraph and a **TH:** paragraph, or clearly separated sections). This applies **only** to content written into the GitHub tracker (issue comments, PR descriptions). Everything else — chat replies, reports, and status updates outside GitHub — follows the user's preferred language (Thai) and is not required to be bilingual. Code, commit messages, identifiers, and inline code comments stay in English.
 
 ## Agent skills
 

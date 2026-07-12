@@ -4,7 +4,7 @@ import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { Certificates } from '@/components/site/certificates';
-import { AboutContent } from '@/components/pages/about-content';
+import { AboutBlocks, AboutCta } from '@/components/pages/about-content';
 
 export const metadata: Metadata = {
   title: 'เกี่ยวกับเรา — T4 Labs',
@@ -16,8 +16,10 @@ export default function AboutPage() {
   return (
     <>
       <SiteNav />
-      <AboutContent certificates={<Certificates />} />
       <div className="wrap">
+        <AboutBlocks />
+        <Certificates />
+        <AboutCta />
         <SiteFooter />
       </div>
       <ChatButton />

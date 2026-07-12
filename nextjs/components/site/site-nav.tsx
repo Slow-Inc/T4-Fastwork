@@ -23,7 +23,7 @@ export function SiteNav() {
   ];
 
   return (
-    <nav>
+    <nav className="site-nav">
       <Link href="/" className="brand">
         <i />
         T4&nbsp;Labs

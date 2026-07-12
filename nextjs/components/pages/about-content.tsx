@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/site/breadcrumb';
 import { useLocale } from '@/i18n/locale-context';
@@ -26,14 +25,12 @@ const steps = [
   { n: '04', th: ['ส่งมอบ ทดสอบ ดูแลต่อ', 'ส่งมอบพร้อมโค้ด และดูแลหลังใช้งาน'], en: ['Ship, test, support', 'Delivered with code, supported after launch'] },
 ];
 
-export function AboutContent({ certificates }: { certificates: ReactNode }) {
+export function AboutBlocks() {
   const { locale } = useLocale();
   const en = locale === 'en';
   const t = (th: string, e: string) => (en ? e : th);
 
   return (
-    <>
-      <div className="wrap">
         <section className="section section-page">
           <Breadcrumb items={[{ label: t('หน้าแรก', 'Home'), href: '/' }, { label: t('เกี่ยวกับเรา', 'About') }]} />
 
@@ -91,20 +88,23 @@ export function AboutContent({ certificates }: { certificates: ReactNode }) {
             </ol>
           </div>
         </section>
+  );
+}
 
-        {certificates}
-
-        <section className="section">
-          <div className="about-cta rv">
-            <h2>{t('พร้อมเริ่มโปรเจกต์แล้วหรือยัง?', 'Ready to start a project?')}</h2>
-            <div className="detail-cta" style={{ border: 'none', marginTop: 24, paddingTop: 0 }}>
-              <Link href="/chat" className="btn">{t('คุยกับ AI', 'Talk to AI')}</Link>
-              <Link href="/contact" className="btn ghost">{t('ติดต่อจ้างงาน', 'Hire us')}</Link>
-              <Link href="/faq" className="btn ghost">{t('ดู FAQ', 'View FAQ')}</Link>
-            </div>
-          </div>
-        </section>
+export function AboutCta() {
+  const { locale } = useLocale();
+  const en = locale === 'en';
+  const t = (th: string, e: string) => (en ? e : th);
+  return (
+    <section className="section">
+      <div className="about-cta rv">
+        <h2>{t('พร้อมเริ่มโปรเจกต์แล้วหรือยัง?', 'Ready to start a project?')}</h2>
+        <div className="detail-cta" style={{ border: 'none', marginTop: 24, paddingTop: 0 }}>
+          <Link href="/chat" className="btn">{t('คุยกับ AI', 'Talk to AI')}</Link>
+          <Link href="/contact" className="btn ghost">{t('ติดต่อจ้างงาน', 'Hire us')}</Link>
+          <Link href="/faq" className="btn ghost">{t('ดู FAQ', 'View FAQ')}</Link>
+        </div>
       </div>
-    </>
+    </section>
   );
 }
