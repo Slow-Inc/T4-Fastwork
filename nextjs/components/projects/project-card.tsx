@@ -1,8 +1,12 @@
+'use client';
+
 import Link from 'next/link';
 import type { Project } from '@/content/catalog';
+import { useLocale } from '@/i18n/locale-context';
 
-/** Portfolio card used on /projects and solution landings (Requirement §4.2). */
-export function ProjectCard({ project: p }: { project: Project }) {
+/** Presentational portfolio card (Requirement §4.2), bilingual — pure/testable. */
+export function ProjectCardView({ project: p, en = false }: { project: Project; en?: boolean }) {
+  const description = en && p.descriptionEn ? p.descriptionEn : p.description;
   return (
     <article className="pcard">
       <Link href={`/projects/${p.slug}`} className={`pcard-shot tw t-${p.tone}`}>
@@ -13,13 +17,13 @@ export function ProjectCard({ project: p }: { project: Project }) {
           <span>{p.title}</span>
         )}
         <div className="pcard-badges">
-          {p.isFeatured && <span className="badge badge-accent">แนะนำ</span>}
+          {p.isFeatured && <span className="badge badge-accent">{en ? 'Featured' : 'แนะนำ'}</span>}
           <span className="badge">{p.category}</span>
         </div>
       </Link>
       <div className="pcard-body">
         <h3 className="pcard-title">{p.title}</h3>
-        <p className="pcard-desc">{p.description}</p>
+        <p className="pcard-desc">{description}</p>
         <ul className="pcard-tags">
           {p.tags.map((t) => (
             <li key={t} className="t-meta">
@@ -29,7 +33,7 @@ export function ProjectCard({ project: p }: { project: Project }) {
         </ul>
         <div className="pcard-actions">
           <Link href={`/projects/${p.slug}`} className="pcard-link">
-            ดูรายละเอียด
+            {en ? 'View details' : 'ดูรายละเอียด'}
           </Link>
           {p.liveUrl && (
             <a
@@ -38,11 +42,16 @@ export function ProjectCard({ project: p }: { project: Project }) {
               rel="noopener noreferrer"
               className="pcard-link pcard-link-muted"
             >
-              ดูเว็บจริง ↗
+              {en ? 'Visit site ↗' : 'ดูเว็บจริง ↗'}
             </a>
           )}
         </div>
       </div>
     </article>
   );
+}
+
+export function ProjectCard({ project }: { project: Project }) {
+  const { locale } = useLocale();
+  return <ProjectCardView project={project} en={locale === 'en'} />;
 }

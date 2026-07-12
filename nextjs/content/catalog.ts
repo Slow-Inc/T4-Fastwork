@@ -10,6 +10,7 @@ export interface Project {
   title: string;
   titleEn: string;
   description: string;
+  descriptionEn?: string;
   /** Full rich description, one paragraph per entry. */
   content: string[];
   category: string;
@@ -32,6 +33,8 @@ export const projects: Project[] = [
     titleEn: 'MangaDock',
     description:
       'แพลตฟอร์มอ่าน/แปลมังงะด้วย AI — OCR ข้อความในภาพ แปล และประกอบกลับแบบอัตโนมัติ',
+    descriptionEn:
+      'AI manga reading/translation — OCR in-image text, translate, and recompose automatically',
     content: [
       'MangaDock เป็นแพลตฟอร์มแปลมังงะอัตโนมัติที่รวม OCR, การแปลด้วย LLM และการประกอบข้อความกลับเข้าเฟรมภาพต้นฉบับไว้ใน pipeline เดียว',
       'ระบบหลังบ้านออกแบบให้รองรับงานปริมาณมากแบบ batch พร้อมคิวประมวลผลและการแคชผลลัพธ์ เพื่อให้ต้นทุนต่อหน้าต่ำและสเกลได้',
@@ -50,6 +53,7 @@ export const projects: Project[] = [
     title: 'ListingThai',
     titleEn: 'ListingThai',
     description: 'มาร์เก็ตเพลสอสังหาริมทรัพย์ — ค้นหา กรอง และลงประกาศพร้อมแดชบอร์ดเอเจนต์',
+    descriptionEn: 'Property marketplace — search, filter and list with an agent dashboard',
     content: [
       'ListingThai เป็นมาร์เก็ตเพลสอสังหาฯ ที่รวมประกาศจากหลายเอเจนต์ พร้อมระบบค้นหา/กรองที่ deep-linkable และแผนที่',
       'มีแดชบอร์ดสำหรับเอเจนต์จัดการประกาศ รูปภาพ และสถิติการเข้าชม',
@@ -67,6 +71,7 @@ export const projects: Project[] = [
     title: 'Powernics',
     titleEn: 'Powernics',
     description: 'แพลตฟอร์มติดตามระบบโซลาร์ — มอนิเตอร์การผลิตไฟฟ้าแบบเรียลไทม์และรายงาน',
+    descriptionEn: 'Solar monitoring platform — real-time generation tracking and reports',
     content: [
       'Powernics เป็นแพลตฟอร์ม SaaS สำหรับติดตามระบบผลิตไฟฟ้าพลังงานแสงอาทิตย์ รวมข้อมูลจากอินเวอร์เตอร์หลายยี่ห้อไว้ในที่เดียว',
       'มีแดชบอร์ดเรียลไทม์ กราฟแนวโน้มการผลิต และรายงานสรุปตามช่วงเวลาแบบ export ได้',
@@ -83,6 +88,7 @@ export const projects: Project[] = [
     title: 'The Ghost Maps',
     titleEn: 'The Ghost Maps',
     description: 'แอปสำรวจสถานที่แบบเรียลไทม์ — พิกัด รีวิว และการแชร์ตำแหน่งสด',
+    descriptionEn: 'Real-time places app — pins, reviews and live location sharing',
     content: [
       'The Ghost Maps เป็นเว็บแอปค้นหาและแชร์สถานที่แบบเรียลไทม์ พร้อมระบบรีวิวและพิกัดสด',
       'ใช้ Supabase Realtime สำหรับการอัปเดตตำแหน่งและความเห็นแบบทันที',
@@ -99,6 +105,7 @@ export const projects: Project[] = [
     title: 'ClinicFlow',
     titleEn: 'ClinicFlow',
     description: 'ระบบจองคิวและจัดการคลินิก — นัดหมาย เวชระเบียน และแจ้งเตือนผ่าน LINE',
+    descriptionEn: 'Clinic booking & management — appointments, records and LINE reminders',
     content: [
       'ClinicFlow เป็นระบบจัดการคลินิกครบวงจร ตั้งแต่การจองคิวออนไลน์ เวชระเบียน ไปจนถึงการแจ้งเตือนผู้ป่วยผ่าน LINE OA',
       'ออกแบบสิทธิ์การเข้าถึงหลายระดับ (หมอ/พยาบาล/แอดมิน) และรองรับหลายสาขา',
@@ -115,6 +122,7 @@ export const projects: Project[] = [
     title: 'StockPilot',
     titleEn: 'StockPilot',
     description: 'ระบบจัดการสต็อกและคลังสินค้าภายในองค์กร — CRUD, บาร์โค้ด และรายงาน',
+    descriptionEn: 'Internal stock & warehouse system — CRUD, barcodes and reports',
     content: [
       'StockPilot เป็นระบบภายในสำหรับจัดการสต็อกและคลังสินค้า รองรับการสแกนบาร์โค้ด นับสต็อก และรายงานเคลื่อนไหว',
       'เชื่อมต่อกับระบบบัญชีเดิมขององค์กรผ่าน REST API',
@@ -131,6 +139,7 @@ export const projects: Project[] = [
     title: 'DocAI Extract',
     titleEn: 'DocAI Extract',
     description: 'บริการดึงข้อมูลจากเอกสารด้วย AI — OCR ใบเสร็จ/สัญญา และส่งออกแบบมีโครงสร้าง',
+    descriptionEn: 'AI document extraction — OCR receipts/contracts into structured output',
     content: [
       'DocAI Extract เป็นบริการ Document AI ที่ดึงข้อมูลจากเอกสารสแกน (ใบเสร็จ สัญญา แบบฟอร์ม) แล้วส่งออกเป็นข้อมูลมีโครงสร้าง',
       'ใช้ pipeline OCR + LLM ตรวจสอบความถูกต้อง และมี webhook ส่งผลลัพธ์กลับระบบลูกค้า',
@@ -147,6 +156,7 @@ export const projects: Project[] = [
     title: 'EduPortal',
     titleEn: 'EduPortal',
     description: 'แพลตฟอร์มการเรียนออนไลน์แบบ multi-tenant — คอร์ส วิดีโอ และการชำระเงิน',
+    descriptionEn: 'Multi-tenant e-learning platform — courses, video and payments',
     content: [
       'EduPortal เป็นแพลตฟอร์ม SaaS การเรียนออนไลน์แบบ multi-tenant ให้สถาบันสร้างพื้นที่เรียนของตัวเองได้',
       'รองรับระบบสมาชิก/subscription การสตรีมวิดีโอ และการชำระเงินผ่าน payment gateway',
