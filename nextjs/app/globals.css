@@ -1753,7 +1753,7 @@ footer {
 .ai-greeting {
   position: fixed;
   right: 20px;
-  bottom: 84px;
+  bottom: 96px;
   z-index: 110;
   width: min(340px, calc(100vw - 32px));
   padding: 18px;
@@ -1762,6 +1762,27 @@ footer {
   backdrop-filter: blur(20px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow: 0 16px 48px rgba(19, 19, 17, 0.18);
+}
+/* Speech-bubble tail pointing down toward the "Ask T4 AI" button. Two
+   stacked triangles: a larger one tinted like the border, a smaller one
+   on top filled like the bubble body — fakes an outlined tail. */
+.ai-greeting::before,
+.ai-greeting::after {
+  content: '';
+  position: absolute;
+  right: 36px;
+  width: 0;
+  height: 0;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+}
+.ai-greeting::before {
+  bottom: -11px;
+  border-top: 12px solid rgba(255, 255, 255, 0.55);
+}
+.ai-greeting::after {
+  bottom: -9px;
+  border-top: 10px solid rgba(244, 242, 237, 0.98);
 }
 .ai-greeting-close {
   position: absolute;
