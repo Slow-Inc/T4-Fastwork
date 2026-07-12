@@ -70,6 +70,16 @@ for (const path of PAGES) {
   });
 }
 
+test('navbar keeps its frosted-glass backdrop blur', async ({ page }) => {
+  // The build (Lightning CSS) can drop the standard `backdrop-filter` when a
+  // `-webkit-` copy is hand-written alongside it, leaving Chrome with no blur.
+  await page.goto('/', { waitUntil: 'networkidle' });
+  const bf = await page.evaluate(
+    () => getComputedStyle(document.querySelector('.site-nav')!).backdropFilter,
+  );
+  expect(bf, 'navbar backdrop-filter blur is missing').toContain('blur');
+});
+
 test('language switch flips nav + content to English', async ({ page }) => {
   await page.goto('/about', { waitUntil: 'networkidle' });
   const nav = page.locator('nav').first();
