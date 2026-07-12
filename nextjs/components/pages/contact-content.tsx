@@ -1,8 +1,10 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { Breadcrumb } from '@/components/site/breadcrumb';
 import { ContactForm } from '@/app/contact/contact-form';
 import { useLocale } from '@/i18n/locale-context';
+import { trackCtaClick } from '@/app/actions/track-cta';
 
 const FASTWORK_URL = 'https://fastwork.co';
 
@@ -10,6 +12,7 @@ export function ContactContent() {
   const { locale } = useLocale();
   const en = locale === 'en';
   const t = (th: string, e: string) => (en ? e : th);
+  const pathname = usePathname();
 
   return (
     <section className="section section-page">
@@ -37,7 +40,13 @@ export function ContactContent() {
                 'Secure payment through Fastwork — funds released when work meets the agreement.',
               )}
             </p>
-            <a href={FASTWORK_URL} target="_blank" rel="noopener noreferrer" className="btn">
+            <a
+              href={FASTWORK_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn"
+              onClick={() => void trackCtaClick(pathname, 'contact-fastwork')}
+            >
               {t('เปิด Fastwork ↗', 'Open Fastwork ↗')}
             </a>
           </div>

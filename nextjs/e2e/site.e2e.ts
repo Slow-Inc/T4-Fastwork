@@ -101,6 +101,15 @@ test('contact form carries a hidden reCAPTCHA token field', async ({ page }) => 
   await expect(token).toHaveAttribute('type', 'hidden');
 });
 
+test('clicking a tracked CTA navigates without console errors', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.locator('nav').first().getByRole('link', { name: /ติดต่อ/i }).click();
+  await page.waitForURL('**/contact');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  expect(errors, 'console errors after clicking a tracked CTA').toEqual([]);
+});
+
 test('language switch flips nav + content to English', async ({ page }) => {
   await page.goto('/about', { waitUntil: 'networkidle' });
   const nav = page.locator('nav').first();

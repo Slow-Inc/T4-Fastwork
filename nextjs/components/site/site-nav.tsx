@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { TrackedLink } from './tracked-link';
 import { useLocale } from '@/i18n/locale-context';
 import th from '@/messages/th.json';
 import en from '@/messages/en.json';
@@ -49,9 +50,9 @@ export function SiteNav() {
         >
           {locale === 'th' ? 'TH / en' : 'th / EN'}
         </button>
-        <Link href="/contact" className="btn nav-cta">
+        <TrackedLink href="/contact" ctaType="nav-contact" className="btn nav-cta">
           {t.contact} <span>&rarr;</span>
-        </Link>
+        </TrackedLink>
         <button
           type="button"
           className="nav-burger"
@@ -71,9 +72,14 @@ export function SiteNav() {
               {l.label}
             </Link>
           ))}
-          <Link href="/contact" className="btn" onClick={() => setOpen(false)}>
+          <TrackedLink
+            href="/contact"
+            ctaType="nav-mobile-contact"
+            className="btn"
+            onClick={() => setOpen(false)}
+          >
             {t.contact}
-          </Link>
+          </TrackedLink>
         </div>
       )}
     </nav>

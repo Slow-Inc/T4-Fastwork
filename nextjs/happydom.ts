@@ -19,6 +19,21 @@ mock.module('server-only', () => ({}));
 
 // next/link relies on Next's router context (hooks) that doesn't exist in unit
 // tests. Mock it to a plain anchor so components using <Link> can be tested.
+// next/navigation hooks need router context that doesn't exist in unit tests.
+// Stub usePathname so client components using it (e.g. TrackedLink) render.
+mock.module('next/navigation', () => ({
+  __esModule: true,
+  usePathname: () => '/',
+  useRouter: () => ({ push: () => {}, replace: () => {}, back: () => {}, refresh: () => {} }),
+  useSearchParams: () => new URLSearchParams(),
+  notFound: () => {
+    throw new Error('notFound() called in test');
+  },
+  redirect: () => {
+    throw new Error('redirect() called in test');
+  },
+}));
+
 mock.module('next/link', () => ({
   __esModule: true,
   default: ({

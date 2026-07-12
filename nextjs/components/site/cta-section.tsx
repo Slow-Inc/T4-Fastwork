@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { TrackedLink } from './tracked-link';
 import { useT } from '@/i18n/locale-context';
 
 /** Closing CTA (Requirement §4.1.9), bilingual (§7.1). */
@@ -23,9 +23,14 @@ export function CtaSection() {
           <div className="t-meta" style={{ marginBottom: 14 }}>
             {note}
           </div>
-          <Link href="/contact" className="btn" style={{ padding: '13px 22px' }}>
+          <TrackedLink
+            href="/contact"
+            ctaType="closing-cta"
+            className="btn"
+            style={{ padding: '13px 22px' }}
+          >
             {cta} <span>&rarr;</span>
-          </Link>
+          </TrackedLink>
         </div>
       </div>
     </section>

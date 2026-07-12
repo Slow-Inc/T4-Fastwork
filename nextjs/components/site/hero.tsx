@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { MetricBand } from './metric-band';
+import { TrackedLink } from './tracked-link';
 import { useT } from '@/i18n/locale-context';
 
 interface HeroCopy {
@@ -36,12 +36,12 @@ export function HeroView({ availability, lead, proof, bookCall, talkAi }: HeroCo
         <div className="right rv">
           <div className="t-meta">{proof}</div>
           <div className="h-cta">
-            <Link href="/contact" className="btn">
+            <TrackedLink href="/contact" ctaType="hero-book-call" className="btn">
               {bookCall} <span>&rarr;</span>
-            </Link>
-            <Link href="/chat" className="btn ghost">
+            </TrackedLink>
+            <TrackedLink href="/chat" ctaType="hero-talk-ai" className="btn ghost">
               {talkAi}
-            </Link>
+            </TrackedLink>
           </div>
         </div>
       </div>
