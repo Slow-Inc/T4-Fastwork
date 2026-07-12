@@ -6,7 +6,12 @@ export function ProjectCard({ project: p }: { project: Project }) {
   return (
     <article className="pcard">
       <Link href={`/projects/${p.slug}`} className={`pcard-shot tw t-${p.tone}`}>
-        <span>{p.title}</span>
+        {p.snapshotImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={p.snapshotImage} alt={p.title} className="pcard-img" />
+        ) : (
+          <span>{p.title}</span>
+        )}
         <div className="pcard-badges">
           {p.isFeatured && <span className="badge badge-accent">แนะนำ</span>}
           <span className="badge">{p.category}</span>

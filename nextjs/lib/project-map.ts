@@ -21,6 +21,7 @@ export interface DbProjectRow {
   description: string | null;
   content: string | null;
   live_url: string | null;
+  snapshot_image?: string | null;
   is_featured: boolean;
   published_at: string | null;
   category: { name: string } | null;
@@ -43,6 +44,7 @@ export function mapDbProject(row: DbProjectRow): Project {
       .map((t) => t.technologies?.name)
       .filter((n): n is string => Boolean(n)),
     liveUrl: row.live_url ?? undefined,
+    snapshotImage: row.snapshot_image ?? undefined,
     isFeatured: row.is_featured,
     tone: toneForSlug(row.slug),
     year: row.published_at ? row.published_at.slice(0, 4) : '',

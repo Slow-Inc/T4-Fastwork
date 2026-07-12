@@ -34,6 +34,7 @@ export async function createProject(
     description: formData.get('description')?.toString() || null,
     content: formData.get('content')?.toString() || null,
     live_url: formData.get('live_url')?.toString() || null,
+    snapshot_image: formData.get('snapshot_image')?.toString() || null,
     is_featured: formData.get('is_featured') === 'on',
     published_at: published ? new Date().toISOString() : null,
   });
@@ -65,6 +66,7 @@ export async function updateProject(
       description: formData.get('description')?.toString() || null,
       content: formData.get('content')?.toString() || null,
       live_url: formData.get('live_url')?.toString() || null,
+      snapshot_image: formData.get('snapshot_image')?.toString() || null,
       is_featured: formData.get('is_featured') === 'on',
       published_at: published ? new Date().toISOString() : null,
     })

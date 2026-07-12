@@ -17,6 +17,8 @@ export interface Project {
   technologies: string[];
   liveUrl?: string;
   videoUrl?: string;
+  /** Cover image URL (e.g. uploaded via the CMS); falls back to a tone tile. */
+  snapshotImage?: string;
   isFeatured: boolean;
   /** Visual tone for the snapshot placeholder (reuses the homepage palette). */
   tone: 'ink' | 'sand' | 'teal' | 'gray';

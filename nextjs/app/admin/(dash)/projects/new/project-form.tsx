@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { createProject, type ProjectFormState } from '../actions';
+import { ImageUpload } from '@/components/admin/image-upload';
 
 const initial: ProjectFormState = {};
 
@@ -34,6 +35,7 @@ export function ProjectForm() {
         <span className="t-meta">ลิงก์เว็บจริง</span>
         <input name="live_url" type="url" placeholder="https://…" />
       </label>
+      <ImageUpload name="snapshot_image" folder="projects" />
       <label className="admin-check">
         <input type="checkbox" name="is_featured" />
         <span>แสดงเป็นผลงานแนะนำ (featured)</span>

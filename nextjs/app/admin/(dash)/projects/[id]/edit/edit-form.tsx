@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { updateProject, type ProjectFormState } from '../../actions';
+import { ImageUpload } from '@/components/admin/image-upload';
 
 const initial: ProjectFormState = {};
 
@@ -12,6 +13,7 @@ interface ProjectValues {
   description: string | null;
   content: string | null;
   live_url: string | null;
+  snapshot_image: string | null;
   is_featured: boolean;
   published_at: string | null;
 }
@@ -42,6 +44,7 @@ export function EditProjectForm({ project }: { project: ProjectValues }) {
         <span className="t-meta">ลิงก์เว็บจริง</span>
         <input name="live_url" type="url" defaultValue={project.live_url ?? ''} />
       </label>
+      <ImageUpload name="snapshot_image" folder="projects" defaultUrl={project.snapshot_image ?? ''} />
       <label className="admin-check">
         <input type="checkbox" name="is_featured" defaultChecked={project.is_featured} />
         <span>แสดงเป็นผลงานแนะนำ (featured)</span>

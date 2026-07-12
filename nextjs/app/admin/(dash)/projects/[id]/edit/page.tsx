@@ -10,7 +10,7 @@ export default async function EditProjectPage({ params }: { params: Params }) {
   const supabase = await createClient();
   const { data: project } = await supabase
     .from('projects')
-    .select('id, title, title_en, description, content, live_url, is_featured, published_at')
+    .select('id, title, title_en, description, content, live_url, snapshot_image, is_featured, published_at')
     .eq('id', Number(id))
     .maybeSingle();
 
