@@ -3,11 +3,25 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ChatClient } from '@/components/chat/chat-client';
+import { useFloatingChat } from './floating-chat-context';
 
 /** Floating AI chat widget (Requirement §4.1.11 / §5.1): a button that opens an
- * inline chat panel; a full-page link is offered inside for more room. */
+ * inline chat panel; a full-page link is offered inside for more room.
+ * A page wrapped in FloatingChatProvider (e.g. a project detail page) can
+ * force this open pre-loaded with project context (§5.5 / FR-09). */
 export function ChatButton() {
   const [open, setOpen] = useState(false);
+  const { request } = useFloatingChat();
+  const [handledNonce, setHandledNonce] = useState<number | null>(null);
+
+  // A fresh request (even for the same project) reopens the panel. Adjusting
+  // state during render (React's documented pattern for resetting state in
+  // response to a prop/context change) instead of in an effect, so it takes
+  // effect in the same render rather than cascading an extra one.
+  if (request && request.nonce !== handledNonce) {
+    setHandledNonce(request.nonce);
+    setOpen(true);
+  }
 
   return (
     <>
@@ -29,7 +43,11 @@ export function ChatButton() {
               เปิดเต็มหน้า ↗
             </Link>
           </div>
-          <ChatClient />
+          <ChatClient
+            key={request?.nonce ?? 'default'}
+            initialProjectSlug={request?.projectSlug}
+            initialProjectTitle={request?.projectTitle}
+          />
         </div>
       )}
     </>

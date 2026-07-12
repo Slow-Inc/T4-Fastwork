@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { SiteNav } from '@/components/site/site-nav';
 import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
+import { FloatingChatProvider } from '@/components/site/floating-chat-context';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { ProjectDetailContent } from '@/components/pages/project-detail-content';
 import { projects } from '@/content/catalog';
@@ -62,11 +63,13 @@ export default async function ProjectDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div className="wrap">
-        <ProjectDetailContent project={p} />
-        <SiteFooter />
-      </div>
-      <ChatButton />
+      <FloatingChatProvider>
+        <div className="wrap">
+          <ProjectDetailContent project={p} />
+          <SiteFooter />
+        </div>
+        <ChatButton />
+      </FloatingChatProvider>
       <RevealObserver />
     </>
   );
