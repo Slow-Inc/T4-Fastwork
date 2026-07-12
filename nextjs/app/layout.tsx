@@ -6,6 +6,7 @@ import {
   IBM_Plex_Sans_Thai,
 } from 'next/font/google';
 import './globals.css';
+import { Analytics } from '@/components/site/analytics';
 
 const disp = Space_Grotesk({
   subsets: ['latin'],
@@ -79,6 +80,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <Analytics />
       </body>
     </html>
   );
