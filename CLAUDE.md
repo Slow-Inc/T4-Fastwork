@@ -11,18 +11,38 @@ This is a monorepo root. Currently it contains:
 
 More packages (e.g. a `backend/`) may be added as siblings of `nextjs/` in the future.
 
+## Product context
+
+This is not a blank scaffold — it's the start of **T4 Labs**' agency/portfolio website (Bigzweb-style): a project/portfolio showcase with category+tech filtering, an AI chat assistant (RAG over projects/services/FAQ) that recommends matching case studies, a bilingual (TH/EN) blog, an admin/CMS, and lead-gen flows funneling visitors to hiring (Fastwork or a contact form).
+
+**Full requirements (Thai): `Requirement.MD` at the repo root — read the relevant section before implementing any page, component, or data model.**
+
+Target stack per the spec (§7) — not yet fully reflected in the current scaffold:
+
+- Package manager/runtime: **Bun** (migrated — see Commands below)
+- Frontend: Next.js App Router + TypeScript + Tailwind + `next-intl` for i18n (scaffold matches everything except i18n)
+- Backend: Nest.js as a separate API layer, or Next.js API routes/Server Actions if staying single-package
+- Database: Supabase (Postgres + pgvector for RAG + Auth + Storage + Realtime)
+- AI: streaming LLM API (OpenAI/Claude) + RAG via pgvector
+- Deploy: Vercel, or self-hosted behind Cloudflare
+
+Phased roadmap: **Phase 1** MVP (portfolio + CMS) → **Phase 2** AI chat + RAG + blog → **Phase 3** full i18n, analytics, performance polish.
+
 ## ⚠️ Non-standard Next.js version
 
 `nextjs/` pins `next@16.2.10` — a version newer than your training data, with breaking changes to APIs, conventions, and file structure. **Before writing or modifying any Next.js code, read the relevant guide under `nextjs/node_modules/next/dist/docs/`** (organized as `01-app/`, `02-pages/`, `03-architecture/`, `04-community/`) rather than relying on prior knowledge of Next.js. Heed any deprecation notices found there.
 
 ## Commands
 
+Uses **Bun** as the package manager/runtime (per spec §7.0) — commit `bun.lock`, never `package-lock.json`/`yarn.lock`. Use `bunx` instead of `npx`.
+
 Run from the `nextjs/` directory:
 
-- `npm run dev` — start the dev server (http://localhost:3000)
-- `npm run build` — production build
-- `npm run start` — serve the production build
-- `npm run lint` — run ESLint (flat config via `eslint.config.mjs`)
+- `bun install` — install dependencies
+- `bun run dev` — start the dev server (http://localhost:3000)
+- `bun run build` — production build
+- `bun run start` — serve the production build
+- `bun run lint` — run ESLint (flat config via `eslint.config.mjs`)
 
 There is no test runner configured in this project yet.
 

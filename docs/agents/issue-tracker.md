@@ -1,8 +1,8 @@
 # Issue tracker: GitHub
 
-Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
+Issues and PRDs for this repo live as GitHub issues, under the **Slow-Inc** org (`github.com/Slow-Inc/T4-Fastwork`). Use the `gh` CLI for all operations.
 
-> Note: this repo does not yet have a `git remote` configured. `gh` infers the repo from the remote automatically, so add one (`git remote add origin <url>`) before these commands will work.
+> **`gh` is not on PATH in this environment.** Call it via full path: `"/c/Program Files/GitHub CLI/gh.exe"` (Git Bash) or `"C:\Program Files\GitHub CLI\gh.exe"` (PowerShell). Authenticated as `xenodeve`, with access to the `Slow-Inc` org.
 
 ## Conventions
 
