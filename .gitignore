@@ -1,2 +1,11 @@
 # Obsidian vault (personal notes, not part of the codebase)
 /Obsidian-Fastwork/
+
+# env files (secrets) — anywhere in the monorepo
+.env
+.env.*
+!.env.example
+
+# dependencies / build artifacts
+node_modules/
+dist/
