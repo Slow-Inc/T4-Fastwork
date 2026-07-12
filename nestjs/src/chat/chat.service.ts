@@ -7,6 +7,7 @@ import {
 } from '../rag/retrieval.service';
 import { StreamMarkerParser, type CardRef } from './marker-parser';
 import { buildSystemPrompt, type RetrievedItem } from './system-prompt';
+import { buildChatMessages } from './build-messages';
 import { ConversationLogService } from './conversation-log.service';
 import type { ChatEvent, ChatInput } from './chat.types';
 
@@ -38,6 +39,13 @@ export class ChatService {
       retrieved = []; // retrieval failure → answer without grounded context
     }
 
+    // Prior turns so the assistant can follow up on context (#15). Tolerant:
+    // returns [] without a DB, so a chat turn never depends on it.
+    let history: Awaited<ReturnType<ConversationLogService['getRecentHistory']>> = [];
+    if (input.sessionId) {
+      history = await this.log.getRecentHistory(input.sessionId);
+    }
+
     const parser = new StreamMarkerParser();
     let assistantText = '';
     const cards: CardRef[] = [];
@@ -57,13 +65,13 @@ export class ChatService {
     }.bind(this);
 
     try {
-      const stream = this.llm.streamChat([
-        {
-          role: 'system',
-          content: buildSystemPrompt({ language: input.language, retrieved }),
-        },
-        { role: 'user', content: input.message },
-      ]);
+      const stream = this.llm.streamChat(
+        buildChatMessages(
+          buildSystemPrompt({ language: input.language, retrieved }),
+          history,
+          input.message,
+        ),
+      );
       for await (const delta of stream) yield* absorb(parser.push(delta));
       yield* absorb(parser.flush());
 

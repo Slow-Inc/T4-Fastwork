@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { eq, desc } from 'drizzle-orm';
 import postgres from 'postgres';
 import * as schema from '../database/schema';
 import type { CardRef } from './marker-parser';
+import type { HistoryMessage } from './build-messages';
 
 export interface LogTurnInput {
   sessionId: string;
@@ -37,6 +39,36 @@ export class ConversationLogService {
           : drizzle(postgres(url, { prepare: false }), { schema });
     }
     return this.db;
+  }
+
+  /**
+   * Prior turns for a session, chronological (fixes #15 — chat memory). Returns
+   * [] when there's no DB or no history, so a chat turn never depends on it.
+   */
+  async getRecentHistory(sessionId: string, limit = 10): Promise<HistoryMessage[]> {
+    const db = this.getDb();
+    if (!db) return [];
+    try {
+      const conv = await db.query.conversations.findFirst({
+        where: eq(schema.conversations.sessionId, sessionId),
+      });
+      if (!conv) return [];
+      const rows = await db
+        .select({
+          role: schema.messages.role,
+          content: schema.messages.content,
+        })
+        .from(schema.messages)
+        .where(eq(schema.messages.conversationId, conv.id))
+        .orderBy(desc(schema.messages.createdAt))
+        .limit(limit);
+      return rows
+        .reverse()
+        .map((r) => ({ role: r.role as 'user' | 'assistant', content: r.content }));
+    } catch (e) {
+      this.logger.warn(`getRecentHistory failed: ${(e as Error).message}`);
+      return [];
+    }
   }
 
   async logTurn(input: LogTurnInput): Promise<void> {
