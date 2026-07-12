@@ -13,6 +13,10 @@ GlobalRegistrator.register();
 // unit-testing their pure logic (see lib/sse-parser, lib/chat-message) plus the
 // `next build` type/prerender check — not by rendering the client shell here.
 
+// `server-only` is a build-time marker with no runtime export; stub it so
+// modules that import it can be pulled into unit tests.
+mock.module('server-only', () => ({}));
+
 // next/link relies on Next's router context (hooks) that doesn't exist in unit
 // tests. Mock it to a plain anchor so components using <Link> can be tested.
 mock.module('next/link', () => ({

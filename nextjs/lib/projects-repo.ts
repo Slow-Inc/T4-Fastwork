@@ -1,5 +1,5 @@
 import 'server-only';
-import { createClient } from '@/lib/server';
+import { publicDb } from '@/lib/public-db';
 import { projects as staticProjects, type Project } from '@/content/catalog';
 import { mapDbProject, mergeProjects, type DbProjectRow } from './project-map';
 
@@ -18,7 +18,7 @@ const SELECT =
 
 export async function getAllProjects(): Promise<Project[]> {
   try {
-    const supabase = await createClient();
+    const supabase = publicDb();
     const { data, error } = await supabase
       .from('projects')
       .select(SELECT)
@@ -35,7 +35,7 @@ export async function getProjectBySlug(slug: string): Promise<Project | undefine
   const fromStatic = staticProjects.find((p) => p.slug === slug);
   if (fromStatic) return fromStatic;
   try {
-    const supabase = await createClient();
+    const supabase = publicDb();
     const { data, error } = await supabase
       .from('projects')
       .select(SELECT)

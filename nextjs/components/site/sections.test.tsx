@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'bun:test';
 import { render, screen, cleanup } from '@testing-library/react';
 import { ServiceList } from './service-list';
 import { ProjectGallery } from './project-gallery';
-import { Certificates } from './certificates';
+import { CertificatesView } from './certificates';
 import { MetricBand } from './metric-band';
 import { services } from '@/content/services';
 import { featuredProjects } from '@/content/projects';
@@ -30,7 +30,7 @@ describe('ProjectGallery', () => {
 
 describe('Certificates', () => {
   it('renders every certificate title', () => {
-    render(<Certificates />);
+    render(<CertificatesView certificates={certificates} />);
     for (const c of certificates)
       expect(screen.getAllByText(c.title).length).toBeGreaterThan(0);
   });

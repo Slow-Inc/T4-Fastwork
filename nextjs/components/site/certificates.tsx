@@ -1,11 +1,12 @@
-import { certificates } from '@/content/site';
+import { getCertificates } from '@/lib/certificates-repo';
+import type { Certificate } from '@/content/site';
 
 /**
- * Credentials with a click-to-zoom lightbox (Requirement §4.7). The lightbox is
- * CSS-only (`:target`) so this stays a server component — no JS, works without
- * hydration, and keeps titles in the SSR HTML for SEO.
+ * Presentational credentials section with a click-to-zoom lightbox (§4.7). The
+ * lightbox is CSS-only (`:target`) so this stays a server component. Kept as a
+ * pure view (takes data) so it is unit-testable; `Certificates` fetches.
  */
-export function Certificates() {
+export function CertificatesView({ certificates }: { certificates: Certificate[] }) {
   return (
     <section id="certs" className="section">
       <div className="cert-wrap">
@@ -45,4 +46,10 @@ export function Certificates() {
       ))}
     </section>
   );
+}
+
+/** Fetches certificates (DB with static fallback) and renders the view. */
+export async function Certificates() {
+  const certificates = await getCertificates();
+  return <CertificatesView certificates={certificates} />;
 }
