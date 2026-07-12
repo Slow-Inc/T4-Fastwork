@@ -4,7 +4,9 @@ import { SolutionSelector } from '@/components/site/solution-selector';
 import { ProjectGallery } from '@/components/site/project-gallery';
 import { ServiceList } from '@/components/site/service-list';
 import { ProcessSchematic } from '@/components/site/process-schematic';
+import { TechStack } from '@/components/site/tech-stack';
 import { Certificates } from '@/components/site/certificates';
+import { projectTechnologies } from '@/content/catalog';
 import { CtaSection } from '@/components/site/cta-section';
 import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
@@ -20,6 +22,7 @@ export default function Home() {
         <ProjectGallery />
         <ServiceList />
         <ProcessSchematic />
+        <TechStack techs={projectTechnologies} />
         <Certificates />
         <CtaSection />
         <SiteFooter />

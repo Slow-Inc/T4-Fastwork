@@ -1993,6 +1993,28 @@ footer {
   border-color: var(--ink);
 }
 
+/* ---- TECH STACK (§4.1.8) ---- */
+.tech-chips {
+  margin-top: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.tech-chip {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  transition: 0.2s;
+}
+.tech-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ============================================================
    ADMIN / CMS (§10)
    ============================================================ */
