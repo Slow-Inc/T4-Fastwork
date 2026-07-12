@@ -36,7 +36,10 @@ export default async function AdminProjects() {
                   <td className="t-meta">{p.slug}</td>
                   <td>{p.is_featured ? '★' : '—'}</td>
                   <td>{p.published_at ? 'เผยแพร่' : 'ฉบับร่าง'}</td>
-                  <td>
+                  <td className="admin-row-actions">
+                    <Link href={`/admin/projects/${p.id}/edit`} className="admin-edit">
+                      แก้ไข
+                    </Link>
                     <form action={deleteProject}>
                       <input type="hidden" name="id" value={p.id} />
                       <button type="submit" className="admin-del">

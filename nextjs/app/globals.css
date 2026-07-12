@@ -2319,6 +2319,21 @@ footer {
 .admin-del:hover {
   border-color: var(--accent);
 }
+.admin-row-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.admin-edit {
+  font-size: 13px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 12px;
+}
+.admin-edit:hover {
+  border-color: var(--ink);
+}
 .admin-empty {
   margin-top: 24px;
   color: var(--muted);

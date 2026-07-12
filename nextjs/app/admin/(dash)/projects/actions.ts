@@ -47,6 +47,36 @@ export async function createProject(
   redirect('/admin/projects');
 }
 
+export async function updateProject(
+  _prev: ProjectFormState,
+  formData: FormData,
+): Promise<ProjectFormState> {
+  const id = Number(formData.get('id'));
+  const title = formData.get('title')?.toString().trim() ?? '';
+  if (!id || !title) return { error: 'ข้อมูลไม่ครบ' };
+
+  const published = formData.get('published') === 'on';
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      title,
+      title_en: formData.get('title_en')?.toString() || null,
+      description: formData.get('description')?.toString() || null,
+      content: formData.get('content')?.toString() || null,
+      live_url: formData.get('live_url')?.toString() || null,
+      is_featured: formData.get('is_featured') === 'on',
+      published_at: published ? new Date().toISOString() : null,
+    })
+    .eq('id', id);
+
+  if (error) return { error: 'บันทึกไม่สำเร็จ' };
+
+  revalidatePath('/admin/projects');
+  revalidatePath('/projects');
+  redirect('/admin/projects');
+}
+
 export async function deleteProject(formData: FormData) {
   const id = formData.get('id')?.toString();
   if (!id) return;
