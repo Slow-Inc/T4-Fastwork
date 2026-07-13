@@ -4,7 +4,9 @@ import { HeroView } from './hero';
 import { ProcessSchematicView } from './process-schematic';
 import { SdlcSectionView } from './sdlc-section';
 import { TeamSectionView } from './team-section';
-import { processNodes, processSteps, sdlcPhases, team } from '@/content/site';
+import { TeamMemberView } from './team-member-view';
+import { TechChips } from './tech-chips';
+import { processNodes, processSteps, sdlcPhases, team, teamProjects } from '@/content/site';
 
 afterEach(cleanup);
 
@@ -66,46 +68,71 @@ describe('SdlcSection', () => {
   });
 });
 
-describe('TeamSection', () => {
-  it('renders every team member by handle', () => {
-    render(<TeamSectionView en={false} />);
+describe('TeamSection (directory on /about)', () => {
+  it('renders one directory row per member, each linking to their profile page', () => {
+    const { container } = render(<TeamSectionView en={false} />);
+    const rows = container.querySelectorAll('.team-dir-item');
+    expect(rows.length).toBe(team.length);
     for (const m of team) {
-      expect(screen.getAllByText(m.handle).length).toBeGreaterThan(0);
+      const link = container.querySelector(`a[href="/team/${m.slug}"]`);
+      expect(link).not.toBeNull();
+      expect(link?.textContent).toContain(m.handle);
     }
   });
 
-  it('renders every member\'s role (Thai)', () => {
-    render(<TeamSectionView en={false} />);
-    for (const m of team) {
-      // A role can coincide with one of that same member's skill chips
-      // (e.g. xenodev's role "Tech Lead" is also listed as a skill), so a
-      // member's role text may legitimately appear more than once.
-      expect(screen.getAllByText(m.role).length).toBeGreaterThan(0);
+  it('renders the shared team (org) projects with contributors', () => {
+    const { container } = render(<TeamSectionView en={false} />);
+    const projs = container.querySelectorAll('.team-projects .team-proj');
+    expect(projs.length).toBe(teamProjects.length);
+    // MangaDock is a real Slow-Inc repo credited to xenodev + akkanop-x.
+    expect(screen.getByText('MangaDock')).toBeDefined();
+  });
+});
+
+describe('TechChips', () => {
+  it('shows a masked logo for known brands and a plain text chip otherwise', () => {
+    const { container } = render(<TechChips items={['Next.js', 'Radmin']} />);
+    const chips = Array.from(container.querySelectorAll('.tech-chip'));
+    const next = chips.find((c) => c.textContent === 'Next.js');
+    const radmin = chips.find((c) => c.textContent === 'Radmin');
+    // Next.js resolves to a vendored icon → carries a mask element.
+    expect(next?.querySelector('.tech-ico')).not.toBeNull();
+    // Radmin has no brand mark → text-chip fallback, no icon.
+    expect(radmin?.querySelector('.tech-ico')).toBeNull();
+    expect(radmin?.classList.contains('tech-chip-text')).toBe(true);
+  });
+});
+
+describe('TeamMemberView (profile page)', () => {
+  const xeno = team.find((m) => m.slug === 'xenodev')!;
+
+  it('renders the member headline and role', () => {
+    render(<TeamMemberView member={xeno} en={false} />);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(xeno.handle);
+    expect(screen.getAllByText(xeno.role).length).toBeGreaterThan(0);
+  });
+
+  it('lists the real audited repos as projects', () => {
+    render(<TeamMemberView member={xeno} en={false} />);
+    for (const p of xeno.projects!) {
+      const link = screen.getByRole('link', { name: new RegExp(p.name.replace('.', '\\.')) });
+      expect(link.getAttribute('href')).toBe(p.url);
     }
   });
 
-  it('renders every card as its own real profile, not a shared generic list', () => {
-    const { container } = render(<TeamSectionView en={false} />);
-    const cards = container.querySelectorAll('.team-card');
-    expect(cards.length).toBe(team.length);
+  it('shows each certificate image with a download link when no lightbox handler is given', () => {
+    const { container } = render(<TeamMemberView member={xeno} en={false} />);
+    const imgs = container.querySelectorAll('.tm-cert-open img');
+    expect(imgs.length).toBe(xeno.certificates!.length);
+    // First cert (AI for All) links to its real PDF for download/view.
+    const firstLink = container.querySelector('.tm-cert-open') as HTMLAnchorElement;
+    expect(firstLink.getAttribute('href')).toBe('/certificates/xenodev/ai-for-all.pdf');
   });
 
-  it('renders stack chips only for members that have one (Slowgers has none)', () => {
-    const { container } = render(<TeamSectionView en={false} />);
-    const cards = Array.from(container.querySelectorAll('.team-card'));
-    const slowgersCard = cards.find((c) => c.textContent?.includes('Slowgers'));
-    expect(slowgersCard?.querySelector('.team-stack')).toBeNull();
-
-    const xenodevCard = cards.find((c) => c.textContent?.includes('xenodev'));
-    expect(xenodevCard?.querySelector('.team-stack')).not.toBeNull();
-  });
-
-  it("renders each member's own certificates, not a shared/merged list", () => {
-    render(<TeamSectionView en={false} />);
-    // NVIDIA is xenodev's cert only; SET is Thanathorn's cert only.
-    expect(screen.getByText('AI for All: From Basics to GenAI Practice')).toBeDefined();
-    expect(screen.getByText('Entrepreneurial Mindset')).toBeDefined();
-    // Both xenodev and Paradise separately completed the same course.
-    expect(screen.getAllByText('Road to Data Scientists').length).toBe(2);
+  it('omits the projects and certificates blocks for a member with none (Slowgers)', () => {
+    const slow = team.find((m) => m.slug === 'slowgers')!;
+    const { container } = render(<TeamMemberView member={slow} en={false} />);
+    expect(container.querySelector('.tm-projects')).toBeNull();
+    expect(container.querySelector('.tm-certs')).toBeNull();
   });
 });

@@ -20,6 +20,8 @@ const PAGES = [
   '/chat',
   '/privacy',
   '/terms',
+  '/team/xenodev',
+  '/team/slowgers',
 ];
 
 /** Fail the test if the page logs a console error or throws. */
@@ -88,27 +90,55 @@ test('/about shows the real SDLC alongside the client-facing "how we work" steps
   }
 });
 
-test('/about shows the real team roster (6 people, each with their own profile)', async ({
-  page,
-}) => {
+test('/about lists the team as a directory that links to each real profile', async ({ page }) => {
   await page.goto('/about', { waitUntil: 'networkidle' });
   await expect(page.getByRole('heading', { name: 'ทีมที่ลงมือสร้างจริง' })).toBeVisible();
 
-  const cards = page.locator('.team-card');
-  await expect(cards).toHaveCount(6);
+  const rows = page.locator('.team-dir-item');
+  await expect(rows).toHaveCount(6);
 
-  const xenodevCard = cards.filter({ hasText: 'xenodev' });
-  // "Tech Lead" appears twice on this card (role label + skill chip) — just
-  // confirm the role text renders at all rather than asserting exact count.
-  await expect(xenodevCard.getByText('Tech Lead', { exact: true }).first()).toBeVisible();
-  await expect(xenodevCard.getByText('Next.js', { exact: true })).toBeVisible();
-  await expect(
-    xenodevCard.getByText('AI for All: From Basics to GenAI Practice'),
-  ).toBeVisible();
+  // Each row links to that member's profile page.
+  await expect(page.locator('a[href="/team/xenodev"]')).toContainText('xenodev');
+  await expect(page.locator('a[href="/team/slowgers"]')).toContainText('Slowgers');
 
-  // Slowgers is a PM, not a hands-on dev — should have no tech-stack chips.
-  const slowgersCard = cards.filter({ hasText: 'Slowgers' });
-  await expect(slowgersCard.locator('.team-stack')).toHaveCount(0);
+  // Shared team (org) projects appear once, credited to real contributors.
+  await expect(page.getByText('MangaDock')).toBeVisible();
+
+  // Clicking a row navigates to the profile page.
+  await page.locator('a[href="/team/xenodev"]').click();
+  await expect(page).toHaveURL(/\/team\/xenodev$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'xenodev' })).toBeVisible();
+});
+
+test('a member profile shows real repos and opens certificates in a lightbox', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.goto('/team/xenodev', { waitUntil: 'networkidle' });
+
+  // Real audited repos render as projects with outbound links.
+  await expect(page.getByRole('link', { name: /Hype-Macro_Store/ })).toHaveAttribute(
+    'href',
+    'https://github.com/xenodeve/Hype-Macro_Store',
+  );
+  await expect(page.getByRole('link', { name: /Home-IoT-System/ })).toBeVisible();
+
+  // Tech stack shows a real logo (masked SVG) for a known brand.
+  await expect(page.locator('.tech-ico').first()).toBeVisible();
+
+  // Clicking a certificate opens the lightbox with a download link.
+  await page.locator('.tm-cert-open').first().click();
+  const modal = page.locator('.tm-modal');
+  await expect(modal).toBeVisible();
+  await expect(modal.locator('.tm-modal-img')).toBeVisible();
+  await expect(modal.getByRole('link', { name: 'PDF' })).toHaveAttribute(
+    'href',
+    '/certificates/xenodev/ai-for-all.pdf',
+  );
+
+  // Escape closes it.
+  await page.keyboard.press('Escape');
+  await expect(modal).toHaveCount(0);
+
+  expect(errors, 'console errors on /team/xenodev').toEqual([]);
 });
 
 test('experience + project-count claims are accurate everywhere (5 years, 21+ projects)', async ({

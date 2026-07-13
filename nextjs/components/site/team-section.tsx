@@ -1,9 +1,11 @@
 'use client';
 
-import { team } from '@/content/site';
+import Link from 'next/link';
+import { team, teamProjects } from '@/content/site';
 import { useLocale } from '@/i18n/locale-context';
 
-/** Presentational team roster — pure, unit-testable. */
+/** Presentational team roster — pure, unit-testable. A directory (not a card grid) so
+ * this section reads structurally different from the rest of /about (Requirement §14.4). */
 export function TeamSectionView({ en }: { en: boolean }) {
   return (
     <section id="team" className="section">
@@ -12,67 +14,46 @@ export function TeamSectionView({ en }: { en: boolean }) {
         <h2>{en ? 'The people building it.' : 'ทีมที่ลงมือสร้างจริง'}</h2>
         <p className="t-body">
           {en
-            ? "Six people, each doing their own real work — not a faceless agency."
-            : 'ทีม 6 คน แต่ละคนทำงานจริงตามความถนัดของตัวเอง — ไม่ใช่เอเจนซี่ที่ไม่มีตัวตน'}
+            ? 'Six people, each doing their own real work — open a profile for their projects and certificates.'
+            : 'ทีม 6 คน แต่ละคนทำงานจริงตามความถนัด — กดเข้าไปดูผลงานและใบรับรองรายคนได้'}
         </p>
       </div>
 
-      <div className="team-grid rv">
-        {team.map((m) => (
-          <div key={m.handle} className="team-card">
-            <div className="team-head">
-              <span className="team-avatar" aria-hidden="true">
-                {m.handle.replace(/^_/, '').charAt(0).toUpperCase()}
+      <ul className="team-dir rv">
+        {team.map((m, i) => (
+          <li key={m.handle} className="team-dir-item">
+            <Link href={`/team/${m.slug}`} className="team-dir-row">
+              <span className="team-dir-num">{String(i + 1).padStart(2, '0')}</span>
+              <span className="team-dir-handle">{m.handle}</span>
+              <span className="team-dir-role t-meta">{en ? m.roleEn : m.role}</span>
+              <span className="team-dir-skills">{m.skills.join(' · ')}</span>
+              <span className="team-dir-arrow" aria-hidden="true">
+                →
               </span>
-              <div>
-                <h3>
-                  {m.githubUrl ? (
-                    <a href={m.githubUrl} target="_blank" rel="noopener noreferrer">
-                      {m.handle}
-                    </a>
-                  ) : (
-                    m.handle
-                  )}
-                </h3>
-                <p className="t-meta">{en ? m.roleEn : m.role}</p>
-              </div>
-            </div>
-
-            <ul className="chip-row">
-              {m.skills.map((s) => (
-                <li key={s} className="chip">
-                  {s}
-                </li>
-              ))}
-            </ul>
-
-            {m.stack && m.stack.length > 0 && (
-              <ul className="chip-row team-stack">
-                {m.stack.map((s) => (
-                  <li key={s} className="chip chip-muted">
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {m.education && (
-              <p className="team-edu t-meta">
-                {m.education.program} — {m.education.institution}
-              </p>
-            )}
-
-            {m.certificates && m.certificates.length > 0 && (
-              <ul className="team-certs">
-                {m.certificates.map((c) => (
-                  <li key={`${c.issuer}-${c.title}`}>
-                    <span className="t-meta">{c.issuer}</span> {c.title}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+            </Link>
+          </li>
         ))}
+      </ul>
+
+      <div className="team-projects rv">
+        <div className="t-idx">{en ? 'Team projects' : 'งานที่ทำร่วมกันเป็นทีม'}</div>
+        <ul className="team-proj-list">
+          {teamProjects.map((p) => (
+            <li key={p.url} className="team-proj">
+              <a href={p.url} target="_blank" rel="noopener noreferrer" className="team-proj-name">
+                {p.name}
+                <span className="team-proj-year">{p.year}</span>
+              </a>
+              {p.description && <p className="team-proj-desc t-meta">{p.description}</p>}
+              <div className="team-proj-foot">
+                <span className="team-proj-contrib t-meta">
+                  {en ? 'by' : 'โดย'} {p.contributors.join(', ')}
+                </span>
+                <span className="team-proj-tech t-meta">{p.tech.join(' · ')}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

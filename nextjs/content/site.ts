@@ -120,13 +120,34 @@ export const certificates: Certificate[] = [
 
 // The team (Requirement §4.6) — sourced from github.com/Slow-Inc's org README for
 // names/roles, and individually from each member for education/skills/certs. Each
-// person's own real data — nothing here is shared/merged across members.
+// person's own real data — nothing here is shared/merged across members. Projects are
+// real audited GitHub repos; certificate assets are the real files under public/.
+import { teamSlug } from '@/lib/team-slug';
+
+export interface TeamProject {
+  name: string;
+  /** Real repo description (Thai/English as-is); '' when the repo has none. */
+  description: string;
+  url: string;
+  tech: string[];
+  year: number;
+}
+export interface TeamCertificateAsset {
+  /** Display image (always present) — WebP, generated from the real file. */
+  webp: string;
+  /** Original PDF, if we have one (download). */
+  pdf?: string;
+  /** Original raster (png/jpg), if we have one (download). */
+  img?: string;
+}
 export interface TeamCertificate {
   issuer: string;
   title: string;
+  asset?: TeamCertificateAsset;
 }
 export interface TeamMember {
   handle: string;
+  slug: string;
   githubUrl?: string;
   role: string;
   roleEn: string;
@@ -136,10 +157,14 @@ export interface TeamMember {
   stack?: string[];
   education?: { program: string; institution: string };
   certificates?: TeamCertificate[];
+  /** Personal repos (real, audited via `gh repo view`). */
+  projects?: TeamProject[];
 }
+
 export const team: TeamMember[] = [
   {
     handle: 'Slowgers',
+    slug: teamSlug('Slowgers'),
     githubUrl: 'https://github.com/Slowgers',
     role: 'Project Manager',
     roleEn: 'Project Manager',
@@ -148,6 +173,7 @@ export const team: TeamMember[] = [
   },
   {
     handle: '_InI4',
+    slug: teamSlug('_InI4'),
     role: 'Editor',
     roleEn: 'Editor',
     skills: ['QA', 'Editor'],
@@ -166,6 +192,7 @@ export const team: TeamMember[] = [
   },
   {
     handle: 'xenodev',
+    slug: teamSlug('xenodev'),
     githubUrl: 'https://github.com/xenodeve',
     role: 'Tech Lead',
     roleEn: 'Tech Lead',
@@ -191,14 +218,100 @@ export const team: TeamMember[] = [
       institution: 'มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ (KMUTNB)',
     },
     certificates: [
-      { issuer: 'NVIDIA', title: 'AI for All: From Basics to GenAI Practice' },
-      { issuer: 'Microsoft · JA Thailand', title: 'Road to Data Scientists' },
-      { issuer: 'SIIT · Thammasat University', title: 'Basic Data Analytics Workshop' },
-      { issuer: "ToBeIT'67 · KMITL", title: 'เข้าสู่ไอทีลาดกระบัง' },
+      {
+        issuer: 'NVIDIA',
+        title: 'AI for All: From Basics to GenAI Practice',
+        asset: {
+          webp: '/certificates/xenodev/ai-for-all.webp',
+          img: '/certificates/xenodev/ai-for-all.png',
+          pdf: '/certificates/xenodev/ai-for-all.pdf',
+        },
+      },
+      {
+        issuer: 'Microsoft · JA Thailand',
+        title: 'Road to Data Scientists',
+        asset: {
+          webp: '/certificates/xenodev/road-to-data-scientists.webp',
+          img: '/certificates/xenodev/road-to-data-scientists.png',
+          pdf: '/certificates/xenodev/road-to-data-scientists.pdf',
+        },
+      },
+      {
+        issuer: 'SIIT · Thammasat University',
+        title: 'Basic Data Analytics Workshop',
+        asset: {
+          webp: '/certificates/xenodev/basic-data-analytics.webp',
+          img: '/certificates/xenodev/basic-data-analytics.jpg',
+        },
+      },
+      {
+        issuer: "ToBeIT'67 · KMITL",
+        title: 'เข้าสู่ไอทีลาดกระบัง',
+        asset: {
+          webp: '/certificates/xenodev/to-be-it-67.webp',
+          img: '/certificates/xenodev/to-be-it-67.png',
+        },
+      },
+    ],
+    projects: [
+      {
+        name: 'resume_web',
+        description:
+          'เว็บพอร์ตโฟลิโอที่เชื่อมต่อ GitHub แบบเรียลไทม์ พร้อม Express backend สำหรับ cache และ Gemini 2.5 Flash สรุป focus areas',
+        url: 'https://github.com/xenodeve/resume_web',
+        tech: ['JavaScript', 'Express.js', 'Gemini API'],
+        year: 2025,
+      },
+      {
+        name: 'Hype-Macro_Store',
+        description:
+          'Full-stack e-commerce สำหรับสินค้า Gaming Mouse — React + TypeScript frontend, Nest.js + MongoDB backend',
+        url: 'https://github.com/xenodeve/Hype-Macro_Store',
+        tech: ['React.js', 'TypeScript', 'Nest.js', 'MongoDB'],
+        year: 2025,
+      },
+      {
+        name: 'Home-IoT-System',
+        description:
+          'ระบบควบคุม IoT เต็มรูปแบบ — Pico W (CircuitPython), Express.js, React และ MQTT ควบคุมจากระยะไกล',
+        url: 'https://github.com/xenodeve/Home-IoT-System',
+        tech: ['Python', 'Express.js', 'React.js', 'MQTT'],
+        year: 2025,
+      },
+      {
+        name: 'facedetection',
+        description:
+          'โปรแกรมตรวจจับใบหน้าด้วย OpenCV และ Python รองรับทั้งไฟล์ภาพ, URL และกล้องแบบ Real-time',
+        url: 'https://github.com/xenodeve/facedetection',
+        tech: ['Python', 'OpenCV'],
+        year: 2025,
+      },
+      {
+        name: 'narze',
+        description: 'Discord Music Bot',
+        url: 'https://github.com/xenodeve/narze',
+        tech: ['TypeScript', 'JavaScript'],
+        year: 2026,
+      },
+      {
+        name: 'xeno-skills',
+        description: 'Multi-agent manual-consensus brainstorm skill สำหรับ PAL clink (Claude Code)',
+        url: 'https://github.com/xenodeve/xeno-skills',
+        tech: ['Claude Code'],
+        year: 2026,
+      },
+      {
+        name: 'orangecat',
+        description: 'Discord bot เช็คสตอร์ Valorant',
+        url: 'https://github.com/xenodeve/orangecat',
+        tech: ['Python', 'Docker'],
+        year: 2023,
+      },
     ],
   },
   {
     handle: 'akkanop-x',
+    slug: teamSlug('akkanop-x'),
     githubUrl: 'https://github.com/akkanop-x',
     role: 'Backend, Infra',
     roleEn: 'Backend, Infra',
@@ -228,9 +341,19 @@ export const team: TeamMember[] = [
       program: 'เทคโนโลยีสารสนเทศและนวัตกรรม',
       institution: 'มหาวิทยาลัยกรุงเทพ (BU)',
     },
+    projects: [
+      {
+        name: 'get-statement-kbiz',
+        description: 'สคริปต์ดึง statement จาก KBIZ (จัดทำเพื่อการศึกษา)',
+        url: 'https://github.com/akkanop-x/get-statement-kbiz',
+        tech: ['Python'],
+        year: 2024,
+      },
+    ],
   },
   {
     handle: "Thanathorn'Z",
+    slug: teamSlug("Thanathorn'Z"),
     githubUrl: 'https://github.com/ThanathornZDev',
     role: 'Backend, Infra',
     roleEn: 'Backend, Infra',
@@ -251,15 +374,67 @@ export const team: TeamMember[] = [
     ],
     education: { program: 'วิทยาการคอมพิวเตอร์', institution: 'มหาวิทยาลัยกรุงเทพ (BU)' },
     certificates: [
-      { issuer: 'TDGA', title: 'Cyber Security Awareness' },
-      { issuer: 'TDGA', title: 'AI Governance & Ethics' },
-      { issuer: 'SET', title: 'Entrepreneurial Mindset' },
-      { issuer: 'Coursera', title: 'GenAI for Application Developers' },
-      { issuer: 'Speexx', title: 'English B1.2' },
+      {
+        issuer: 'TDGA',
+        title: 'Cyber Security Awareness',
+        asset: {
+          webp: '/certificates/thanathornz/cyber-security-awareness.webp',
+          pdf: '/certificates/thanathornz/cyber-security-awareness.pdf',
+        },
+      },
+      {
+        issuer: 'TDGA',
+        title: 'AI Governance & Ethics',
+        asset: {
+          webp: '/certificates/thanathornz/ai-governance-ethics.webp',
+          pdf: '/certificates/thanathornz/ai-governance-ethics.pdf',
+        },
+      },
+      {
+        issuer: 'SET',
+        title: 'Entrepreneurial Mindset',
+        asset: {
+          webp: '/certificates/thanathornz/entrepreneurial-mindset.webp',
+          pdf: '/certificates/thanathornz/entrepreneurial-mindset.pdf',
+        },
+      },
+      {
+        issuer: 'Coursera',
+        title: 'GenAI for Application Developers',
+        asset: {
+          webp: '/certificates/thanathornz/genai-for-app-developers.webp',
+          pdf: '/certificates/thanathornz/genai-for-app-developers.pdf',
+        },
+      },
+      {
+        issuer: 'Speexx',
+        title: 'English B1.2',
+        asset: {
+          webp: '/certificates/thanathornz/english-b1-2.webp',
+          pdf: '/certificates/thanathornz/english-b1-2.pdf',
+        },
+      },
+    ],
+    projects: [
+      {
+        name: 'LINE_OA_BOT',
+        description: 'บอท LINE Official Account',
+        url: 'https://github.com/ThanathornZDev/LINE_OA_BOT',
+        tech: ['Python', 'LINE OA'],
+        year: 2026,
+      },
+      {
+        name: 'Java-GUI-Read-Write-Binary-Data-File',
+        description: 'โปรแกรม Java GUI อ่าน/เขียนไฟล์ binary',
+        url: 'https://github.com/ThanathornZDev/Java-GUI-Read-Write-Binary-Data-File',
+        tech: ['Java'],
+        year: 2025,
+      },
     ],
   },
   {
     handle: 'Paradise',
+    slug: teamSlug('Paradise'),
     githubUrl: 'https://github.com/CableMoMo2027',
     role: 'Frontend Developer & Mobile Developer',
     roleEn: 'Frontend Developer & Mobile Developer',
@@ -280,6 +455,108 @@ export const team: TeamMember[] = [
       program: 'เทคโนโลยีสารสนเทศและนวัตกรรมดิจิทัล (นานาชาติ)',
       institution: 'มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ (KMUTNB)',
     },
-    certificates: [{ issuer: 'Microsoft · JA Thailand', title: 'Road to Data Scientists' }],
+    certificates: [
+      {
+        issuer: 'Microsoft · JA Thailand',
+        title: 'Road to Data Scientists',
+        asset: {
+          webp: '/certificates/paradise/road-to-data-scientists.webp',
+          img: '/certificates/paradise/road-to-data-scientists.png',
+          pdf: '/certificates/paradise/road-to-data-scientists.pdf',
+        },
+      },
+    ],
+    projects: [
+      {
+        name: 'TeachThrough',
+        description: '',
+        url: 'https://github.com/CableMoMo2027/TeachThrough',
+        tech: ['Vue.js', 'TypeScript', 'PostgreSQL'],
+        year: 2026,
+      },
+      {
+        name: 'PopcornPlus',
+        description: '',
+        url: 'https://github.com/CableMoMo2027/PopcornPlus',
+        tech: ['Flutter', 'Dart'],
+        year: 2026,
+      },
+      {
+        name: 'MoMo.Ecom',
+        description: '',
+        url: 'https://github.com/CableMoMo2027/MoMo.Ecom',
+        tech: ['JavaScript', 'TypeScript'],
+        year: 2026,
+      },
+      {
+        name: 'NextSeatProject',
+        description: '',
+        url: 'https://github.com/CableMoMo2027/NextSeatProject',
+        tech: ['JavaScript', 'TypeScript'],
+        year: 2026,
+      },
+      {
+        name: 'Todo_Dashboard.vue',
+        description: '',
+        url: 'https://github.com/CableMoMo2027/Todo_Dashboard.vue',
+        tech: ['Vue.js', 'TypeScript'],
+        year: 2026,
+      },
+      {
+        name: 'Galleria_app',
+        description: '',
+        url: 'https://github.com/CableMoMo2027/Galleria_app',
+        tech: ['Flutter', 'Dart'],
+        year: 2025,
+      },
+      {
+        name: 'Project_Flutter',
+        description: '',
+        url: 'https://github.com/CableMoMo2027/Project_Flutter',
+        tech: ['Flutter', 'Dart'],
+        year: 2025,
+      },
+    ],
+  },
+];
+
+// Shared team repos under the Slow-Inc org — collaborative work, shown once (not
+// duplicated per person). `contributors` are the real GitHub contributors (mapped to
+// their display handles), from `gh api repos/<r>/contributors`.
+export interface TeamOrgProject extends TeamProject {
+  contributors: string[];
+}
+export const teamProjects: TeamOrgProject[] = [
+  {
+    name: 'MangaDock',
+    description: 'เว็บไซต์อ่านมังงะพร้อมระบบแปลมังงะด้วย AI',
+    url: 'https://github.com/Slow-Inc/MangaDock',
+    tech: ['TypeScript', 'AI'],
+    year: 2026,
+    contributors: ['xenodev', 'akkanop-x'],
+  },
+  {
+    name: 'Website_Prototype01_Frontend',
+    description: 'เว็บไซต์ต้นแบบ (Frontend)',
+    url: 'https://github.com/Slow-Inc/Website_Prototype01_Frontend',
+    tech: ['JavaScript'],
+    year: 2025,
+    contributors: ['xenodev', 'Paradise'],
+  },
+  {
+    name: 'Website_Prototype01_Backend',
+    description: 'เว็บไซต์ต้นแบบ (Backend API)',
+    url: 'https://github.com/Slow-Inc/Website_Prototype01_Backend',
+    tech: ['TypeScript'],
+    year: 2025,
+    contributors: ['xenodev'],
+  },
+  {
+    name: 'planet_management',
+    description: 'Discord bot สำหรับจัดการเซิร์ฟเวอร์',
+    url: 'https://github.com/Slow-Inc/planet_management',
+    tech: ['JavaScript', 'Discord.js'],
+    year: 2025,
+    contributors: ['xenodev'],
   },
 ];
