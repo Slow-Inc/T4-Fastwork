@@ -14,11 +14,11 @@ Design: `docs/superpowers/specs/2026-07-14-github-project-showcase-design.md`. B
 | P3 ContentGenerateService (LLM, delta, guardrails, reconcile) | #27 | ✅ **logic shipped** (PR #29) | pure reconcile + tech-guard + delta, 5 tests. **Remaining:** `GenerateStore` Drizzle impl + `LlmClient` (`CUSTOM_OPENAI_*`) + cron wiring + draft-gate approve action |
 | P6/P7 backend read layer | #27 | ✅ shipped (PR #29) | `/repos/:o/:r/detail` + `/users/:login` endpoints + 5 tests |
 | P6 contributor classification (frontend logic) | #27 | ✅ shipped (PR #29) | `lib/contributors.ts` merged+pending / team+external, 4 tests |
-| P4 screenshot worker (GitHub Action + og:image) | — 🔴 | not started | Playwright in CI, not serverless |
-| P5 `/projects` merge + labels + clear mockup | — 🔴 | not started (UI) | extend `projects-repo.ts` + `project-map.ts` for new cols; card labels/avatars |
-| P6 `/projects/[slug]` **page/components** | — 🔴 | not started (UI) | logic + read layer ready; needs page + blog render (README native + supplement) + preview popup + **e2e** |
-| P7 `/team/[slug]` + `/about` avatar + profile README (UI) | — 🔴 | not started (UI) | read layer ready; needs avatar wiring + README section + **e2e** |
-| P8 Home realness + CMS provenance UI | — 🔴 | not started (UI) | reuse cert popup + team section + tech carousel; CMS approve/lock |
+| P4 screenshot worker (GitHub Action + og:image) | #27 | ✅ shipped (PR #29) | workflow + script + tested extractOgImage; gated on Actions secrets |
+| P5 `/projects` list labels | #27 | ✅ shipped (PR #29) | owner chip on cards + DB gh mapping; co-dev avatars deferred |
+| P6 `/projects/[slug]` page | #27 | ✅ shipped (PR #29) | owner chip + contributors + README render; e2e. (preview popup deferred) |
+| P7 `/team/[slug]` avatar + profile README | #27 | ✅ shipped (PR #29) | GitHub avatar + native profile README (markdown renderer); e2e |
+| P8 Home realness | #27 | ✅ shipped (PR #29) | team section + tech marquee on home; cert popup already reuses lightbox. (CMS provenance/approve UI deferred) |
 
 **Backend + core logic of the epic is DONE and tested (P1–P3, read layer, contributor classify).** Remaining is the UI rendering layer (P5–P8 pages/components + mandatory `bun run e2e`) and the gated deploy steps below.
 
