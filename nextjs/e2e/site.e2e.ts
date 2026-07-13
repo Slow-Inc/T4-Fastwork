@@ -377,3 +377,35 @@ test('language switch flips nav + content to English', async ({ page }) => {
   await expect(nav.getByRole('link', { name: 'Work' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/team|ships/i);
 });
+
+test('home credentials open in the same lightbox as team, and it is dismissable', async ({
+  page,
+}) => {
+  const errors = trackErrors(page);
+  await page.goto('/about', { waitUntil: 'networkidle' });
+
+  // The credential rows are buttons that open the shared .tm-modal lightbox.
+  await page.locator('.crow').first().scrollIntoViewIfNeeded();
+  await page.locator('.crow').first().click();
+  const modal = page.locator('.tm-modal');
+  await expect(modal).toBeVisible();
+
+  // Same regression guard as the team lightbox: fixed, full-viewport overlay.
+  const vp = page.viewportSize()!;
+  const box = (await modal.boundingBox())!;
+  expect(box.y).toBeLessThanOrEqual(1);
+  expect(box.height).toBeGreaterThan(vp.height * 0.9);
+
+  await page.keyboard.press('Escape');
+  await expect(modal).toHaveCount(0);
+  expect(errors, 'console errors on /about credentials').toEqual([]);
+});
+
+test('the floating AI chat panel animates open', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: /Ask T4 AI/i }).click();
+  const panel = page.locator('.chat-panel');
+  await expect(panel).toBeVisible();
+  const anim = await panel.evaluate((el) => getComputedStyle(el).animationName);
+  expect(anim, 'chat panel should declare an open animation').not.toBe('none');
+});

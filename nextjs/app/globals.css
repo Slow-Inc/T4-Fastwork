@@ -3310,3 +3310,112 @@ footer {
     padding: 24px;
   }
 }
+
+/* ============================================================
+   MOTION PASS — popup enter animations + transitions where they
+   were missing (§14.6). Shared so every floating layer feels the
+   same: cert lightboxes (team + home), the AI chat panel, the
+   greeting popup. Reveal cascades are handled by .rv/.rv-down.
+   ============================================================ */
+
+/* Certificate lightbox enter animation — the same .tm-modal shell is used by
+   the per-person team pages and the home/about credentials section. */
+.tm-modal {
+  animation: modalFade 0.22s ease both;
+}
+.tm-modal-inner {
+  animation: modalCard 0.3s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+@keyframes modalFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modalCard {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Home/about cert lightbox body (typographic fallback or the real image). */
+.tm-modal-body {
+  width: min(560px, 100%);
+  margin: 0 auto;
+}
+.cert-card {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The credential rows are <button>s now (open the lightbox) — reset the button
+   chrome so they read exactly like the old anchors. */
+.crow {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+}
+
+/* Floating AI chat: pop open from the button, and ease size changes when the
+   panel grows/shrinks. The greeting popup reuses the same entrance. */
+.chat-panel,
+.ai-greeting {
+  transform-origin: bottom right;
+  animation: chatPop 0.26s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+.chat-panel {
+  transition:
+    width 0.28s ease,
+    max-height 0.28s ease,
+    height 0.28s ease;
+}
+@keyframes chatPop {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.chat {
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.chat:hover {
+  transform: translateY(-2px);
+}
+.chat:active {
+  transform: translateY(0) scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tm-modal,
+  .tm-modal-inner,
+  .chat-panel,
+  .ai-greeting {
+    animation: none;
+  }
+  .chat-panel {
+    transition: none;
+  }
+  .chat:hover,
+  .chat:active {
+    transform: none;
+  }
+}

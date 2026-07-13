@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { team, teamProjects } from '@/content/site';
 import { useLocale } from '@/i18n/locale-context';
+import { staggerDelay } from '@/lib/stagger';
 
 /** Presentational team roster — pure, unit-testable. A directory (not a card grid) so
  * this section reads structurally different from the rest of /about (Requirement §14.4). */
@@ -19,9 +20,13 @@ export function TeamSectionView({ en }: { en: boolean }) {
         </p>
       </div>
 
-      <ul className="team-dir rv">
+      <ul className="team-dir">
         {team.map((m, i) => (
-          <li key={m.handle} className="team-dir-item">
+          <li
+            key={m.handle}
+            className="team-dir-item rv rv-down"
+            style={{ transitionDelay: staggerDelay(i) }}
+          >
             <Link href={`/team/${m.slug}`} className="team-dir-row">
               <span className="team-dir-num">{String(i + 1).padStart(2, '0')}</span>
               <span className="team-dir-handle">{m.handle}</span>
@@ -38,8 +43,12 @@ export function TeamSectionView({ en }: { en: boolean }) {
       <div className="team-projects rv">
         <div className="t-idx">{en ? 'Team projects' : 'งานที่ทำร่วมกันเป็นทีม'}</div>
         <ul className="team-proj-list">
-          {teamProjects.map((p) => (
-            <li key={p.url} className="team-proj">
+          {teamProjects.map((p, i) => (
+            <li
+              key={p.url}
+              className="team-proj rv rv-down"
+              style={{ transitionDelay: staggerDelay(i) }}
+            >
               <a href={p.url} target="_blank" rel="noopener noreferrer" className="team-proj-name">
                 {p.name}
                 <span className="team-proj-year">{p.year}</span>

@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'bun:test';
 import { render, screen, cleanup } from '@testing-library/react';
 import { ServiceListView } from './service-list';
 import { ProjectGallery } from './project-gallery';
-import { CertificatesView } from './certificates';
+import { CertificatesView } from './certificates-view';
 import { MetricBand } from './metric-band';
 import { services } from '@/content/services';
 import { featuredProjects } from '@/content/projects';

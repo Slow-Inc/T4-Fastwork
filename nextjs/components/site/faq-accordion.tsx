@@ -1,16 +1,10 @@
+import { staggerDelay } from '@/lib/stagger';
+
 interface FaqItem {
   question: string;
   answer: string;
   questionEn?: string;
   answerEn?: string;
-}
-
-const STAGGER_STEP_MS = 60;
-const STAGGER_CAP = 8;
-
-/** Cascading per-item entrance delay (capped so long lists don't drag out). */
-function staggerDelay(index: number): string {
-  return `${Math.min(index, STAGGER_CAP) * STAGGER_STEP_MS}ms`;
 }
 
 /** Accessible FAQ accordion using native <details> (Requirement §4.6), bilingual. */

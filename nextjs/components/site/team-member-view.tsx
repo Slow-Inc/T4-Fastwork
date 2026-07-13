@@ -1,5 +1,6 @@
 import type { TeamMember, TeamCertificate } from '@/content/site';
 import { TechChips } from './tech-chips';
+import { staggerDelay } from '@/lib/stagger';
 
 /**
  * Presentational profile for one team member — pure and unit-testable (no hooks).
@@ -74,7 +75,11 @@ export function TeamMemberView({
           <div className="t-idx">04 — {en ? 'Projects' : 'ผลงาน'}</div>
           <ol className="tm-projects">
             {member.projects.map((p, i) => (
-              <li key={p.url} className="tm-proj">
+              <li
+                key={p.url}
+                className="tm-proj rv rv-down"
+                style={{ transitionDelay: staggerDelay(i) }}
+              >
                 <span className="tm-proj-num">{String(i + 1).padStart(2, '0')}</span>
                 <div className="tm-proj-body">
                   <a href={p.url} target="_blank" rel="noopener noreferrer" className="tm-proj-name">
@@ -101,8 +106,12 @@ export function TeamMemberView({
         <section className="tm-block rv">
           <div className="t-idx">05 — {en ? 'Certificates' : 'ใบรับรอง'}</div>
           <ul className="tm-certs">
-            {member.certificates.map((c) => (
-              <li key={`${c.issuer}-${c.title}`} className="tm-cert">
+            {member.certificates.map((c, i) => (
+              <li
+                key={`${c.issuer}-${c.title}`}
+                className="tm-cert rv rv-down"
+                style={{ transitionDelay: staggerDelay(i) }}
+              >
                 {c.asset ? (
                   onOpenCert ? (
                     <button
