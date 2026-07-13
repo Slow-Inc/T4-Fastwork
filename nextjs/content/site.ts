@@ -6,7 +6,7 @@ export interface Metric {
 }
 export const metrics: Metric[] = [
   { value: '5+', label: 'Years experience' },
-  { value: '500+', label: 'Projects shipped' },
+  { value: '21+', label: 'Projects built' },
   { value: '7', label: 'AI & security certs' },
   { value: 'TH·EN', label: 'Bilingual delivery' },
 ];

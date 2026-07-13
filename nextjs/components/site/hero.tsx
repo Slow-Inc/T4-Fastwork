@@ -68,8 +68,8 @@ export function Hero() {
       </>,
     ),
     proof: useT(
-      '— ประสบการณ์ 5 ปี · ส่งมอบแล้ว 500+ โปรเจกต์',
-      '— 5 years of experience · 500+ projects shipped',
+      '— ประสบการณ์ 5 ปี · ทำมาแล้ว 21+ โปรเจกต์',
+      '— 5 years of experience · 21+ projects built',
     ),
     bookCall: useT('นัดคุยโปรเจกต์', 'Book a call'),
     talkAi: useT('คุยกับ AI', 'Talk to our AI'),

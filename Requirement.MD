@@ -91,7 +91,7 @@
 2. **Hero Section**
    - หัวข้อหลัก + ประโยคขาย(value proposition)
    - ปุ่ม CTA คู่: "ติดต่อ/จ้างงาน" และ "คุยกับ AI"
-   - แถบตัวเลขความน่าเชื่อถือ: ประสบการณ์ 5 ปี, ส่งมอบ 500+ โปรเจกต์, เชี่ยวชาญงานระบบ
+   - แถบตัวเลขความน่าเชื่อถือ: ประสบการณ์ 5 ปี, ทำมาแล้ว 21+ โปรเจกต์ (ทีม + ส่วนตัว), เชี่ยวชาญงานระบบ
    - (ออปชัน) องค์ประกอบ interactive เช่น มินิเกม/แอนิเมชัน
 
 3. **ตัวเลือกโจทย์ (Solution Selector)** — ปรับให้ตรงกับกลุ่มเป้าหมายสายเทค
@@ -727,7 +727,7 @@ Micro-interaction ที่ควรมี:
 - **mono tag** สำหรับเทคโนโลยี/หมวด (`[ NEXT.JS ]`, `[ SAAS ]`)
 - **accent underline** ที่วิ่งตอน hover
 - **Liquid Glass nav** ที่ลอยและปรับความใสตาม scroll
-- (ออปชัน) แถบ **system status ticker** เล็ก ๆ ("500+ projects · 5 yrs · TH/EN") แบบ mono
+- (ออปชัน) แถบ **system status ticker** เล็ก ๆ ("21+ projects · 5 yrs · TH/EN") แบบ mono
 
 ### 14.10 Deliverables ฝั่งดีไซน์ (แนะนำ)
 - **Figma:** design tokens (สี/ไทโป/สเปซ), component library, หน้าออกแบบจริง 5–6 หน้า, prototype motion

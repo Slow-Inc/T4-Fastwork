@@ -99,12 +99,16 @@ test('/about shows the team\'s real skills and education (synced with Fastwork)'
   await expect(page.getByText('มหาวิทยาลัยกรุงเทพ').first()).toBeVisible();
 });
 
-test('experience claims say 5 years everywhere, not the old 20-year figure', async ({ page }) => {
+test('experience + project-count claims are accurate everywhere (5 years, 21+ projects)', async ({
+  page,
+}) => {
   for (const path of ['/', '/about']) {
     await page.goto(path, { waitUntil: 'networkidle' });
     const bodyText = await page.locator('body').innerText();
     expect(bodyText, `${path} should not claim 20 years`).not.toContain('20 ปี');
     expect(bodyText, `${path} should not claim 20+ years`).not.toContain('20+');
+    expect(bodyText, `${path} should not claim 500 projects`).not.toContain('500');
+    expect(bodyText, `${path} should claim 21+ projects`).toContain('21+');
   }
 });
 
