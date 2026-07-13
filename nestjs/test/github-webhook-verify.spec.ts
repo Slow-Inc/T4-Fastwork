@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'bun:test';
 import { createHmac } from 'node:crypto';
-import { verifyGithubSignature } from '../src/github/webhook-verify';
+import {
+  verifyGithubSignature,
+  constantTimeEqual,
+} from '../src/github/webhook-verify';
 
 const SECRET = 'shhh-webhook-secret';
 
@@ -39,5 +42,20 @@ describe('verifyGithubSignature', () => {
 
   it('does not throw on a length-mismatched signature (constant-time guard)', () => {
     expect(verifyGithubSignature(body, 'sha256=deadbeef', SECRET)).toBe(false);
+  });
+});
+
+describe('constantTimeEqual', () => {
+  it('is true only for identical non-empty strings', () => {
+    expect(constantTimeEqual('secret', 'secret')).toBe(true);
+    expect(constantTimeEqual('secret', 'Secret')).toBe(false);
+    expect(constantTimeEqual('secret', 'secrets')).toBe(false);
+  });
+
+  it('is false for empty/missing values', () => {
+    expect(constantTimeEqual('', 'x')).toBe(false);
+    expect(constantTimeEqual('x', '')).toBe(false);
+    expect(constantTimeEqual(null, null)).toBe(false);
+    expect(constantTimeEqual(undefined, 'x')).toBe(false);
   });
 });

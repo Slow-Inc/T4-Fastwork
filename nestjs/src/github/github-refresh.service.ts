@@ -64,3 +64,22 @@ export class GithubRefreshService {
     return summary;
   }
 }
+
+/** Refreshes exactly one owner's repo list — the webhook's targeted path. */
+export class SnapshotOwnerRefresher {
+  constructor(
+    private readonly syncer: ResourceSyncer,
+    private readonly org: string = GITHUB_ORG,
+  ) {}
+
+  async refreshOwner(owner: string): Promise<void> {
+    const { key, url } =
+      owner === this.org
+        ? { key: snapshotKey.orgRepos(owner), url: githubUrl.orgRepos(owner) }
+        : {
+            key: snapshotKey.memberRepos(owner),
+            url: githubUrl.userRepos(owner),
+          };
+    await this.syncer.syncResource(key, url);
+  }
+}

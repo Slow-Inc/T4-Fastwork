@@ -27,3 +27,18 @@ export function verifyGithubSignature(
   if (expected.length !== received.length) return false;
   return timingSafeEqual(expected, received);
 }
+
+/**
+ * Constant-time string compare for shared-secret checks (e.g. the refresh
+ * endpoint's `x-refresh-secret` header). Length-guarded; empty/missing → false.
+ */
+export function constantTimeEqual(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): boolean {
+  if (!a || !b) return false;
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}

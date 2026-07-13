@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import {
   GithubRefreshService,
+  SnapshotOwnerRefresher,
   type ResourceSyncer,
 } from '../src/github/github-refresh.service';
 
@@ -56,5 +57,33 @@ describe('GithubRefreshService.refreshAll', () => {
 
     expect(r.synced).toContain('repos:ok');
     expect(r.failed).toEqual(['repos:boom']);
+  });
+});
+
+describe('SnapshotOwnerRefresher.refreshOwner', () => {
+  it('syncs the org repo list when the owner is the org', async () => {
+    const calls: { key: string; url: string }[] = [];
+    const syncer: ResourceSyncer = {
+      syncResource: async (key, url) => {
+        calls.push({ key, url });
+        return { changed: true, data: [] };
+      },
+    };
+    await new SnapshotOwnerRefresher(syncer, 'Slow-Inc').refreshOwner('Slow-Inc');
+    expect(calls[0].key).toBe('org:Slow-Inc');
+    expect(calls[0].url).toContain('/orgs/Slow-Inc/repos');
+  });
+
+  it('syncs a member repo list when the owner is a user', async () => {
+    const calls: { key: string; url: string }[] = [];
+    const syncer: ResourceSyncer = {
+      syncResource: async (key, url) => {
+        calls.push({ key, url });
+        return { changed: true, data: [] };
+      },
+    };
+    await new SnapshotOwnerRefresher(syncer, 'Slow-Inc').refreshOwner('xenodeve');
+    expect(calls[0].key).toBe('repos:xenodeve');
+    expect(calls[0].url).toContain('/users/xenodeve/repos');
   });
 });

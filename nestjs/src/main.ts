@@ -2,7 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // `rawBody` preserves the exact bytes for GitHub webhook HMAC verification.
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   // Allow the Next.js frontend to call this API (chat SSE etc.).
   app.enableCors({
