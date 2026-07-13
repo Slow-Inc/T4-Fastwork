@@ -325,6 +325,23 @@ test('project detail "ask AI about this project" opens the floating widget groun
   expect((requestBody?.message as string) ?? '').toContain('MangaDock');
 });
 
+test('project detail shows an owner chip (team/personal) — spec P6', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  await page.goto('/projects/mangadock', { waitUntil: 'networkidle' });
+
+  // The owner chip labels whose project this is (MangaDock = a team project).
+  const chip = page.locator('.owner-chip');
+  await expect(chip).toBeVisible();
+  await expect(chip).toContainText('T4 Labs');
+  // Live contributors/README overlay is graceful when the backend is offline —
+  // the page must still render its h1 with no console errors.
+  await expect(page.locator('h1')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('arriving at /chat with ?project= shows a banner and grounds the auto-sent question', async ({
   page,
 }) => {
