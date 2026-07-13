@@ -129,6 +129,18 @@ test('a member profile shows real repos and opens certificates in a lightbox', a
   const modal = page.locator('.tm-modal');
   await expect(modal).toBeVisible();
   await expect(modal.locator('.tm-modal-img')).toBeVisible();
+
+  // The modal must be a fixed, full-viewport overlay — not left in normal flow
+  // (a stale/colliding stylesheet once made it position:static, so it opened
+  // off-screen while body scroll stayed locked = the "frozen page" bug). Assert it
+  // actually covers the viewport and its close control is reachable on-screen.
+  const vp = page.viewportSize()!;
+  const box = (await modal.boundingBox())!;
+  expect(box.y, 'modal not anchored to the viewport top').toBeLessThanOrEqual(1);
+  expect(box.height, 'modal does not fill the viewport height').toBeGreaterThan(vp.height * 0.9);
+  const closeBox = (await page.locator('.tm-modal-close').boundingBox())!;
+  expect(closeBox.y, 'close button is off-screen (unreachable)').toBeGreaterThanOrEqual(0);
+  expect(closeBox.y).toBeLessThan(vp.height);
   await expect(modal.getByRole('link', { name: 'PDF' })).toHaveAttribute(
     'href',
     '/certificates/xenodev/ai-for-all.pdf',
