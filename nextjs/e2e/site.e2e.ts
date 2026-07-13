@@ -465,3 +465,26 @@ test('the floating chat keeps its conversation when closed and reopened', async 
   await page.getByRole('button', { name: /Ask T4 AI/i }).click();
   await expect(page.locator('.chat-panel').getByText('APPLE123')).toBeVisible();
 });
+
+test('the floating popup and the /chat page share one conversation (#31)', async ({
+  page,
+}) => {
+  // Type a message in the floating popup...
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: /Ask T4 AI/i }).click();
+  const panel = page.locator('.chat-panel');
+  await expect(panel).toBeVisible();
+  await panel.locator('input, textarea').first().fill('ต่อเนื่อง BANANA456');
+  await panel.getByRole('button', { name: 'ส่ง' }).click();
+  await expect(panel.getByText('BANANA456')).toBeVisible();
+
+  // ...expand into the full /chat page — the history carries over (shared key).
+  await page.goto('/chat', { waitUntil: 'networkidle' });
+  await expect(page.getByText('BANANA456')).toBeVisible();
+
+  // ...and the /chat page writes back to the same shared conversation, so
+  // returning to the popup still shows the history (symmetric persistence).
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: /Ask T4 AI/i }).click();
+  await expect(page.locator('.chat-panel').getByText('BANANA456')).toBeVisible();
+});

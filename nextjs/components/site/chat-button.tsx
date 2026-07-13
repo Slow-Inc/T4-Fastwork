@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChatClient } from '@/components/chat/chat-client';
+import { SHARED_CHAT_KEY } from '@/lib/chat-persist';
 import { useFloatingChat } from './floating-chat-context';
 
 /** Floating AI chat widget (Requirement §4.1.11 / §5.1): a button that opens an
@@ -125,7 +126,7 @@ export function ChatButton() {
           </div>
           <ChatClient
             key={request?.nonce ?? 'default'}
-            persistKey={request ? undefined : 'floating'}
+            persistKey={request ? undefined : SHARED_CHAT_KEY}
             initialProjectSlug={request?.projectSlug}
             initialProjectTitle={request?.projectTitle}
           />

@@ -4,6 +4,13 @@
  * shows the prior messages and the assistant keeps its memory. Tolerant: any failure
  * (no storage, quota, corrupt data) degrades to "start fresh", never throws.
  */
+/**
+ * Shared sessionStorage key for the general (non-project) conversation. Used by
+ * BOTH the floating popup and the /chat page so history carries across when the
+ * user expands the popup into the full page and back (#31).
+ */
+export const SHARED_CHAT_KEY = 'floating';
+
 export interface PersistedChat {
   messages: unknown[];
   sessionId?: string;
