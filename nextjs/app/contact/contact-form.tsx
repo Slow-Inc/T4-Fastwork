@@ -1,47 +1,17 @@
 'use client';
 
-import { useActionState, useRef } from 'react';
+import { useActionState } from 'react';
 import { submitContact, type ContactState } from './actions';
 import { useLocale } from '@/i18n/locale-context';
 
 const initial: ContactState = { status: 'idle' };
-const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-
-declare global {
-  interface Window {
-    grecaptcha?: {
-      ready(cb: () => void): void;
-      execute(siteKey: string, opts: { action: string }): Promise<string>;
-    };
-  }
-}
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export function ContactForm() {
   const [state, formAction, pending] = useActionState(submitContact, initial);
   const { locale } = useLocale();
   const en = locale === 'en';
   const t = (th: string, e: string) => (en ? e : th);
-  const tokenInputRef = useRef<HTMLInputElement>(null);
-  const resubmittingRef = useRef(false);
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    if (resubmittingRef.current) {
-      resubmittingRef.current = false;
-      return; // token already attached — let the native submit proceed
-    }
-    const grecaptcha = RECAPTCHA_SITE_KEY ? window.grecaptcha : undefined;
-    if (!grecaptcha) return; // no site key configured — submit without a token
-
-    e.preventDefault();
-    const token = await new Promise<string>((resolve) => {
-      grecaptcha.ready(() => {
-        grecaptcha.execute(RECAPTCHA_SITE_KEY!, { action: 'contact' }).then(resolve);
-      });
-    });
-    if (tokenInputRef.current) tokenInputRef.current.value = token;
-    resubmittingRef.current = true;
-    e.currentTarget.requestSubmit();
-  }
 
   const projectTypes = [
     { value: '', label: t('เลือกประเภทงาน (ไม่บังคับ)', 'Project type (optional)') },
@@ -68,8 +38,7 @@ export function ContactForm() {
   }
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} className="contact-form rv" noValidate>
-      <input ref={tokenInputRef} type="hidden" name="recaptchaToken" />
+    <form action={formAction} className="contact-form rv" noValidate>
       <label className="field">
         <span className="t-meta">{t('ชื่อ *', 'Name *')}</span>
         <input name="name" type="text" required aria-invalid={!!state.errors?.name} />
@@ -100,6 +69,16 @@ export function ContactForm() {
       </label>
 
       {state.message && <p className="field-err">{state.message}</p>}
+
+      {TURNSTILE_SITE_KEY && (
+        <div
+          className="cf-turnstile"
+          data-sitekey={TURNSTILE_SITE_KEY}
+          data-response-field-name="turnstileToken"
+          data-appearance="interaction-only"
+          data-size="flexible"
+        />
+      )}
 
       <button type="submit" className="btn" disabled={pending}>
         {pending ? t('กำลังส่ง…', 'Sending…') : t('ส่งข้อความ', 'Send message')}

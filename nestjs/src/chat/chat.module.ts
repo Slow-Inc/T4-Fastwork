@@ -4,10 +4,10 @@ import { RETRIEVAL_SERVICE } from '../rag/retrieval.service';
 import { DrizzleRetrievalService } from '../rag/drizzle-retrieval.service';
 import { EmbeddingService } from '../ingestion/embedding.service';
 import {
-  RECAPTCHA_VERIFIER,
-  GoogleRecaptchaVerifier,
-} from '../security/recaptcha.verifier';
-import { RecaptchaGuard } from '../security/recaptcha.guard';
+  TURNSTILE_VERIFIER,
+  CloudflareTurnstileVerifier,
+} from '../security/turnstile.verifier';
+import { TurnstileGuard } from '../security/turnstile.guard';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 import { ConversationLogService } from './conversation-log.service';
@@ -25,8 +25,8 @@ import { ProjectContextService } from './project-context.service';
     EmbeddingService,
     // Real pgvector retrieval (query → Jina embed → cosine search).
     { provide: RETRIEVAL_SERVICE, useClass: DrizzleRetrievalService },
-    { provide: RECAPTCHA_VERIFIER, useClass: GoogleRecaptchaVerifier },
-    RecaptchaGuard,
+    { provide: TURNSTILE_VERIFIER, useClass: CloudflareTurnstileVerifier },
+    TurnstileGuard,
   ],
 })
 export class ChatModule {}

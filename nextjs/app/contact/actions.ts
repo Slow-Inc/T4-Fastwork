@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/server';
 import { validateContact } from '@/lib/contact-validation';
-import { checkRecaptcha, verifyRecaptchaWithGoogle } from '@/lib/recaptcha';
+import { checkTurnstile, verifyWithCloudflare } from '@/lib/turnstile';
 
 export interface ContactState {
   status: 'idle' | 'success' | 'error';
@@ -25,11 +25,11 @@ export async function submitContact(
     return { status: 'error', errors: result.errors };
   }
 
-  const recaptcha = await checkRecaptcha({
-    token: formData.get('recaptchaToken')?.toString(),
-    verify: verifyRecaptchaWithGoogle,
+  const captcha = await checkTurnstile({
+    token: formData.get('turnstileToken')?.toString(),
+    verify: verifyWithCloudflare,
   });
-  if (!recaptcha.ok) {
+  if (!captcha.ok) {
     return {
       status: 'error',
       message: 'ยืนยันตัวตนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',

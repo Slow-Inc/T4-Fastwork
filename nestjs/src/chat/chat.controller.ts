@@ -7,7 +7,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { RecaptchaGuard } from '../security/recaptcha.guard';
+import { TurnstileGuard } from '../security/turnstile.guard';
 import { ChatService } from './chat.service';
 import { ScopeSummaryService } from './scope-summary.service';
 import type { ScopeSummary } from './scope-summary.types';
@@ -16,7 +16,7 @@ class ChatRequestDto {
   message!: string;
   language?: 'th' | 'en';
   sessionId?: string;
-  recaptchaToken?: string;
+  turnstileToken?: string;
   /** Set when the visitor is chatting from a project's detail page (§5.4). */
   projectSlug?: string;
 }
@@ -35,9 +35,9 @@ export class ChatController {
   /**
    * SSE streaming chat. POST (fetch-based SSE) rather than GET/EventSource so
    * the body carries the message. Emits: session, token, card, done, error.
-   * Rate-limited globally; reCAPTCHA-gated when RECAPTCHA_SECRET is set.
+   * Rate-limited globally; Turnstile-gated when TURNSTILE_SECRET is set.
    */
-  @UseGuards(RecaptchaGuard)
+  @UseGuards(TurnstileGuard)
   @Post('stream')
   async stream(@Body() body: ChatRequestDto, @Res() res: Response) {
     res.setHeader('Content-Type', 'text/event-stream');

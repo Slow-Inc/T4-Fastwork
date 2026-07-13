@@ -227,12 +227,17 @@ test('FAQ items slide down into place with a cascading stagger', async ({ page }
   await expect(items.last()).toHaveCSS('opacity', '1', { timeout: 3000 });
 });
 
-test('contact form carries a hidden reCAPTCHA token field', async ({ page }) => {
+test('contact form renders and works without a Turnstile key (feature-flagged)', async ({
+  page,
+}) => {
   // Not submitting here — a real submit would insert a lead into the live DB.
-  // This just confirms the reCAPTCHA wiring is present in the DOM.
   await page.goto('/contact', { waitUntil: 'networkidle' });
-  const token = page.locator('form.contact-form input[name="recaptchaToken"]');
-  await expect(token).toHaveAttribute('type', 'hidden');
+  const form = page.locator('form.contact-form');
+  await expect(form.locator('input[name="name"]')).toBeVisible();
+  await expect(form.locator('input[name="email"]')).toBeVisible();
+  await expect(form.locator('textarea[name="message"]')).toBeVisible();
+  // Turnstile is feature-flagged: no site key in this env → no widget rendered.
+  await expect(page.locator('.cf-turnstile')).toHaveCount(0);
 });
 
 test('AI greeting popup appears on first visit and "ไว้ก่อน" dismisses without navigating', async ({
