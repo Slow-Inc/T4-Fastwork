@@ -3,14 +3,15 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { HeroView } from './hero';
 import { ProcessSchematicView } from './process-schematic';
 import { SdlcSectionView } from './sdlc-section';
-import { processNodes, processSteps, sdlcPhases } from '@/content/site';
+import { SkillsSectionView } from './skills-section';
+import { processNodes, processSteps, sdlcPhases, skills, education } from '@/content/site';
 
 afterEach(cleanup);
 
 const heroCopy = {
   availability: 'Open for Q3 · 2026',
   lead: 'A product engineering partner',
-  proof: '20+ years',
+  proof: '5 years',
   bookCall: 'Book a call',
   talkAi: 'Talk to our AI',
 };
@@ -62,5 +63,33 @@ describe('SdlcSection', () => {
       (el) => el.textContent,
     );
     expect(indices).toEqual(sdlcPhases.map((p) => p.index));
+  });
+});
+
+describe('SkillsSection', () => {
+  it('renders every skill name', () => {
+    render(<SkillsSectionView en={false} />);
+    for (const s of skills) expect(screen.getByText(s.name)).toBeDefined();
+  });
+
+  it('marks expert-level skills distinctly from intermediate ones', () => {
+    const { container } = render(<SkillsSectionView en={false} />);
+    const expertChips = container.querySelectorAll('.skill-chip[data-level="expert"]');
+    const intermediateChips = container.querySelectorAll(
+      '.skill-chip[data-level="intermediate"]',
+    );
+    expect(expertChips.length).toBe(skills.filter((s) => s.level === 'expert').length);
+    expect(intermediateChips.length).toBe(
+      skills.filter((s) => s.level === 'intermediate').length,
+    );
+  });
+
+  it('renders every education entry', () => {
+    render(<SkillsSectionView en={false} />);
+    for (const e of education) {
+      // Programs are unique; institutions repeat across entries, so use getAllByText for those.
+      expect(screen.getByText(e.program)).toBeDefined();
+      expect(screen.getAllByText(e.institution).length).toBeGreaterThan(0);
+    }
   });
 });

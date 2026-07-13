@@ -116,9 +116,9 @@ export const faqs: Faq[] = [
   {
     question: 'ทำไมต้องเลือก T4 Labs?',
     answer:
-      'ประสบการณ์กว่า 20 ปี ส่งมอบกว่า 500 โปรเจกต์ คุยกับนักพัฒนาตัวจริงโดยตรง เชี่ยวชาญทั้ง Full-Stack และ AI เน้นผลลัพธ์ต่อธุรกิจ และดูแลต่อหลังส่งมอบ — ได้ทั้งงานคุณภาพและความสบายใจครับ',
+      'ประสบการณ์ 5 ปี ส่งมอบกว่า 500 โปรเจกต์ คุยกับนักพัฒนาตัวจริงโดยตรง เชี่ยวชาญทั้ง Full-Stack และ AI เน้นผลลัพธ์ต่อธุรกิจ และดูแลต่อหลังส่งมอบ — ได้ทั้งงานคุณภาพและความสบายใจครับ',
     questionEn: 'Why choose T4 Labs?',
     answerEn:
-      '20+ years of experience, 500+ projects delivered, talk to real engineers directly, expertise across Full-Stack and AI, focused on business outcomes and post-delivery care — quality work with peace of mind.',
+      '5 years of experience, 500+ projects delivered, talk to real engineers directly, expertise across Full-Stack and AI, focused on business outcomes and post-delivery care — quality work with peace of mind.',
   },
 ];

@@ -40,8 +40,8 @@ export function AboutBlocks() {
             <h1>{t('ทีม Full-Stack + AI ที่สร้างของจริง', 'A Full-Stack + AI team that ships real products')}</h1>
             <p className="page-lead">
               {t(
-                'T4 Labs คือพาร์ตเนอร์ด้านวิศวกรรมซอฟต์แวร์ — ประสบการณ์รวมกว่า 20 ปี ส่งมอบกว่า 500 โปรเจกต์ ตั้งแต่ Landing Page ไปจนถึงแพลตฟอร์มที่ซับซ้อนสูง',
-                'T4 Labs is a software engineering partner — 20+ years combined, 500+ projects shipped, from landing pages to high-complexity platforms.',
+                'T4 Labs คือพาร์ตเนอร์ด้านวิศวกรรมซอฟต์แวร์ — ประสบการณ์ 5 ปี ส่งมอบกว่า 500 โปรเจกต์ ตั้งแต่ Landing Page ไปจนถึงแพลตฟอร์มที่ซับซ้อนสูง',
+                'T4 Labs is a software engineering partner — 5 years of experience, 500+ projects shipped, from landing pages to high-complexity platforms.',
               )}
             </p>
           </div>

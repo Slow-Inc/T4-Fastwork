@@ -5,7 +5,7 @@ export interface Metric {
   label: string;
 }
 export const metrics: Metric[] = [
-  { value: '20+', label: 'Years combined' },
+  { value: '5+', label: 'Years experience' },
   { value: '500+', label: 'Projects shipped' },
   { value: '7', label: 'AI & security certs' },
   { value: 'TH·EN', label: 'Bilingual delivery' },
@@ -116,4 +116,62 @@ export const certificates: Certificate[] = [
   { issuer: 'SIIT · TU', title: 'Basic Data Analytics Workshop' },
   { issuer: 'TDGA', title: 'Cyber Security Awareness' },
   { issuer: 'TDGA', title: 'AI Governance & Ethics' },
+];
+
+// Education (from the team's Fastwork profile — kept in sync with it).
+export interface EducationEntry {
+  program: string;
+  institution: string;
+}
+export const education: EducationEntry[] = [
+  {
+    program: 'เทคโนโลยีสารสนเทศและนวัตกรรมดิจิทัล (นานาชาติ)',
+    institution: 'มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ',
+  },
+  {
+    program: 'คณิตศาสตร์เชิงวิทยาการคอมพิวเตอร์',
+    institution: 'มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ',
+  },
+  { program: 'วิทยาการคอมพิวเตอร์', institution: 'มหาวิทยาลัยกรุงเทพ' },
+  { program: 'เทคโนโลยีสารสนเทศและนวัตกรรม', institution: 'มหาวิทยาลัยกรุงเทพ' },
+];
+
+// Skills (from the team's Fastwork profile — kept in sync with it).
+export type SkillLevel = 'expert' | 'intermediate';
+export interface Skill {
+  name: string;
+  detail?: string;
+  level: SkillLevel;
+}
+export const skills: Skill[] = [
+  { name: 'Next.js', detail: 'TypeScript, JavaScript, Tailwind, CSS, HTML', level: 'expert' },
+  { name: 'Nest.js', detail: 'TypeScript', level: 'expert' },
+  { name: 'React', detail: 'TypeScript, JavaScript, Tailwind, CSS, HTML', level: 'expert' },
+  { name: 'Vue.js', detail: 'TypeScript, JavaScript, Tailwind, CSS, HTML', level: 'expert' },
+  { name: 'AI Integration', detail: 'OCR, LLM, RAG, Chatbot, Document AI', level: 'expert' },
+  { name: 'Cloudflare', detail: 'CDN, WAF, Tunnel, DNS, Zero Trust', level: 'expert' },
+  { name: 'Payment Gateway', level: 'expert' },
+  { name: 'Mobile App', detail: 'Flutter, React Native', level: 'expert' },
+  { name: 'Cyber Security', level: 'intermediate' },
+  { name: 'Discord Bot', detail: 'Discord.js, Lavalink, Management', level: 'expert' },
+  {
+    name: 'Supabase',
+    detail: 'PostgreSQL, SMS/Email OTP, Database, Authentication, Realtime',
+    level: 'expert',
+  },
+  {
+    name: 'Firebase',
+    detail: 'Firestore, SMS/Email OTP, Authentication, Cloud Messaging/FCM',
+    level: 'expert',
+  },
+  { name: 'IoT', detail: 'MQTT', level: 'intermediate' },
+  {
+    name: 'Network & Routing',
+    detail: 'Nginx, DNS, Load Balancing, API Gateway, Proxy, SSL/TLS, TCP/IP',
+    level: 'expert',
+  },
+  { name: 'Real-time Protocols', detail: 'WebSocket, Socket.io, SSE', level: 'expert' },
+  { name: 'UX/UI', detail: 'Figma', level: 'expert' },
+  { name: 'MySQL', level: 'expert' },
+  { name: 'MongoDB', level: 'expert' },
 ];

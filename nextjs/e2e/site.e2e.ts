@@ -88,6 +88,26 @@ test('/about shows the real SDLC alongside the client-facing "how we work" steps
   }
 });
 
+test('/about shows the team\'s real skills and education (synced with Fastwork)', async ({
+  page,
+}) => {
+  await page.goto('/about', { waitUntil: 'networkidle' });
+  await expect(page.getByRole('heading', { name: 'ความสามารถของทีม' })).toBeVisible();
+  await expect(page.getByText('Next.js', { exact: true })).toBeVisible();
+  await expect(page.getByText('MongoDB', { exact: true })).toBeVisible();
+  await expect(page.getByText('วิทยาการคอมพิวเตอร์', { exact: true })).toBeVisible();
+  await expect(page.getByText('มหาวิทยาลัยกรุงเทพ').first()).toBeVisible();
+});
+
+test('experience claims say 5 years everywhere, not the old 20-year figure', async ({ page }) => {
+  for (const path of ['/', '/about']) {
+    await page.goto(path, { waitUntil: 'networkidle' });
+    const bodyText = await page.locator('body').innerText();
+    expect(bodyText, `${path} should not claim 20 years`).not.toContain('20 ปี');
+    expect(bodyText, `${path} should not claim 20+ years`).not.toContain('20+');
+  }
+});
+
 test('homepage also shows the SDLC section', async ({ page }) => {
   await page.goto('/', { waitUntil: 'networkidle' });
   const section = page.locator('#sdlc');
