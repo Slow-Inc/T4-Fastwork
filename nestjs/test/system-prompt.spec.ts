@@ -6,8 +6,18 @@ import {
 import type { ProjectContextRecord } from '../src/chat/project-context';
 
 const retrieved: RetrievedItem[] = [
-  { kind: 'project', ref: 'fin-track', title: 'FinTrack', summary: 'SaaS finance dashboard' },
-  { kind: 'service', ref: '1', title: 'SaaS Platform', summary: 'build SaaS platforms' },
+  {
+    kind: 'project',
+    ref: 'fin-track',
+    title: 'FinTrack',
+    summary: 'SaaS finance dashboard',
+  },
+  {
+    kind: 'service',
+    ref: '1',
+    title: 'SaaS Platform',
+    summary: 'build SaaS platforms',
+  },
 ];
 
 const activeProject: ProjectContextRecord = {
@@ -54,7 +64,11 @@ describe('buildSystemPrompt', () => {
   });
 
   it('injects the active project as ground truth when the visitor is viewing it', () => {
-    const p = buildSystemPrompt({ language: 'th', retrieved: [], activeProject });
+    const p = buildSystemPrompt({
+      language: 'th',
+      retrieved: [],
+      activeProject,
+    });
     expect(p).toContain('MangaDock');
     expect(p).toContain('AI Product');
     expect(p).toContain('OCR + LLM แปลภาพมังงะอัตโนมัติ');
@@ -66,8 +80,28 @@ describe('buildSystemPrompt', () => {
   });
 
   it('renders the active-project block in English for language "en"', () => {
-    const p = buildSystemPrompt({ language: 'en', retrieved: [], activeProject });
+    const p = buildSystemPrompt({
+      language: 'en',
+      retrieved: [],
+      activeProject,
+    });
     expect(p).toContain('MangaDock');
     expect(p.toLowerCase()).toContain('currently viewing');
+  });
+
+  // #30 — the prompt must pin the team's real stats so the model can't invent
+  // inflated numbers (e.g. "20 years / 500 projects").
+  it('pins the real TH stats and forbids inventing them', () => {
+    const p = buildSystemPrompt({ language: 'th', retrieved });
+    expect(p).toContain('5 ปี');
+    expect(p).toContain('21+');
+    expect(p).toContain('ห้ามแต่งตัวเลข');
+  });
+
+  it('pins the real EN stats and forbids inventing them', () => {
+    const p = buildSystemPrompt({ language: 'en', retrieved });
+    expect(p).toContain('5 years');
+    expect(p).toContain('21+');
+    expect(p.toLowerCase()).toContain('do not invent');
   });
 });

@@ -4,7 +4,10 @@
  * instructs the inline card markers the StreamMarkerParser extracts, and injects
  * the RAG-retrieved context. Pure function — framework-agnostic.
  */
-import { formatProjectContext, type ProjectContextRecord } from './project-context';
+import {
+  formatProjectContext,
+  type ProjectContextRecord,
+} from './project-context';
 
 export interface RetrievedItem {
   kind: 'project' | 'service' | 'faq';
@@ -22,6 +25,22 @@ export interface SystemPromptOptions {
   activeProject?: ProjectContextRecord;
 }
 
+/**
+ * Ground-truth team facts (Requirement.MD §4.1). Pinned into the prompt so the
+ * model states the real scale and never inflates it (#30). Single source of
+ * truth — update here if the real numbers change.
+ */
+export const TEAM_FACTS = {
+  yearsExperience: 5,
+  projectsBuilt: '21+',
+} as const;
+
+function teamFactsBlock(language: 'th' | 'en'): string {
+  return language === 'en'
+    ? `Team facts (ground truth — state these exactly, do not invent or inflate): ${TEAM_FACTS.yearsExperience} years of experience, ${TEAM_FACTS.projectsBuilt} projects built (team + personal). Do not invent statistics, client names, or numbers not given here or in the context.`
+    : `ข้อมูลจริงของทีม (ความจริง — ระบุตามนี้เป๊ะ ห้ามแต่งหรือทำให้เกินจริง): ประสบการณ์ ${TEAM_FACTS.yearsExperience} ปี ทำมาแล้ว ${TEAM_FACTS.projectsBuilt} โปรเจกต์ (ทีม + ส่วนตัว) ห้ามแต่งตัวเลข ชื่อลูกค้า หรือสถิติที่ไม่ได้ให้ไว้ตรงนี้หรือใน context`;
+}
+
 function markerFor(item: RetrievedItem): string {
   return item.kind === 'project'
     ? `[PROJECT:${item.ref}]`
@@ -30,7 +49,10 @@ function markerFor(item: RetrievedItem): string {
       : `[FAQ:${item.ref}]`;
 }
 
-function contextBlock(retrieved: RetrievedItem[], language: 'th' | 'en'): string {
+function contextBlock(
+  retrieved: RetrievedItem[],
+  language: 'th' | 'en',
+): string {
   if (retrieved.length === 0) {
     return language === 'th'
       ? 'ไม่พบผลงาน/บริการที่ตรงกับคำถามนี้โดยตรง — แนะนำอย่างกว้างและชวนให้เล่าโจทย์เพิ่ม'
@@ -41,7 +63,10 @@ function contextBlock(retrieved: RetrievedItem[], language: 'th' | 'en'): string
     .join('\n');
 }
 
-function activeProjectBlock(project: ProjectContextRecord, language: 'th' | 'en'): string {
+function activeProjectBlock(
+  project: ProjectContextRecord,
+  language: 'th' | 'en',
+): string {
   const formatted = formatProjectContext(project, language);
   return language === 'en'
     ? [
@@ -60,13 +85,16 @@ function activeProjectBlock(project: ProjectContextRecord, language: 'th' | 'en'
 export function buildSystemPrompt(opts: SystemPromptOptions): string {
   const { language, retrieved, activeProject } = opts;
   const context = contextBlock(retrieved, language);
-  const projectBlock = activeProject ? [activeProjectBlock(activeProject, language)] : [];
+  const projectBlock = activeProject
+    ? [activeProjectBlock(activeProject, language)]
+    : [];
 
   if (language === 'en') {
     return [
       "You are T4 Labs' assistant. T4 Labs is a software team building SaaS, web apps, and AI products.",
-      'Recommend the team\'s real work that fits the visitor\'s problem. Stay strictly within T4 Labs\' services — do not answer off-topic questions. Reply in English. Keep answers short and concrete. End every reply with a call-to-contact.',
+      "Recommend the team's real work that fits the visitor's problem. Stay strictly within T4 Labs' services — do not answer off-topic questions. Reply in English. Keep answers short and concrete. End every reply with a call-to-contact.",
       'When you recommend a project, cite it inline as [PROJECT:<slug>]. When you recommend a service, cite it as [SERVICE:<id>]. Use ONLY the refs from the context below — never invent one. Do not include raw URLs.',
+      teamFactsBlock('en'),
       ...projectBlock,
       'Context (retrieved for this question):',
       context,
@@ -77,6 +105,7 @@ export function buildSystemPrompt(opts: SystemPromptOptions): string {
     'คุณคือผู้ช่วยของ T4 Labs — ทีมพัฒนาซอฟต์แวร์ที่สร้าง SaaS, Web Application และ AI Product',
     'หน้าที่: แนะนำผลงาน/บริการจริงของทีมที่ตรงกับโจทย์ของผู้เข้าชม ตอบเฉพาะขอบเขตบริการของ T4 Labs เท่านั้น (อย่าตอบนอกเรื่อง) ตอบเป็นภาษาไทย สั้น กระชับ เป็นรูปธรรม และปิดท้ายทุกครั้งด้วยการชวนติดต่อ/จ้างงาน',
     'เมื่อแนะนำผลงาน ให้อ้างอิงแบบ inline ด้วย [PROJECT:<slug>] และเมื่อแนะนำบริการ ให้ใช้ [SERVICE:<id>] โดยใช้เฉพาะ ref จาก context ด้านล่างเท่านั้น ห้ามแต่งขึ้นเอง และห้ามใส่ URL ดิบ',
+    teamFactsBlock('th'),
     ...projectBlock,
     'ข้อมูลที่ค้นมาสำหรับคำถามนี้ (context):',
     context,
