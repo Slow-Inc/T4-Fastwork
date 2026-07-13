@@ -1,4 +1,5 @@
 import type { TeamMember, TeamCertificate } from '@/content/site';
+import type { LiveRepo } from '@/lib/github';
 import { TechChips } from './tech-chips';
 import { staggerDelay } from '@/lib/stagger';
 
@@ -12,12 +13,18 @@ export function TeamMemberView({
   member,
   en,
   onOpenCert,
+  liveRepos,
 }: {
   member: TeamMember;
   en: boolean;
   onOpenCert?: (cert: TeamCertificate) => void;
+  /** Live GitHub repos (ADR 0003); overlays star counts when present, else absent. */
+  liveRepos?: LiveRepo[] | null;
 }) {
   const initial = member.handle.replace(/^_/, '').charAt(0).toUpperCase();
+  const starsByUrl = new Map(
+    (liveRepos ?? []).map((r) => [r.html_url, r.stargazers_count] as const),
+  );
   return (
     <article className="tm">
       {/* 01 — Hero band */}
@@ -85,6 +92,11 @@ export function TeamMemberView({
                   <a href={p.url} target="_blank" rel="noopener noreferrer" className="tm-proj-name">
                     {p.name}
                     <span className="tm-proj-year">{p.year}</span>
+                    {starsByUrl.has(p.url) && (
+                      <span className="tm-proj-stars" aria-label="GitHub stars">
+                        ★ {starsByUrl.get(p.url)}
+                      </span>
+                    )}
                   </a>
                   {p.description && <p className="tm-proj-desc">{p.description}</p>}
                   <ul className="chip-row tm-proj-tech">
