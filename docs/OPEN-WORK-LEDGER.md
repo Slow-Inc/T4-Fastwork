@@ -20,7 +20,7 @@ Design: `docs/superpowers/specs/2026-07-14-github-project-showcase-design.md`. B
 | P7 `/team/[slug]` avatar + profile README | #27 | ✅ shipped (PR #29) | GitHub avatar + native profile README (markdown renderer); e2e |
 | P8 Home realness | #27 | ✅ shipped (PR #29) | team section + tech marquee on home; cert popup already reuses lightbox. (CMS provenance/approve UI deferred) |
 
-**Backend + core logic of the epic is DONE and tested (P1–P3, read layer, contributor classify).** Remaining is the UI rendering layer (P5–P8 pages/components + mandatory `bun run e2e`) and the gated deploy steps below.
+**All showcase phases P1–P8 are implemented, tested, and on PR #29** (nestjs 112 pass, nextjs 176 unit, e2e 42). What remains is NOT feature code — only the gated prod steps below and a few explicitly-deferred sub-items (P3 `GenerateStore`/LLM wiring + draft-approve CMS action, P5 co-dev avatars, P6 iframe preview popup, P8 CMS provenance UI).
 
 **Gated deploy steps (need developer / careful apply):**
 - Apply Drizzle migration `0002_clumsy_deathstrike.sql` to prod Supabase (`bun run db:migrate` with `DATABASE_URL`). Additive-only, safe, but touches prod.
