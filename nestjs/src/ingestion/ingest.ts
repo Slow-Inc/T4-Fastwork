@@ -19,7 +19,12 @@ async function main() {
 
   const chunks: Chunk[] = [];
 
-  const projects = await db.select().from(schema.projects);
+  // Only published projects feed the chat's RAG — never an auto-discovered
+  // GitHub draft awaiting first-run approval (#30, spec 2026-07-14).
+  const projects = await db
+    .select()
+    .from(schema.projects)
+    .where(eq(schema.projects.status, 'published'));
   for (const p of projects) {
     const category = p.categoryId
       ? (
@@ -94,7 +99,7 @@ async function main() {
       sourceId: c.sourceId,
       chunkIndex: c.chunkIndex,
       chunkText: c.text,
-      embedding: vectors[i]!,
+      embedding: vectors[i],
       metadata: c.metadata,
     })),
   );
