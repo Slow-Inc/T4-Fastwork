@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChatClient } from '@/components/chat/chat-client';
 import { useFloatingChat } from './floating-chat-context';
@@ -17,6 +17,7 @@ export function ChatButton() {
   const [handledNonce, setHandledNonce] = useState<number | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const prevWidth = useRef<number | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // The label toggles between "Ask T4 AI" and "ปิด", which changes the button's
   // (content-driven) width. Content changes don't fire a CSS transition, so animate
@@ -35,6 +36,40 @@ export function ChatButton() {
       { duration: 280, easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)' },
     );
   }, [open]);
+
+  // The panel's height grows as messages are added (content-driven auto height,
+  // which no CSS transition can catch). Watch it with a ResizeObserver and tween each
+  // height change with the Web Animations API so the panel stretches instead of jumping.
+  // Resizes caused by our own height animation are ignored to avoid a feedback loop.
+  useEffect(() => {
+    const el = panelRef.current;
+    if (!el) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    let prev = el.offsetHeight;
+    let anim: Animation | null = null;
+    const ro = new ResizeObserver(() => {
+      if (anim) return;
+      const h = el.offsetHeight;
+      if (h === prev) return;
+      const from = prev;
+      prev = h;
+      anim = el.animate(
+        [{ height: `${from}px` }, { height: `${h}px` }],
+        { duration: 240, easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)' },
+      );
+      const done = () => {
+        anim = null;
+        prev = el.offsetHeight;
+      };
+      anim.onfinish = done;
+      anim.oncancel = done;
+    });
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      anim?.cancel();
+    };
+  }, [open, exiting]);
 
   // A fresh request (even for the same project) reopens the panel. Adjusting
   // state during render (React's documented pattern for resetting state in
@@ -74,6 +109,7 @@ export function ChatButton() {
 
       {showPanel && (
         <div
+          ref={panelRef}
           className={`chat-panel${exiting ? ' chat-panel-exit' : ''}`}
           role="dialog"
           aria-label="ผู้ช่วย AI"
