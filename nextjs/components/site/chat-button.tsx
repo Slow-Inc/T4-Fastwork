@@ -11,6 +11,8 @@ import { useFloatingChat } from './floating-chat-context';
  * force this open pre-loaded with project context (§5.5 / FR-09). */
 export function ChatButton() {
   const [open, setOpen] = useState(false);
+  // Keeps the panel mounted through its collapse animation on close.
+  const [exiting, setExiting] = useState(false);
   const { request } = useFloatingChat();
   const [handledNonce, setHandledNonce] = useState<number | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -40,8 +42,22 @@ export function ChatButton() {
   // effect in the same render rather than cascading an extra one.
   if (request && request.nonce !== handledNonce) {
     setHandledNonce(request.nonce);
+    setExiting(false);
     setOpen(true);
   }
+
+  const toggle = () => {
+    if (open) {
+      setOpen(false);
+      // Play the collapse animation before unmounting, unless motion is reduced.
+      if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) setExiting(true);
+    } else {
+      setExiting(false);
+      setOpen(true);
+    }
+  };
+
+  const showPanel = open || exiting;
 
   return (
     <>
@@ -50,14 +66,21 @@ export function ChatButton() {
         type="button"
         className="chat"
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggle}
       >
         <i />
         {open ? 'ปิด' : 'Ask T4 AI'}
       </button>
 
-      {open && (
-        <div className="chat-panel" role="dialog" aria-label="ผู้ช่วย AI">
+      {showPanel && (
+        <div
+          className={`chat-panel${exiting ? ' chat-panel-exit' : ''}`}
+          role="dialog"
+          aria-label="ผู้ช่วย AI"
+          onAnimationEnd={(e) => {
+            if (exiting && e.target === e.currentTarget) setExiting(false);
+          }}
+        >
           <div className="chat-panel-head">
             <span className="t-meta">T4 AI Assistant</span>
             <Link href="/chat" className="chat-panel-expand t-meta">

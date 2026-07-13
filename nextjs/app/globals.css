@@ -3376,13 +3376,20 @@ footer {
 .chat-panel,
 .ai-greeting {
   transform-origin: bottom right;
+}
+.ai-greeting {
   animation: chatPop 0.26s cubic-bezier(0.2, 0.8, 0.25, 1) both;
 }
+/* The panel grows out of the launcher on open and collapses back into it on close. */
 .chat-panel {
+  animation: chatGrow 0.28s cubic-bezier(0.2, 0.8, 0.25, 1) both;
   transition:
     width 0.28s ease,
     max-height 0.28s ease,
     height 0.28s ease;
+}
+.chat-panel-exit {
+  animation: chatCollapse 0.2s cubic-bezier(0.4, 0, 1, 1) both;
 }
 @keyframes chatPop {
   from {
@@ -3392,6 +3399,26 @@ footer {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+@keyframes chatGrow {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes chatCollapse {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(22px) scale(0.7);
   }
 }
 .chat {
@@ -3411,6 +3438,7 @@ footer {
   .tm-modal,
   .tm-modal-inner,
   .chat-panel,
+  .chat-panel-exit,
   .ai-greeting {
     animation: none;
   }
