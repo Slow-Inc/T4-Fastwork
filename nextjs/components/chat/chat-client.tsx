@@ -11,6 +11,7 @@ import {
   type ChatStatus,
 } from '@/lib/chat-message';
 import { buildProjectGreetingMessage } from '@/lib/project-chat';
+import { loadChat, saveChat } from '@/lib/chat-persist';
 import { InlineCard, type CardData } from './inline-card';
 import { useChatSession } from './chat-session-context';
 
@@ -49,8 +50,23 @@ const QUICK_REPLIES = [
 export function ChatClient({
   initialProjectSlug,
   initialProjectTitle,
-}: { initialProjectSlug?: string; initialProjectTitle?: string } = {}) {
-  const [messages, setMessages] = useState<Message[]>([GREETING]);
+  persistKey,
+}: {
+  initialProjectSlug?: string;
+  initialProjectTitle?: string;
+  /** When set, the conversation survives unmount/remount via sessionStorage under
+   * this key (used by the floating widget so closing/reopening keeps the chat). */
+  persistKey?: string;
+} = {}) {
+  const [messages, setMessages] = useState<Message[]>(() => {
+    // Restore a persisted floating conversation up front (client-only mount, so no
+    // SSR hydration mismatch — the /chat page doesn't pass persistKey).
+    if (persistKey && typeof window !== 'undefined') {
+      const saved = loadChat(window.sessionStorage, persistKey);
+      if (saved) return saved.messages as Message[];
+    }
+    return [GREETING];
+  });
   const [input, setInput] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [projectSlug, setProjectSlug] = useState(initialProjectSlug);
@@ -166,6 +182,21 @@ export function ChatClient({
     // Only ever auto-sends once, on mount, guarded by autoSentRef.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The messages were restored in the useState initializer above; restore the matching
+  // backend sessionId here (a ref, so reopening keeps the assistant's memory too).
+  useEffect(() => {
+    if (!persistKey) return;
+    const saved = loadChat(window.sessionStorage, persistKey);
+    if (saved?.sessionId) sessionId.current = saved.sessionId;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist after every change (skip the lone greeting — nothing to remember yet).
+  useEffect(() => {
+    if (!persistKey || messages.length <= 1) return;
+    saveChat(window.sessionStorage, persistKey, { messages, sessionId: sessionId.current });
+  }, [messages, persistKey]);
 
   return (
     <div className="chat-full">

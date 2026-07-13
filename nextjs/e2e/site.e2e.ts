@@ -409,3 +409,20 @@ test('the floating AI chat panel animates open', async ({ page }) => {
   const anim = await panel.evaluate((el) => getComputedStyle(el).animationName);
   expect(anim, 'chat panel should declare an open animation').not.toBe('none');
 });
+
+test('the floating chat keeps its conversation when closed and reopened', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: /Ask T4 AI/i }).click();
+
+  const panel = page.locator('.chat-panel');
+  await expect(panel).toBeVisible();
+  await panel.locator('input, textarea').first().fill('จำคำนี้ได้ไหม APPLE123');
+  await panel.getByRole('button', { name: 'ส่ง' }).click();
+  await expect(panel.getByText('APPLE123')).toBeVisible();
+
+  // Close, then reopen — the message must still be there.
+  await page.getByRole('button', { name: /ปิด/ }).click();
+  await expect(page.locator('.chat-panel')).toHaveCount(0);
+  await page.getByRole('button', { name: /Ask T4 AI/i }).click();
+  await expect(page.locator('.chat-panel').getByText('APPLE123')).toBeVisible();
+});

@@ -125,6 +125,7 @@ export function ChatButton() {
           </div>
           <ChatClient
             key={request?.nonce ?? 'default'}
+            persistKey={request ? undefined : 'floating'}
             initialProjectSlug={request?.projectSlug}
             initialProjectTitle={request?.projectTitle}
           />
