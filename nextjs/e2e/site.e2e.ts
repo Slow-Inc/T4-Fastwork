@@ -88,15 +88,25 @@ test('/about shows the real SDLC alongside the client-facing "how we work" steps
   }
 });
 
-test('/about shows the team\'s real skills and education (synced with Fastwork)', async ({
+test('/about shows the real team roster (6 people, each with their own profile)', async ({
   page,
 }) => {
   await page.goto('/about', { waitUntil: 'networkidle' });
-  await expect(page.getByRole('heading', { name: 'ความสามารถของทีม' })).toBeVisible();
-  await expect(page.getByText('Next.js', { exact: true })).toBeVisible();
-  await expect(page.getByText('MongoDB', { exact: true })).toBeVisible();
-  await expect(page.getByText('วิทยาการคอมพิวเตอร์', { exact: true })).toBeVisible();
-  await expect(page.getByText('มหาวิทยาลัยกรุงเทพ').first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'ทีมที่ลงมือสร้างจริง' })).toBeVisible();
+
+  const cards = page.locator('.team-card');
+  await expect(cards).toHaveCount(6);
+
+  const xenodevCard = cards.filter({ hasText: 'xenodev' });
+  await expect(xenodevCard.getByText('Full-Stack Developer & Bot Specialist')).toBeVisible();
+  await expect(xenodevCard.getByText('Next.js', { exact: true })).toBeVisible();
+  await expect(
+    xenodevCard.getByText('AI for All: From Basics to GenAI Practice'),
+  ).toBeVisible();
+
+  // Slowgers is a PM, not a hands-on dev — should have no tech-stack chips.
+  const slowgersCard = cards.filter({ hasText: 'Slowgers' });
+  await expect(slowgersCard.locator('.team-stack')).toHaveCount(0);
 });
 
 test('experience + project-count claims are accurate everywhere (5 years, 21+ projects)', async ({

@@ -1461,68 +1461,67 @@ footer {
   font-size: clamp(28px, 4.4vw, 52px);
 }
 
-/* ---- SKILLS + EDUCATION (§4.6, synced with the team's Fastwork profile) —
-   a wrapping pill tag-cloud, deliberately unlike the card-grid / hairline-row
-   patterns used by the sections nearby (§14.4). ---- */
-.skill-chips {
+/* ---- TEAM (§4.6) — real per-person profiles from github.com/Slow-Inc, each
+   with their own skills/stack/education/certs (never merged across people). ---- */
+.team-grid {
   margin-top: 32px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  list-style: none;
-}
-.skill-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 16px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.02em;
-  color: var(--ink);
-  cursor: default;
-  transition: border-color 0.2s ease;
-}
-.skill-chip:hover {
-  border-color: var(--ink);
-}
-.skill-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--faint);
-  flex: none;
-}
-.skill-chip[data-level='expert'] .skill-dot {
-  background: var(--accent);
-}
-.edu-block {
-  margin-top: 56px;
-  padding-top: 32px;
-  border-top: 1px solid var(--line);
-}
-.edu-block > .t-idx {
-  display: block;
-  margin-bottom: 18px;
-}
-.edu-list {
-  list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px 32px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 22px;
 }
-.edu-list li {
+.team-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.3);
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 14px;
+  gap: 14px;
 }
-@media (prefers-reduced-motion: reduce) {
-  .skill-chip {
-    transition: none;
-  }
+.team-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.team-avatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--disp);
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--accent);
+}
+.team-head h3 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.team-head h3 a {
+  color: inherit;
+}
+.team-head h3 a:hover {
+  color: var(--accent);
+}
+.team-stack .chip {
+  font-size: 11px;
+  padding: 5px 9px;
+}
+.team-edu {
+  line-height: 1.5;
+}
+.team-certs {
+  list-style: none;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
 }
 
 /* ---- PRICING GUIDE (§4.6) ---- */

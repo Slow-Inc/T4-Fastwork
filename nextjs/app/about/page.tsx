@@ -5,7 +5,7 @@ import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { Certificates } from '@/components/site/certificates';
-import { SkillsSection } from '@/components/site/skills-section';
+import { TeamSection } from '@/components/site/team-section';
 import { AboutBlocks, AboutCta } from '@/components/pages/about-content';
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default function AboutPage() {
       <SiteNav />
       <div className="wrap">
         <AboutBlocks />
-        <SkillsSection />
+        <TeamSection />
         <Certificates />
         <AboutCta />
         <SiteFooter />

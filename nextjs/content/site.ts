@@ -118,60 +118,168 @@ export const certificates: Certificate[] = [
   { issuer: 'TDGA', title: 'AI Governance & Ethics' },
 ];
 
-// Education (from the team's Fastwork profile — kept in sync with it).
-export interface EducationEntry {
-  program: string;
-  institution: string;
+// The team (Requirement §4.6) — sourced from github.com/Slow-Inc's org README for
+// names/roles, and individually from each member for education/skills/certs. Each
+// person's own real data — nothing here is shared/merged across members.
+export interface TeamCertificate {
+  issuer: string;
+  title: string;
 }
-export const education: EducationEntry[] = [
-  {
-    program: 'เทคโนโลยีสารสนเทศและนวัตกรรมดิจิทัล (นานาชาติ)',
-    institution: 'มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ',
-  },
-  {
-    program: 'คณิตศาสตร์เชิงวิทยาการคอมพิวเตอร์',
-    institution: 'มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ',
-  },
-  { program: 'วิทยาการคอมพิวเตอร์', institution: 'มหาวิทยาลัยกรุงเทพ' },
-  { program: 'เทคโนโลยีสารสนเทศและนวัตกรรม', institution: 'มหาวิทยาลัยกรุงเทพ' },
-];
-
-// Skills (from the team's Fastwork profile — kept in sync with it).
-export type SkillLevel = 'expert' | 'intermediate';
-export interface Skill {
-  name: string;
-  detail?: string;
-  level: SkillLevel;
+export interface TeamMember {
+  handle: string;
+  githubUrl?: string;
+  role: string;
+  roleEn: string;
+  /** Broad skill categories (not every member is a hands-on developer). */
+  skills: string[];
+  /** Detailed tech stack — omitted for non-technical roles. */
+  stack?: string[];
+  education?: { program: string; institution: string };
+  certificates?: TeamCertificate[];
 }
-export const skills: Skill[] = [
-  { name: 'Next.js', detail: 'TypeScript, JavaScript, Tailwind, CSS, HTML', level: 'expert' },
-  { name: 'Nest.js', detail: 'TypeScript', level: 'expert' },
-  { name: 'React', detail: 'TypeScript, JavaScript, Tailwind, CSS, HTML', level: 'expert' },
-  { name: 'Vue.js', detail: 'TypeScript, JavaScript, Tailwind, CSS, HTML', level: 'expert' },
-  { name: 'AI Integration', detail: 'OCR, LLM, RAG, Chatbot, Document AI', level: 'expert' },
-  { name: 'Cloudflare', detail: 'CDN, WAF, Tunnel, DNS, Zero Trust', level: 'expert' },
-  { name: 'Payment Gateway', level: 'expert' },
-  { name: 'Mobile App', detail: 'Flutter, React Native', level: 'expert' },
-  { name: 'Cyber Security', level: 'intermediate' },
-  { name: 'Discord Bot', detail: 'Discord.js, Lavalink, Management', level: 'expert' },
+export const team: TeamMember[] = [
   {
-    name: 'Supabase',
-    detail: 'PostgreSQL, SMS/Email OTP, Database, Authentication, Realtime',
-    level: 'expert',
+    handle: 'Slowgers',
+    githubUrl: 'https://github.com/Slowgers',
+    role: 'Lead Developer & System Architect',
+    roleEn: 'Lead Developer & System Architect',
+    skills: ['Project Manager'],
+    education: { program: 'วิทยาการคอมพิวเตอร์', institution: 'มหาวิทยาลัยกรุงเทพ (BU)' },
   },
   {
-    name: 'Firebase',
-    detail: 'Firestore, SMS/Email OTP, Authentication, Cloud Messaging/FCM',
-    level: 'expert',
+    handle: '_InI4',
+    role: 'Vice Leader & Tester',
+    roleEn: 'Vice Leader & Tester',
+    skills: ['QA', 'Editor'],
+    stack: [
+      'Adobe Premiere Pro',
+      'Adobe Photoshop',
+      'Adobe Illustrator',
+      'Adobe After Effects',
+      'DaVinci Resolve',
+      'Canva',
+    ],
+    education: {
+      program: 'ภาพยนตร์และสื่อดิจิทัล',
+      institution: 'มหาวิทยาลัยธุรกิจบัณฑิตย์ (DPU)',
+    },
   },
-  { name: 'IoT', detail: 'MQTT', level: 'intermediate' },
   {
-    name: 'Network & Routing',
-    detail: 'Nginx, DNS, Load Balancing, API Gateway, Proxy, SSL/TLS, TCP/IP',
-    level: 'expert',
+    handle: 'xenodev',
+    githubUrl: 'https://github.com/xenodeve',
+    role: 'Full-Stack Developer & Bot Specialist',
+    roleEn: 'Full-Stack Developer & Bot Specialist',
+    skills: ['Tech Lead', 'Full-Stack', 'Infra', 'DevOps', 'UX/UI'],
+    stack: [
+      'Next.js',
+      'Vite.js',
+      'React.js',
+      'Nest.js',
+      'Express.js',
+      'Vercel',
+      'Radmin',
+      'Tailscale',
+      'Nginx',
+      'Figma',
+      'Cloudflare (CDN, DNS, Tunnel)',
+      'MongoDB',
+      'Supabase',
+      'Firebase',
+    ],
+    education: {
+      program: 'คณิตศาสตร์เชิงวิทยาการคอมพิวเตอร์',
+      institution: 'มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ (KMUTNB)',
+    },
+    certificates: [
+      { issuer: 'NVIDIA', title: 'AI for All: From Basics to GenAI Practice' },
+      { issuer: 'Microsoft · JA Thailand', title: 'Road to Data Scientists' },
+      { issuer: 'SIIT · Thammasat University', title: 'Basic Data Analytics Workshop' },
+      { issuer: "ToBeIT'67 · KMITL", title: 'เข้าสู่ไอทีลาดกระบัง' },
+    ],
   },
-  { name: 'Real-time Protocols', detail: 'WebSocket, Socket.io, SSE', level: 'expert' },
-  { name: 'UX/UI', detail: 'Figma', level: 'expert' },
-  { name: 'MySQL', level: 'expert' },
-  { name: 'MongoDB', level: 'expert' },
+  {
+    handle: 'akkanop-x',
+    githubUrl: 'https://github.com/akkanop-x',
+    role: 'Full-Stack Developer & Cyber Security',
+    roleEn: 'Full-Stack Developer & Cyber Security',
+    skills: ['Infra', 'DevOps', 'Backend', 'Security'],
+    stack: [
+      'Cloudflare (CDN, DNS, WAF, Tunnel)',
+      'Public Cloud (AWS, Azure, Google Cloud)',
+      'Nest.js',
+      'Express.js',
+      'Fastify',
+      'LINE OA',
+      'Vercel',
+      'Nginx',
+      'Runpod',
+      'Nmap',
+      'Burp Suite',
+      'Kali Linux',
+      'VMware',
+      'Radmin',
+      'Tailscale',
+      'MongoDB',
+      'MySQL',
+      'Supabase',
+      'Firebase',
+    ],
+    education: {
+      program: 'เทคโนโลยีสารสนเทศและนวัตกรรม',
+      institution: 'มหาวิทยาลัยกรุงเทพ (BU)',
+    },
+  },
+  {
+    handle: "Thanathorn'Z",
+    githubUrl: 'https://github.com/ThanathornZDev',
+    role: 'Backend Developer & Game Developer',
+    roleEn: 'Backend Developer & Game Developer',
+    skills: ['Infra', 'Network', 'Backend', 'Security'],
+    stack: [
+      'Cloudflare (CDN, DNS, WAF, Tunnel)',
+      'Public Cloud (AWS, Azure, Google Cloud)',
+      'DNS',
+      'DHCP',
+      'Express.js',
+      'LINE OA',
+      'Vercel',
+      'Nmap',
+      'Burp Suite',
+      'VMware',
+      'Radmin',
+      'Tailscale',
+    ],
+    education: { program: 'วิทยาการคอมพิวเตอร์', institution: 'มหาวิทยาลัยกรุงเทพ (BU)' },
+    certificates: [
+      { issuer: 'TDGA', title: 'Cyber Security Awareness' },
+      { issuer: 'TDGA', title: 'AI Governance & Ethics' },
+      { issuer: 'SET', title: 'Entrepreneurial Mindset' },
+      { issuer: 'Coursera', title: 'GenAI for Application Developers' },
+      { issuer: 'Speexx', title: 'English B1.2' },
+    ],
+  },
+  {
+    handle: 'Paradise',
+    githubUrl: 'https://github.com/CableMoMo2027',
+    role: 'Frontend Developer & Mobile Developer',
+    roleEn: 'Frontend Developer & Mobile Developer',
+    skills: ['Mobile App', 'Frontend', 'UX/UI'],
+    stack: [
+      'Flutter',
+      'Nuxt.js',
+      'Vue.js',
+      'Next.js',
+      'React.js',
+      'Vite.js',
+      'Vercel',
+      'Figma',
+      'MongoDB',
+      'Firebase',
+    ],
+    education: {
+      program: 'เทคโนโลยีสารสนเทศและนวัตกรรมดิจิทัล (นานาชาติ)',
+      institution: 'มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ (KMUTNB)',
+    },
+    certificates: [{ issuer: 'Microsoft · JA Thailand', title: 'Road to Data Scientists' }],
+  },
 ];

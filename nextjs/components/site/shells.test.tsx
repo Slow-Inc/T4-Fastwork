@@ -3,8 +3,8 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { HeroView } from './hero';
 import { ProcessSchematicView } from './process-schematic';
 import { SdlcSectionView } from './sdlc-section';
-import { SkillsSectionView } from './skills-section';
-import { processNodes, processSteps, sdlcPhases, skills, education } from '@/content/site';
+import { TeamSectionView } from './team-section';
+import { processNodes, processSteps, sdlcPhases, team } from '@/content/site';
 
 afterEach(cleanup);
 
@@ -66,30 +66,41 @@ describe('SdlcSection', () => {
   });
 });
 
-describe('SkillsSection', () => {
-  it('renders every skill name', () => {
-    render(<SkillsSectionView en={false} />);
-    for (const s of skills) expect(screen.getByText(s.name)).toBeDefined();
-  });
-
-  it('marks expert-level skills distinctly from intermediate ones', () => {
-    const { container } = render(<SkillsSectionView en={false} />);
-    const expertChips = container.querySelectorAll('.skill-chip[data-level="expert"]');
-    const intermediateChips = container.querySelectorAll(
-      '.skill-chip[data-level="intermediate"]',
-    );
-    expect(expertChips.length).toBe(skills.filter((s) => s.level === 'expert').length);
-    expect(intermediateChips.length).toBe(
-      skills.filter((s) => s.level === 'intermediate').length,
-    );
-  });
-
-  it('renders every education entry', () => {
-    render(<SkillsSectionView en={false} />);
-    for (const e of education) {
-      // Programs are unique; institutions repeat across entries, so use getAllByText for those.
-      expect(screen.getByText(e.program)).toBeDefined();
-      expect(screen.getAllByText(e.institution).length).toBeGreaterThan(0);
+describe('TeamSection', () => {
+  it('renders every team member by handle', () => {
+    render(<TeamSectionView en={false} />);
+    for (const m of team) {
+      expect(screen.getAllByText(m.handle).length).toBeGreaterThan(0);
     }
+  });
+
+  it('renders every member\'s role (Thai)', () => {
+    render(<TeamSectionView en={false} />);
+    for (const m of team) expect(screen.getByText(m.role)).toBeDefined();
+  });
+
+  it('renders every card as its own real profile, not a shared generic list', () => {
+    const { container } = render(<TeamSectionView en={false} />);
+    const cards = container.querySelectorAll('.team-card');
+    expect(cards.length).toBe(team.length);
+  });
+
+  it('renders stack chips only for members that have one (Slowgers has none)', () => {
+    const { container } = render(<TeamSectionView en={false} />);
+    const cards = Array.from(container.querySelectorAll('.team-card'));
+    const slowgersCard = cards.find((c) => c.textContent?.includes('Slowgers'));
+    expect(slowgersCard?.querySelector('.team-stack')).toBeNull();
+
+    const xenodevCard = cards.find((c) => c.textContent?.includes('xenodev'));
+    expect(xenodevCard?.querySelector('.team-stack')).not.toBeNull();
+  });
+
+  it("renders each member's own certificates, not a shared/merged list", () => {
+    render(<TeamSectionView en={false} />);
+    // NVIDIA is xenodev's cert only; SET is Thanathorn's cert only.
+    expect(screen.getByText('AI for All: From Basics to GenAI Practice')).toBeDefined();
+    expect(screen.getByText('Entrepreneurial Mindset')).toBeDefined();
+    // Both xenodev and Paradise separately completed the same course.
+    expect(screen.getAllByText('Road to Data Scientists').length).toBe(2);
   });
 });
