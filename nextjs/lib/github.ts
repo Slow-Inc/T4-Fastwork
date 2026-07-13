@@ -78,6 +78,50 @@ export function parseUser(body: unknown): LiveUser | null {
   };
 }
 
+/** Live detail for one repo (project detail page, spec P6). */
+export interface RepoDetail {
+  contributors: {
+    login: string;
+    avatar_url: string;
+    html_url: string;
+    contributions: number;
+  }[];
+  pulls: { user: { login: string; avatar_url: string; html_url: string } | null }[];
+  readme: string | null;
+}
+
+/** Narrow the `/github/repos/:owner/:repo/detail` payload to a `RepoDetail`. */
+export function parseRepoDetail(body: unknown): RepoDetail {
+  const b = body as {
+    contributors?: { data?: unknown } | null;
+    pulls?: { data?: unknown } | null;
+    readme?: { data?: { markdown?: string } | null } | null;
+  } | null;
+  const asArray = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
+  return {
+    contributors: asArray(b?.contributors?.data) as RepoDetail['contributors'],
+    pulls: asArray(b?.pulls?.data) as RepoDetail['pulls'],
+    readme: b?.readme?.data?.markdown ?? null,
+  };
+}
+
+/** Fetch a repo's contributors/pulls/README, or `null` on any failure. */
+export async function getRepoDetail(
+  owner: string,
+  repo: string,
+): Promise<RepoDetail | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/github/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/detail`,
+      { next: { revalidate: 60, tags: [`gh:${owner}/${repo}`] } },
+    );
+    if (!res.ok) return null;
+    return parseRepoDetail(await res.json());
+  } catch {
+    return null;
+  }
+}
+
 /** Fetch a member's live profile + profile README, or `null` on any failure. */
 export async function getMemberLiveUser(
   login: string,

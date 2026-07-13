@@ -1686,6 +1686,58 @@ footer {
   margin: 0.7em 0;
   color: color-mix(in srgb, var(--ink) 70%, transparent);
 }
+/* Project detail — owner chip + contributors (spec P6) */
+.detail-owner {
+  margin: 6px 0 10px;
+}
+.owner-chip {
+  display: inline-block;
+  font-size: 13px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.owner-personal {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.detail-contributors,
+.detail-readme {
+  margin-top: 28px;
+}
+.contrib-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+}
+.contrib-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 5px;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: 999px;
+  text-decoration: none;
+  color: inherit;
+}
+.contrib-avatar {
+  border-radius: 50%;
+  object-fit: cover;
+}
+.contrib-tag {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.contrib-tag.pending {
+  background: color-mix(in srgb, #d29922 25%, transparent);
+}
+.contrib-tag.external {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
 .tm-hero h1 {
   font-size: clamp(30px, 5vw, 46px);
   line-height: 1.05;
