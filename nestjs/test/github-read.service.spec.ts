@@ -23,7 +23,10 @@ describe('GithubReadService.getResource', () => {
   it('returns data with stale:false when the snapshot is fresh', async () => {
     const svc = new GithubReadService(
       reader({
-        'repos:foo': { data: [{ name: 'r' }], updatedAt: new Date(NOW - 60_000) },
+        'repos:foo': {
+          data: [{ name: 'r' }],
+          updatedAt: new Date(NOW - 60_000),
+        },
       }),
       STALE_MS,
       clock,
@@ -55,5 +58,26 @@ describe('GithubReadService.getResource', () => {
     await svc.getMemberRepos('xenodeve');
     await svc.getOrgRepos('Slow-Inc');
     expect(seen).toEqual(['repos:xenodeve', 'org:Slow-Inc']);
+  });
+
+  it('maps the showcase detail helpers to the right snapshot keys', async () => {
+    const seen: string[] = [];
+    const svc = new GithubReadService(
+      { read: async (k) => (seen.push(k), null) },
+      STALE_MS,
+      clock,
+    );
+    await svc.getRepoContributors('Slow-Inc', 'MangaDock');
+    await svc.getRepoPulls('Slow-Inc', 'MangaDock');
+    await svc.getRepoReadme('Slow-Inc', 'MangaDock');
+    await svc.getUserProfile('xenodeve');
+    await svc.getUserReadme('xenodeve');
+    expect(seen).toEqual([
+      'repo:Slow-Inc/MangaDock:contributors',
+      'repo:Slow-Inc/MangaDock:pulls',
+      'repo:Slow-Inc/MangaDock:readme',
+      'user:xenodeve',
+      'user:xenodeve:readme',
+    ]);
   });
 });
