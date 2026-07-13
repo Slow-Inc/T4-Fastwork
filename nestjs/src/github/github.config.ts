@@ -21,6 +21,13 @@ export const snapshotKey = {
   memberRepos: (login: string) => `repos:${login}`,
   orgRepos: (org: string) => `org:${org}`,
   repoLanguages: (login: string, repo: string) => `languages:${login}/${repo}`,
+  // Showcase detail resources (spec 2026-07-14, P1).
+  repoContributors: (owner: string, repo: string) =>
+    `repo:${owner}/${repo}:contributors`,
+  repoPulls: (owner: string, repo: string) => `repo:${owner}/${repo}:pulls`,
+  repoReadme: (owner: string, repo: string) => `repo:${owner}/${repo}:readme`,
+  userProfile: (login: string) => `user:${login}`,
+  userReadme: (login: string) => `user:${login}:readme`,
 };
 
 /** GitHub REST URLs. `sort=pushed` surfaces recently active repos first. */
@@ -31,4 +38,15 @@ export const githubUrl = {
     `https://api.github.com/orgs/${org}/repos?per_page=100&sort=pushed`,
   repoLanguages: (login: string, repo: string) =>
     `https://api.github.com/repos/${login}/${repo}/languages`,
+  // Showcase detail resources (spec 2026-07-14, P1).
+  repoContributors: (owner: string, repo: string) =>
+    `https://api.github.com/repos/${owner}/${repo}/contributors?per_page=100`,
+  repoPulls: (owner: string, repo: string) =>
+    `https://api.github.com/repos/${owner}/${repo}/pulls?state=open&per_page=100`,
+  repoReadme: (owner: string, repo: string) =>
+    `https://api.github.com/repos/${owner}/${repo}/readme`,
+  userProfile: (login: string) => `https://api.github.com/users/${login}`,
+  // The profile README lives in the special `<login>/<login>` repo.
+  userReadme: (login: string) =>
+    `https://api.github.com/repos/${login}/${login}/readme`,
 };

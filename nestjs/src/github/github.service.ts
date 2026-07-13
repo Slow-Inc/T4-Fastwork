@@ -92,6 +92,7 @@ export class GithubSnapshotService {
   async syncResource(
     key: string,
     url: string,
+    opts?: { map?: (data: unknown) => unknown },
   ): Promise<{ changed: boolean; data: unknown }> {
     const prior = await this.store.read(key);
     const res = await this.fetcher.fetch(url, prior?.etag ?? null);
@@ -100,7 +101,10 @@ export class GithubSnapshotService {
       return { changed: false, data: prior.data };
     }
 
-    await this.store.upsert({ key, data: res.data, etag: res.etag });
-    return { changed: true, data: res.data };
+    // A `map` lets callers store a derived shape (e.g. decoded README) instead
+    // of the raw GitHub payload, while keeping the ETag/304 machinery.
+    const data = opts?.map ? opts.map(res.data) : res.data;
+    await this.store.upsert({ key, data, etag: res.etag });
+    return { changed: true, data };
   }
 }
