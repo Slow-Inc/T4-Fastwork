@@ -1,14 +1,26 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import type { Project } from '@/content/catalog';
 import { useLocale } from '@/i18n/locale-context';
 
-/** Presentational portfolio card (Requirement §4.2), bilingual — pure/testable. */
-export function ProjectCardView({ project: p, en = false }: { project: Project; en?: boolean }) {
+/** Presentational portfolio card (Requirement §4.2), bilingual — pure/testable.
+ * Optional `className`/`style` let a list add a reveal/stagger without wrapping. */
+export function ProjectCardView({
+  project: p,
+  en = false,
+  className,
+  style,
+}: {
+  project: Project;
+  en?: boolean;
+  className?: string;
+  style?: CSSProperties;
+}) {
   const description = en && p.descriptionEn ? p.descriptionEn : p.description;
   return (
-    <article className="pcard">
+    <article className={`pcard${className ? ` ${className}` : ''}`} style={style}>
       <Link href={`/projects/${p.slug}`} className={`pcard-shot tw t-${p.tone}`}>
         {p.snapshotImage ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -51,7 +63,22 @@ export function ProjectCardView({ project: p, en = false }: { project: Project; 
   );
 }
 
-export function ProjectCard({ project }: { project: Project }) {
+export function ProjectCard({
+  project,
+  className,
+  style,
+}: {
+  project: Project;
+  className?: string;
+  style?: CSSProperties;
+}) {
   const { locale } = useLocale();
-  return <ProjectCardView project={project} en={locale === 'en'} />;
+  return (
+    <ProjectCardView
+      project={project}
+      en={locale === 'en'}
+      className={className}
+      style={style}
+    />
+  );
 }

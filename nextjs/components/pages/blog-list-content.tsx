@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Breadcrumb } from '@/components/site/breadcrumb';
 import type { BlogPost } from '@/content/blog';
 import { useLocale } from '@/i18n/locale-context';
+import { staggerDelay } from '@/lib/stagger';
 
 export function BlogListContent({ posts, q }: { posts: BlogPost[]; q?: string }) {
   const { locale } = useLocale();
@@ -24,7 +25,7 @@ export function BlogListContent({ posts, q }: { posts: BlogPost[]; q?: string })
         </p>
       </div>
 
-      <form method="get" action="/blog" className="blog-search rv">
+      <form method="get" action="/blog" className="blog-search rv rv-down">
         <input
           type="search"
           name="q"
@@ -36,9 +37,14 @@ export function BlogListContent({ posts, q }: { posts: BlogPost[]; q?: string })
       </form>
 
       {posts.length > 0 ? (
-        <div className="blog-grid rv">
-          {posts.map((p) => (
-            <Link key={p.slug} href={`/blog/${p.slug}`} className="blog-card">
+        <div className="blog-grid">
+          {posts.map((p, i) => (
+            <Link
+              key={p.slug}
+              href={`/blog/${p.slug}`}
+              className="blog-card rv rv-down"
+              style={{ transitionDelay: staggerDelay(i) }}
+            >
               <div className="blog-card-tags">
                 {p.tags.map((tag) => (
                   <span key={tag} className="t-meta">{tag}</span>
@@ -53,7 +59,7 @@ export function BlogListContent({ posts, q }: { posts: BlogPost[]; q?: string })
           ))}
         </div>
       ) : (
-        <div className="empty-state rv">
+        <div className="empty-state rv rv-down">
           <p>{t('ไม่พบบทความที่ตรงกับคำค้น', 'No articles match your search')}</p>
           <Link href="/blog" className="pcard-link">{t('ดูบทความทั้งหมด', 'View all articles')}</Link>
         </div>

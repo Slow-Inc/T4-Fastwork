@@ -46,7 +46,7 @@ export function AboutBlocks() {
             </p>
           </div>
 
-          <div className="about-block rv">
+          <div className="about-block rv rv-down">
             <h2>{t('สิ่งที่เราทำ', 'What we do')}</h2>
             <div className="about-grid">
               {whatWeDo.map((w) => (
@@ -58,7 +58,7 @@ export function AboutBlocks() {
             </div>
           </div>
 
-          <div className="about-block rv">
+          <div className="about-block rv rv-down">
             <h2>{t('ทำไมต้องเลือกเรา', 'Why choose us')}</h2>
             <div className="about-grid">
               {whyUs.map((w) => {
@@ -73,7 +73,7 @@ export function AboutBlocks() {
             </div>
           </div>
 
-          <div className="about-block rv">
+          <div className="about-block rv rv-down">
             <h2>{t('ขั้นตอนการทำงาน', 'How we work')}</h2>
             <ol className="about-steps">
               {steps.map((s) => {
