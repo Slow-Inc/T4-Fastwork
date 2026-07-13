@@ -9,14 +9,18 @@ Design: `docs/superpowers/specs/2026-07-14-github-project-showcase-design.md`. B
 
 | Phase | Issue | State | Notes |
 |---|---|---|---|
-| P1 sync (contributors/PRs/README/profile) | #28 | ✅ shipped (PR #29) | `GithubDetailService` + config + tests |
-| P2 projects table + CurateService | #27 | ✅ code shipped (PR #29) | migration `0002` **NOT yet applied to prod** (gated) |
-| P3 ContentGenerateService (LLM, delta, guardrails, draft gate) | — 🔴 | not started | needs a `ProjectDraftStore`/generate store impl + `CUSTOM_OPENAI_*` |
+| P1 sync (contributors/PRs/README/profile) | #28 | ✅ shipped (PR #29) | `GithubDetailService` + config + 8 tests |
+| P2 projects table + CurateService | #27 | ✅ code shipped (PR #29) | migration `0002` **NOT yet applied to prod** (gated); 9 tests |
+| P3 ContentGenerateService (LLM, delta, guardrails, reconcile) | #27 | ✅ **logic shipped** (PR #29) | pure reconcile + tech-guard + delta, 5 tests. **Remaining:** `GenerateStore` Drizzle impl + `LlmClient` (`CUSTOM_OPENAI_*`) + cron wiring + draft-gate approve action |
+| P6/P7 backend read layer | #27 | ✅ shipped (PR #29) | `/repos/:o/:r/detail` + `/users/:login` endpoints + 5 tests |
+| P6 contributor classification (frontend logic) | #27 | ✅ shipped (PR #29) | `lib/contributors.ts` merged+pending / team+external, 4 tests |
 | P4 screenshot worker (GitHub Action + og:image) | — 🔴 | not started | Playwright in CI, not serverless |
-| P5 `/projects` merge + labels + clear mockup | — 🔴 | not started | extend `projects-repo.ts` + `project-map.ts` |
-| P6 `/projects/[slug]` detail | — 🔴 | not started | Requirement §4.3 |
-| P7 `/team/[slug]` + `/about` avatar + profile README | — 🔴 | not started | |
-| P8 Home realness + CMS provenance UI | — 🔴 | not started | reuse cert popup + team section + tech carousel |
+| P5 `/projects` merge + labels + clear mockup | — 🔴 | not started (UI) | extend `projects-repo.ts` + `project-map.ts` for new cols; card labels/avatars |
+| P6 `/projects/[slug]` **page/components** | — 🔴 | not started (UI) | logic + read layer ready; needs page + blog render (README native + supplement) + preview popup + **e2e** |
+| P7 `/team/[slug]` + `/about` avatar + profile README (UI) | — 🔴 | not started (UI) | read layer ready; needs avatar wiring + README section + **e2e** |
+| P8 Home realness + CMS provenance UI | — 🔴 | not started (UI) | reuse cert popup + team section + tech carousel; CMS approve/lock |
+
+**Backend + core logic of the epic is DONE and tested (P1–P3, read layer, contributor classify).** Remaining is the UI rendering layer (P5–P8 pages/components + mandatory `bun run e2e`) and the gated deploy steps below.
 
 **Gated deploy steps (need developer / careful apply):**
 - Apply Drizzle migration `0002_clumsy_deathstrike.sql` to prod Supabase (`bun run db:migrate` with `DATABASE_URL`). Additive-only, safe, but touches prod.
@@ -26,7 +30,7 @@ Design: `docs/superpowers/specs/2026-07-14-github-project-showcase-design.md`. B
 
 | Item | Issue | State |
 |---|---|---|
-| Chat RAG answers from live GitHub data + fix inflated stats (site uses correct 5yr/21+; wrong 20yr/500 likely in nestjs chat system-prompt/RAG seed) | #30 | filed, not started |
+| Chat inflated stats — **DONE** (`system-prompt.ts` `TEAM_FACTS` pins 5yr/21+, forbids invention). RAG-from-live-GitHub part **remains** | #30 | ✅ stats fixed (PR #29); RAG-freshness not started |
 | Share conversation between floating popup and `/chat` AI page (history continuity) | #31 | filed, not started |
 
 ## Tech debt (pre-existing, surfaced this session) 🔴
