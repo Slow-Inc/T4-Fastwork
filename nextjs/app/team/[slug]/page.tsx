@@ -6,6 +6,7 @@ import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { TeamMemberContent } from '@/components/pages/team-member-content';
 import { team } from '@/content/site';
+import { getMemberLiveRepos, githubLogin } from '@/lib/github';
 import { pageAlternates } from '@/lib/seo';
 
 type Params = Promise<{ slug: string }>;
@@ -32,11 +33,15 @@ export default async function TeamMemberPage({ params }: { params: Params }) {
   const m = team.find((x) => x.slug === slug);
   if (!m) notFound();
 
+  // Overlay live GitHub data when the backend is reachable; null → static fallback.
+  const login = githubLogin(m.githubUrl);
+  const liveRepos = login ? await getMemberLiveRepos(login) : null;
+
   return (
     <>
       <SiteNav />
       <div className="wrap">
-        <TeamMemberContent member={m} />
+        <TeamMemberContent member={m} liveRepos={liveRepos} />
         <SiteFooter />
       </div>
       <ChatButton />
