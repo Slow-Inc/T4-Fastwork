@@ -840,6 +840,9 @@ footer {
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+  /* keep the label on one line while the width tweens (no 2-line flash on expand) */
+  white-space: nowrap;
+  overflow: hidden;
   transition: 0.2s;
   box-shadow: 0 6px 20px rgba(19, 19, 17, 0.16);
 }
