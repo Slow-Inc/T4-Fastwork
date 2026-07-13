@@ -325,6 +325,23 @@ test('project detail "ask AI about this project" opens the floating widget groun
   expect((requestBody?.message as string) ?? '').toContain('MangaDock');
 });
 
+test('home shows the team directory and a tech-stack marquee — spec P8', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  await page.goto('/', { waitUntil: 'networkidle' });
+
+  // The team is visible on the home page (credibility — real people).
+  await expect(page.locator('#team')).toBeVisible();
+  await expect(
+    page.locator('#team').getByRole('link', { name: /xenodev|Slowgers/ }).first(),
+  ).toBeVisible();
+  // The tech-stack marquee renders its track.
+  await expect(page.locator('.tech-marquee-track')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('project detail shows an owner chip (team/personal) — spec P6', async ({
   page,
 }) => {

@@ -1744,6 +1744,57 @@ footer {
 .owner-badge.owner-personal {
   background: color-mix(in srgb, var(--ink) 10%, transparent);
 }
+/* Tech-stack marquee (spec P8) */
+.tech-marquee {
+  overflow: hidden;
+  width: 100%;
+  padding: 18px 0;
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+}
+.tech-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: tech-marquee-scroll 40s linear infinite;
+}
+.tech-marquee-row {
+  display: flex;
+  gap: 14px;
+  padding: 0 7px;
+  margin: 0;
+  list-style: none;
+}
+.tech-marquee-item {
+  flex: none;
+  font-family: var(--mono, monospace);
+  font-size: 14px;
+  padding: 7px 16px;
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+@keyframes tech-marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tech-marquee-track {
+    animation: none;
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: center;
+    gap: 10px;
+  }
+}
 .tm-hero h1 {
   font-size: clamp(30px, 5vw, 46px);
   line-height: 1.05;
