@@ -48,3 +48,48 @@ export async function getMemberLiveRepos(
     return null;
   }
 }
+
+/** A member's live GitHub identity (spec 2026-07-14, P7). */
+export interface LiveUser {
+  login: string;
+  avatarUrl: string | null;
+  name: string | null;
+  bio: string | null;
+  /** Raw markdown of the profile README (`<login>/<login>` repo), or null. */
+  profileReadme: string | null;
+}
+
+/** Narrow the `/github/users/:login` payload to a `LiveUser`, or null. */
+export function parseUser(body: unknown): LiveUser | null {
+  const b = body as
+    | {
+        profile?: { data?: { login?: string; avatar_url?: string; name?: string; bio?: string } | null } | null;
+        readme?: { data?: { markdown?: string } | null } | null;
+      }
+    | null;
+  const p = b?.profile?.data;
+  if (!p || typeof p.login !== 'string') return null;
+  return {
+    login: p.login,
+    avatarUrl: p.avatar_url ?? null,
+    name: p.name ?? null,
+    bio: p.bio ?? null,
+    profileReadme: b?.readme?.data?.markdown ?? null,
+  };
+}
+
+/** Fetch a member's live profile + profile README, or `null` on any failure. */
+export async function getMemberLiveUser(
+  login: string,
+): Promise<LiveUser | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/github/users/${encodeURIComponent(login)}`,
+      { next: { revalidate: 60, tags: [`gh:${login}`] } },
+    );
+    if (!res.ok) return null;
+    return parseUser(await res.json());
+  } catch {
+    return null;
+  }
+}

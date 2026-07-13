@@ -1,6 +1,7 @@
 import type { TeamMember, TeamCertificate } from '@/content/site';
-import type { LiveRepo } from '@/lib/github';
+import type { LiveRepo, LiveUser } from '@/lib/github';
 import { TechChips } from './tech-chips';
+import { MarkdownContent } from '@/lib/markdown';
 import { staggerDelay } from '@/lib/stagger';
 
 /**
@@ -14,12 +15,15 @@ export function TeamMemberView({
   en,
   onOpenCert,
   liveRepos,
+  liveUser,
 }: {
   member: TeamMember;
   en: boolean;
   onOpenCert?: (cert: TeamCertificate) => void;
   /** Live GitHub repos (ADR 0003); overlays star counts when present, else absent. */
   liveRepos?: LiveRepo[] | null;
+  /** Live GitHub identity (spec P7): real avatar + profile README. */
+  liveUser?: LiveUser | null;
 }) {
   const initial = member.handle.replace(/^_/, '').charAt(0).toUpperCase();
   const starsByUrl = new Map(
@@ -31,9 +35,21 @@ export function TeamMemberView({
       <header className="tm-hero rv">
         <div className="t-idx">01 — {en ? 'Profile' : 'โปรไฟล์'}</div>
         <div className="tm-hero-row">
-          <span className="tm-avatar" aria-hidden="true">
-            {initial}
-          </span>
+          {liveUser?.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className="tm-avatar tm-avatar-img"
+              src={liveUser.avatarUrl}
+              alt={`${member.handle} GitHub avatar`}
+              width={72}
+              height={72}
+              loading="lazy"
+            />
+          ) : (
+            <span className="tm-avatar" aria-hidden="true">
+              {initial}
+            </span>
+          )}
           <div>
             <h1>{member.handle}</h1>
             <p className="tm-role">{en ? member.roleEn : member.role}</p>
@@ -55,6 +71,16 @@ export function TeamMemberView({
           </div>
         </div>
       </header>
+
+      {/* GitHub profile README (spec P7) — native rendering when present */}
+      {liveUser?.profileReadme && (
+        <section className="tm-block rv tm-readme">
+          <div className="t-idx">
+            {en ? 'GitHub profile' : 'โปรไฟล์ GitHub'}
+          </div>
+          <MarkdownContent source={liveUser.profileReadme} />
+        </section>
+      )}
 
       {/* 02 — Skills */}
       <section className="tm-block rv">
