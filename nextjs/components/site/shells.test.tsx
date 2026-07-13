@@ -76,7 +76,12 @@ describe('TeamSection', () => {
 
   it('renders every member\'s role (Thai)', () => {
     render(<TeamSectionView en={false} />);
-    for (const m of team) expect(screen.getByText(m.role)).toBeDefined();
+    for (const m of team) {
+      // A role can coincide with one of that same member's skill chips
+      // (e.g. xenodev's role "Tech Lead" is also listed as a skill), so a
+      // member's role text may legitimately appear more than once.
+      expect(screen.getAllByText(m.role).length).toBeGreaterThan(0);
+    }
   });
 
   it('renders every card as its own real profile, not a shared generic list', () => {

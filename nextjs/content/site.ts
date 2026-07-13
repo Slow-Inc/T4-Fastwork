@@ -141,15 +141,15 @@ export const team: TeamMember[] = [
   {
     handle: 'Slowgers',
     githubUrl: 'https://github.com/Slowgers',
-    role: 'Lead Developer & System Architect',
-    roleEn: 'Lead Developer & System Architect',
+    role: 'Project Manager',
+    roleEn: 'Project Manager',
     skills: ['Project Manager'],
     education: { program: 'วิทยาการคอมพิวเตอร์', institution: 'มหาวิทยาลัยกรุงเทพ (BU)' },
   },
   {
     handle: '_InI4',
-    role: 'Vice Leader & Tester',
-    roleEn: 'Vice Leader & Tester',
+    role: 'Editor',
+    roleEn: 'Editor',
     skills: ['QA', 'Editor'],
     stack: [
       'Adobe Premiere Pro',
@@ -167,8 +167,8 @@ export const team: TeamMember[] = [
   {
     handle: 'xenodev',
     githubUrl: 'https://github.com/xenodeve',
-    role: 'Full-Stack Developer & Bot Specialist',
-    roleEn: 'Full-Stack Developer & Bot Specialist',
+    role: 'Tech Lead',
+    roleEn: 'Tech Lead',
     skills: ['Tech Lead', 'Full-Stack', 'Infra', 'DevOps', 'UX/UI'],
     stack: [
       'Next.js',
@@ -200,8 +200,8 @@ export const team: TeamMember[] = [
   {
     handle: 'akkanop-x',
     githubUrl: 'https://github.com/akkanop-x',
-    role: 'Full-Stack Developer & Cyber Security',
-    roleEn: 'Full-Stack Developer & Cyber Security',
+    role: 'Backend, Infra',
+    roleEn: 'Backend, Infra',
     skills: ['Infra', 'DevOps', 'Backend', 'Security'],
     stack: [
       'Cloudflare (CDN, DNS, WAF, Tunnel)',
@@ -232,8 +232,8 @@ export const team: TeamMember[] = [
   {
     handle: "Thanathorn'Z",
     githubUrl: 'https://github.com/ThanathornZDev',
-    role: 'Backend Developer & Game Developer',
-    roleEn: 'Backend Developer & Game Developer',
+    role: 'Backend, Infra',
+    roleEn: 'Backend, Infra',
     skills: ['Infra', 'Network', 'Backend', 'Security'],
     stack: [
       'Cloudflare (CDN, DNS, WAF, Tunnel)',

@@ -98,7 +98,9 @@ test('/about shows the real team roster (6 people, each with their own profile)'
   await expect(cards).toHaveCount(6);
 
   const xenodevCard = cards.filter({ hasText: 'xenodev' });
-  await expect(xenodevCard.getByText('Full-Stack Developer & Bot Specialist')).toBeVisible();
+  // "Tech Lead" appears twice on this card (role label + skill chip) — just
+  // confirm the role text renders at all rather than asserting exact count.
+  await expect(xenodevCard.getByText('Tech Lead', { exact: true }).first()).toBeVisible();
   await expect(xenodevCard.getByText('Next.js', { exact: true })).toBeVisible();
   await expect(
     xenodevCard.getByText('AI for All: From Basics to GenAI Practice'),
