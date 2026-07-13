@@ -6,7 +6,6 @@ import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { Breadcrumb } from '@/components/site/breadcrumb';
 import { ProjectCard } from '@/components/projects/project-card';
-import { staggerDelay } from '@/lib/stagger';
 import { FilterBar } from '@/components/projects/filter-bar';
 import { filterProjectList, facetsFor, type ProjectFilter } from '@/content/catalog';
 import { getAllProjects } from '@/lib/projects-repo';
@@ -65,14 +64,9 @@ export default async function ProjectsPage({
           </p>
 
           {results.length > 0 ? (
-            <div className="pgrid">
-              {results.map((p, i) => (
-                <ProjectCard
-                  key={p.slug}
-                  project={p}
-                  className="rv rv-down"
-                  style={{ transitionDelay: staggerDelay(i) }}
-                />
+            <div className="pgrid rv rv-down">
+              {results.map((p) => (
+                <ProjectCard key={p.slug} project={p} />
               ))}
             </div>
           ) : (
