@@ -7,6 +7,36 @@ export interface ChatMessage {
 }
 
 /**
+ * A tagged stream delta: `reasoning` = the model's chain-of-thought
+ * (`delta.reasoning_content`, streamed first), `content` = the answer
+ * (`delta.content`). The chat layer routes these to the thinking box vs the
+ * answer bubble.
+ */
+export interface LlmDelta {
+  kind: 'reasoning' | 'content';
+  value: string;
+}
+
+/**
+ * Map one OpenAI-compatible stream chunk to a tagged delta, or null for
+ * empty/role-only/finish chunks. `reasoning_content` is not in the SDK types
+ * (a DeepSeek/Qwen extension), so it is read defensively.
+ */
+export function chunkToDelta(chunk: unknown): LlmDelta | null {
+  const delta = (chunk as { choices?: { delta?: Record<string, unknown> }[] })
+    ?.choices?.[0]?.delta;
+  const reasoning = delta?.reasoning_content;
+  if (typeof reasoning === 'string' && reasoning.length > 0) {
+    return { kind: 'reasoning', value: reasoning };
+  }
+  const content = delta?.content;
+  if (typeof content === 'string' && content.length > 0) {
+    return { kind: 'content', value: content };
+  }
+  return null;
+}
+
+/**
  * Thin adapter over any OpenAI-compatible chat endpoint (here: the 9arm gateway).
  * Kept behind this interface so the provider can be swapped/fallen back to
  * without touching callers. Streams raw text deltas; marker parsing and RAG
@@ -30,15 +60,19 @@ export class LlmService {
     return this.client;
   }
 
-  /** Streams assistant text deltas for the given conversation. */
-  async *streamChat(messages: ChatMessage[]): AsyncGenerator<string> {
+  /**
+   * Streams tagged deltas (reasoning then content) for the given conversation.
+   * Reasoning deltas carry the model's chain-of-thought; content deltas carry
+   * the answer.
+   */
+  async *streamChat(messages: ChatMessage[]): AsyncGenerator<LlmDelta> {
     const stream = await this.getClient().chat.completions.create({
       model: this.model,
       messages,
       stream: true,
     });
     for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content;
+      const delta = chunkToDelta(chunk);
       if (delta) yield delta;
     }
   }

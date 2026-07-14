@@ -59,6 +59,9 @@ export class ChatController {
           case 'session':
             send('session', { sessionId: ev.sessionId });
             break;
+          case 'reasoning':
+            send('reasoning', { text: ev.text });
+            break;
           case 'token':
             send('token', { text: ev.text });
             break;
@@ -66,7 +69,10 @@ export class ChatController {
             send('card', ev.card);
             break;
           case 'done':
-            send('done', { latencyMs: ev.latencyMs });
+            send('done', {
+              latencyMs: ev.latencyMs,
+              reasoningMs: ev.reasoningMs,
+            });
             break;
           case 'error':
             send('error', {

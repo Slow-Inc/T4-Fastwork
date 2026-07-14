@@ -7,9 +7,9 @@ import type { ChatEvent } from '../src/chat/chat.types';
 const fakeLlm = {
   // eslint-disable-next-line require-yield
   async *streamChat() {
-    yield 'สวัสดี ';
-    yield '[PROJECT:fin-';
-    yield 'track] ครับ';
+    yield { kind: 'content', value: 'สวัสดี ' };
+    yield { kind: 'content', value: '[PROJECT:fin-' };
+    yield { kind: 'content', value: 'track] ครับ' };
   },
 };
 const emptyRetrieval = { retrieve: async () => [] };
@@ -64,6 +64,67 @@ describe('ChatService.streamChat', () => {
     expect(cards[0]!.card).toEqual({ kind: 'project', slug: 'fin-track' });
   });
 
+  it('emits reasoning events, strips the leading blank line, and reports reasoningMs', async () => {
+    // Mirrors the real gateway: reasoning_content first, then content that starts
+    // with "\n\n" (the source of the blank-first-line bug).
+    const thinkingLlm = {
+      async *streamChat() {
+        yield { kind: 'reasoning', value: 'Let me' };
+        yield { kind: 'reasoning', value: ' think.' };
+        yield { kind: 'content', value: '\n\n' };
+        yield { kind: 'content', value: 'สวัสดี' };
+        yield { kind: 'content', value: 'ครับ' };
+      },
+    };
+    const svc = new ChatService(
+      thinkingLlm as never,
+      emptyRetrieval as never,
+      fakeLog() as never,
+      fakeProjectContext() as never,
+    );
+    const events = await collect(svc.streamChat({ message: 'hi', language: 'th' }));
+
+    const reasoning = events
+      .filter((e): e is Extract<ChatEvent, { type: 'reasoning' }> => e.type === 'reasoning')
+      .map((e) => e.text)
+      .join('');
+    expect(reasoning).toBe('Let me think.');
+
+    const answer = events
+      .filter((e): e is Extract<ChatEvent, { type: 'token' }> => e.type === 'token')
+      .map((e) => e.text)
+      .join('');
+    expect(answer).toBe('สวัสดีครับ'); // no leading blank line
+
+    // no token is emitted for the whitespace-only "\n\n" prefix
+    const firstToken = events.find((e) => e.type === 'token') as
+      | Extract<ChatEvent, { type: 'token' }>
+      | undefined;
+    expect(firstToken?.text).toBe('สวัสดี');
+
+    // reasoning events come before any answer token
+    const firstReasoningIdx = events.findIndex((e) => e.type === 'reasoning');
+    const firstTokenIdx = events.findIndex((e) => e.type === 'token');
+    expect(firstReasoningIdx).toBeLessThan(firstTokenIdx);
+
+    const done = events.at(-1) as Extract<ChatEvent, { type: 'done' }>;
+    expect(done.type).toBe('done');
+    expect(typeof done.reasoningMs).toBe('number');
+  });
+
+  it('sets no reasoningMs when the model does not think (content only)', async () => {
+    const svc = new ChatService(
+      fakeLlm as never,
+      emptyRetrieval as never,
+      fakeLog() as never,
+      fakeProjectContext() as never,
+    );
+    const events = await collect(svc.streamChat({ message: 'hi', language: 'th' }));
+    const done = events.at(-1) as Extract<ChatEvent, { type: 'done' }>;
+    expect(done.reasoningMs).toBeUndefined();
+    expect(events.some((e) => e.type === 'reasoning')).toBe(false);
+  });
+
   it('emits an error event with a fallback message when the LLM throws', async () => {
     const throwingLlm = {
       // eslint-disable-next-line require-yield
@@ -114,7 +175,7 @@ describe('ChatService.streamChat', () => {
     const capturingLlm = {
       async *streamChat(messages: { role: string; content: string }[]) {
         systemPrompt = messages.find((m) => m.role === 'system')?.content ?? '';
-        yield 'ตอบแล้วครับ';
+        yield { kind: 'content', value: 'ตอบแล้วครับ' };
       },
     };
     const record = {
