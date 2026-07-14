@@ -27,9 +27,9 @@ Design: ADR `docs/adr/0004-serverless-realtime-freshness.md` + spec `docs/superp
 **🎉 #25 fully activated** — all 3 event sources live: heal-on-read (Vercel env set), hourly cron (Actions secret, verified HTTP 201), org webhook (verified ping 200). The "double" works end-to-end on prod.
 - **Known gap (non-blocking):** the webhook's `refreshOwner` re-syncs repo *lists*, not per-repo showcase *detail* (contributors/pulls/readme) — those freshen via the hourly cron + heal-on-read. Acceptable for a safety-net; expand only if push-latency on contributors matters.
 
-## Active — Autonomous GitHub project showcase (epic #27, PR #29)
+## Shipped & closed — Autonomous GitHub project showcase (epic #27, PR #29 merged + deployed)
 
-Design: `docs/superpowers/specs/2026-07-14-github-project-showcase-design.md`. Branch `feat/27-github-project-showcase`.
+Design: `docs/superpowers/specs/2026-07-14-github-project-showcase-design.md`. **Status: #27/#28/#30/#31 CLOSED; PR #29 merged (`39d2ed2`) + deployed to prod; migrations `0002_showcase_projects_columns` + `enable_realtime_github_snapshots` applied; RAG re-ingested.** Table below is historical record; only the "Deferred" list under it remains.
 
 | Phase | Issue | State | Notes |
 |---|---|---|---|
@@ -46,16 +46,13 @@ Design: `docs/superpowers/specs/2026-07-14-github-project-showcase-design.md`. B
 
 **All showcase phases P1–P8 are implemented, tested, and on PR #29** (nestjs 112 pass, nextjs 176 unit, e2e 42). What remains is NOT feature code — only the gated prod steps below and a few explicitly-deferred sub-items (P3 `GenerateStore`/LLM wiring + draft-approve CMS action, P5 co-dev avatars, P6 iframe preview popup, P8 CMS provenance UI).
 
-**Gated deploy steps (need developer / careful apply):**
-- Apply Drizzle migration `0002_clumsy_deathstrike.sql` to prod Supabase (`bun run db:migrate` with `DATABASE_URL`). Additive-only, safe, but touches prod.
-- Wire `CurateService`/`GithubDetailService` into the refresh cron (which repos are "tracked" comes from published `projects` rows).
+**Deferred (post-#27, NO open issue — re-file if pursued):**
+- P3 autonomous content-gen: `GenerateStore` Drizzle impl + `LlmClient` (`CUSTOM_OPENAI_*`) + refresh-cron wiring + draft-gate approve CMS action.
+- **#30 RAG-from-live-GitHub** — chat answers grounded in fresh GitHub data (the stats-fix half shipped; the RAG-freshness half never started).
+- P5 co-dev avatars on project cards · P6 iframe preview popup · P8 CMS provenance/approve UI.
+- Wire `CurateService`/`GithubDetailService` "tracked repos" from published `projects` rows (currently `GITHUB_SHOWCASE_REPOS` constant).
 
-## Active — AI chat corrections
-
-| Item | Issue | State |
-|---|---|---|
-| Chat inflated stats — **DONE** (`system-prompt.ts` `TEAM_FACTS` pins 5yr/21+, forbids invention). RAG-from-live-GitHub part **remains** | #30 | ✅ stats fixed (PR #29); RAG-freshness not started |
-| Share conversation between floating popup and `/chat` AI page (history continuity) | #31 | filed, not started |
+_(#31 share-conversation popup↔/chat: DONE — `SHARED_CHAT_KEY`, closed. #30 stats-fix: DONE, closed.)_
 
 ## Tech debt (pre-existing, surfaced this session) 🔴
 
