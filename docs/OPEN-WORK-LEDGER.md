@@ -3,6 +3,20 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## Active — Serverless-native live freshness (#25)
+
+Design: ADR `docs/adr/0004-serverless-realtime-freshness.md` + spec `docs/superpowers/specs/2026-07-14-serverless-realtime-freshness-design.md`. Branch `feat/25-serverless-realtime-freshness`.
+
+| Phase | State | Notes |
+|---|---|---|
+| R1 backend heal + single-flight + `POST /github/heal` | ✅ shipped (`2e6ac7b`) | `GithubHealService`, `resolveHealTarget`, wired; 8 tests |
+| R4 Next.js `after()` stale-heal trigger on live-surface reads | ✅ shipped | `nextjs/lib/heal.ts` (keys mirror backend `resolveHealTarget`, stale-gate extractors, secret-guarded `postHeal`, `after()`-wired `scheduleHeal`); wired into `getMemberLiveRepos`/`getMemberLiveUser`/`getRepoDetail`; 13 unit tests; 189 nextjs unit + 42 e2e + build green |
+| R2 enable Supabase Realtime on `github_snapshots` + anon-SELECT RLS | 🔴 not started | **security boundary + prod DB** — run `/security-review` first, then MCP apply |
+| R3 frontend `<LiveSnapshot>` client Realtime subscriber → swap UI (the "double") | 🔴 not started | needs R2 |
+| R5 wire webhook + cron safety-net to the heal path | 🔴 not started | org webhook = human step |
+
+**Gated deploy step (R4):** set `GITHUB_REFRESH_SECRET` on the **frontend** Vercel project (same value as the nestjs project's `GITHUB_REFRESH_SECRET`). Unset = heal is a silent no-op (pages still serve stale data). Added to `nextjs/.env.example`.
+
 ## Active — Autonomous GitHub project showcase (epic #27, PR #29)
 
 Design: `docs/superpowers/specs/2026-07-14-github-project-showcase-design.md`. Branch `feat/27-github-project-showcase`.
