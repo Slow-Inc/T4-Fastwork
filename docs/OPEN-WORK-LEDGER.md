@@ -17,10 +17,12 @@ Design: ADR `docs/adr/0004-serverless-realtime-freshness.md` + spec `docs/superp
 
 **All #25 code phases (R1–R5) are implemented, tested, committed.** The "double" works end-to-end: idle = zero work · serve stale instantly · heal-on-read (R4→R1) · current viewer gets fresh via Realtime + `updateTag` (R3) · genuinely-new gate (ETag/304) · quiet on leave. See `docs/deploy/realtime-freshness-runbook.md`.
 
-**Human activation steps (can't be done AFK — external dashboards):**
-1. **Frontend Vercel env:** set `GITHUB_REFRESH_SECRET` on the *frontend* project (= nestjs value). Unset → heal no-ops (pages still serve stale).
-2. **Actions secret:** set repo secret `BACKEND_REFRESH_SECRET` (= backend `GITHUB_REFRESH_SECRET`; can't reuse the `GITHUB_`-prefixed name). Unset → cron no-ops.
-3. **Org webhook** on `Slow-Inc` → `POST <backend>/github/webhook`, secret = `GITHUB_WEBHOOK_SECRET`, events: push (carried over from ADR 0003).
+**Merged + deployed:** PR #32 merged to `master` (merge `4d66774`); frontend redeployed to prod (aliased `t4-fastwork-nextjs.vercel.app`, 200). R4 heal-on-read is live.
+
+**Human activation steps (external dashboards):**
+1. ✅ **Frontend Vercel env** — `GITHUB_REFRESH_SECRET` set on `t4-fastwork-nextjs` (production, Sensitive) via Vercel CLI + redeploy. See `docs/deploy/vercel-cli.md`.
+2. 🔴 **Actions secret:** set repo secret `BACKEND_REFRESH_SECRET` (= backend `GITHUB_REFRESH_SECRET`; can't reuse the `GITHUB_`-prefixed name; `gh secret set` works). Unset → cron no-ops.
+3. 🔴 **Org webhook** on `Slow-Inc` → `POST <backend>/github/webhook`, secret = `GITHUB_WEBHOOK_SECRET`, events: push (carried over from ADR 0003).
 - **Known gap (non-blocking):** the webhook's `refreshOwner` re-syncs repo *lists*, not per-repo showcase *detail* (contributors/pulls/readme) — those freshen via the hourly cron + heal-on-read. Acceptable for a safety-net; expand only if push-latency on contributors matters.
 
 ## Active — Autonomous GitHub project showcase (epic #27, PR #29)
