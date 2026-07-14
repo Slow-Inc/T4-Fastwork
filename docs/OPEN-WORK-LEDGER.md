@@ -9,7 +9,7 @@ PRD: `docs/superpowers/specs/2026-07-15-owui-app-shell-chat.md`. Design inputs: 
 
 | Phase | Issue | State | Notes |
 |---|---|---|---|
-| P0 conversation store (`lib/chat-conversations.ts`, pure, migrate `floating` key) | #38 | ⬜ next — TDD | list/create/switch/rename/delete/touch + recency-group; foundation for sidebar |
+| P0 conversation store (`lib/chat-conversations.ts`, pure, migrate `floating` key) | #38 | ✅ shipped (`dc0fc3e`) | list/create/switch/rename/delete/touch + `groupByRecency` + `migrateFloating` (idempotent) + `deriveTitle`; 23 unit tests. Pure lib — not wired to UI yet (P1). Issue still OPEN pending confirm-to-close |
 | P1 `<ChatSidebar>` + two-pane app-shell | #39 | ⬜ | collapsible, grouped history, identity footer; the big one |
 | P2 empty-state + suggestions | #40 | ⬜ | centered identity + composer + `⚡ แนะนำ` rows |
 | P3 message actions (copy/regenerate) | #41 | ⬜ | hover-reveal action row on assistant turns |
