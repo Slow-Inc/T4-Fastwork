@@ -35,9 +35,36 @@ Event sources feeding the "double" (no loop, no timer held): **heal-on-read**
    - The workflow only runs on the default branch — it activates after this branch
      merges to `master`.
 
-3. **Org webhook** (carried from ADR 0003) — `Slow-Inc` org → Settings → Webhooks
-   → add `POST <backend>/github/webhook`, content-type `application/json`, secret =
-   backend `GITHUB_WEBHOOK_SECRET`, events: **push** (or "repository" events).
+3. **Org webhook** (carried from ADR 0003) — `POST <backend>/github/webhook`,
+   content-type `application/json`, secret = backend `GITHUB_WEBHOOK_SECRET`,
+   events: **push**. Two ways:
+
+   **Via CLI (`gh api`)** — needs the `admin:org_hook` scope, which the default
+   `gh` token does NOT have (nor does the fine-grained PAT). Grant it once
+   (interactive — opens a browser), then create + verify. Run from the repo root:
+
+   ```bash
+   # 1) one-time scope grant (interactive; must run in a real terminal / TTY)
+   gh auth refresh -h github.com -s admin:org_hook
+
+   # 2) create the hook — secret read from nestjs/.env, never printed/echoed.
+   #    (jq isn't installed here, so build the JSON with printf; the secret is
+   #     validated to a JSON-safe charset first. With jq: use --arg instead.)
+   secret=$(grep '^GITHUB_WEBHOOK_SECRET=' nestjs/.env | head -1 \
+            | sed 's/^GITHUB_WEBHOOK_SECRET=//' | tr -d '\r\n')
+   secret="${secret%\"}"; secret="${secret#\"}"
+   printf '{"name":"web","active":true,"events":["push"],"config":{"url":"%s","content_type":"json","secret":"%s"}}' \
+     "https://t4-fastwork-nestjs.vercel.app/github/webhook" "$secret" \
+     | gh api -X POST orgs/Slow-Inc/hooks --input -
+
+   # 3) verify + send a test ping (GitHub delivers a ping event)
+   gh api orgs/Slow-Inc/hooks --jq '.[] | "\(.id) \(.config.url) active=\(.active)"'
+   gh api -X POST orgs/Slow-Inc/hooks/<hook-id>/pings
+   ```
+
+   **Via UI** — `Slow-Inc` org → Settings → Webhooks → Add webhook, same four
+   values as above.
+
    - Without it, pushes don't fast-path; the cron + heal-on-read still keep data
      fresh, just less immediately.
 
