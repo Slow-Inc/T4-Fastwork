@@ -2282,18 +2282,41 @@ footer {
   flex: 1;
   min-height: 0;
   width: 100%;
-  max-width: 940px;
+  max-width: 900px;
   margin-left: auto;
   margin-right: auto;
+  position: relative;
+  /* Visible-grid rails framing the conversation column (§14 Visible Grid). */
+  border-inline: 1px solid var(--line);
+}
+/* + registration marks at the rail corners (top-left / bottom-right), a Swiss
+   grid detail — only at real macro joints (research: 4–6 per screen). */
+.chat-page .chat-full::before,
+.chat-page .chat-full::after {
+  content: "+";
+  position: absolute;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--faint);
+  pointer-events: none;
+}
+.chat-page .chat-full::before {
+  top: -6px;
+  left: -5px;
+}
+.chat-page .chat-full::after {
+  bottom: -6px;
+  right: -5px;
 }
 .chat-scroll {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 0;
   overflow-y: auto;
-  padding: 8px 4px;
+  padding: 0;
   /* Thin, unobtrusive scrollbar (Open WebUI feel) instead of the chunky default. */
   scrollbar-width: thin;
   scrollbar-color: rgba(19, 19, 17, 0.2) transparent;
@@ -2308,43 +2331,87 @@ footer {
 .chat-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
-.chat-msg {
+/* ---- Conversation turns — Visible-Grid Swiss (NO bubbles) ----
+   Role is shown by a mono identity label + alignment, not a speech bubble.
+   Turns are flat rows separated by a hairline rule (the "ledger" grid);
+   elevation is by hairline + whitespace, never shadow (§14 · research). */
+.chat-turn {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 22px;
+  border-top: 1px solid var(--line);
 }
-.chat-user {
-  justify-content: flex-end;
+.chat-turn:first-child {
+  border-top: 0;
 }
 .chat-assistant {
-  justify-content: flex-start;
+  align-items: flex-start;
 }
-.chat-bubble {
-  max-width: 76%;
-  padding: 14px 18px;
-  border-radius: 14px;
-  font-size: 15.5px;
-  line-height: 1.65;
+.chat-user {
+  align-items: flex-end;
+  text-align: right;
+}
+/* Mono identity label — the ONE place the accent appears per turn (assistant
+   identity color-code, like entire.io's agent tokens). */
+.chat-turn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  /* muted (≥4.5:1), not faint — small labels need real contrast. The accent
+     lives ONLY in the identity dot (research: ration the accent hard; orange
+     on paper is 3.5:1, too low for 11px text). */
+  color: var(--muted);
+}
+.chat-turn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.chat-turn-body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-width: 68ch;
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--ink);
 }
-.chat-user .chat-bubble {
-  background: var(--ink);
-  color: var(--paper);
-  border-bottom-right-radius: 4px;
-}
-.chat-assistant .chat-bubble {
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid var(--line);
-  border-bottom-left-radius: 4px;
+.chat-user .chat-turn-body {
+  align-items: flex-end;
 }
 .chat-text {
   white-space: pre-wrap;
 }
+/* Mechanical thinking indicator — mono label + accent block caret (terminal
+   feel), not bouncing dots (research: quiet-luxury motion). */
 .chat-thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-family: var(--mono);
   font-size: 12px;
-  color: var(--faint);
-  animation: chatpulse 1.4s ease-in-out infinite;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.chat-caret {
+  width: 7px;
+  height: 13px;
+  background: var(--accent);
+  display: inline-block;
+  animation: chatcaret 0.8s steps(2, jump-none) infinite;
+}
+@keyframes chatcaret {
+  50% {
+    opacity: 0;
+  }
 }
 @keyframes chatpulse {
   0%, 100% { opacity: 0.4; }
@@ -2353,10 +2420,14 @@ footer {
 
 /* AI thinking / chain-of-thought (Open WebUI style): collapsed by default in
    both states — a spinner + "กำลังคิด…" while thinking, "💭 คิดอยู่ N วิ" once done. */
+/* Thinking box — a hairline-framed block (no side-stripe: a >1px colored
+   left-border is an impeccable "absolute ban"). Elevation by hairline only. */
 .chat-thinking-box {
-  margin-bottom: 8px;
-  border-left: 2px solid var(--line, rgba(0, 0, 0, 0.12));
-  padding-left: 10px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--paper) 60%, transparent);
 }
 .chat-thinking-summary {
   font-family: var(--mono);
@@ -2444,10 +2515,12 @@ footer {
   gap: 8px;
 }
 .quick-chip {
-  font-family: var(--body);
-  font-size: 13.5px;
-  padding: 7px 13px;
-  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  border-radius: 6px;
   border: 1px solid var(--line);
   background: transparent;
   color: var(--muted);
@@ -2457,28 +2530,39 @@ footer {
 .quick-chip:hover:not(:disabled) {
   color: var(--ink);
   border-color: var(--ink);
+  background: rgba(19, 19, 17, 0.035);
 }
 .quick-chip:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
-/* Composer — a single rounded, elevated bar (Open WebUI: rounded-3xl + shadow +
-   backdrop-blur) with the attach + send controls inside it. */
+/* Composer = the Liquid-Glass pillar's home on the chat surface — a floating
+   frosted bar pinned above the conversation (§14.5: glass on floating layers
+   only). Rectangular-ish rounded-lg (Swiss), soft shadow, faint specular edge. */
 .chat-input-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 6px 6px 8px;
-  border-radius: 26px;
+  padding: 7px 8px 7px 14px;
+  border-radius: 14px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(12px) saturate(140%);
-  box-shadow: 0 6px 24px rgba(19, 19, 17, 0.08);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  background: rgba(244, 242, 237, 0.6);
+  backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: 0 2px 12px rgba(19, 19, 17, 0.05);
+  transition: border-color 0.2s;
+}
+/* faint specular highlight along the top edge — the "liquid glass" material cue */
+.chat-input-row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border-top: 1px solid rgba(255, 255, 255, 0.55);
+  pointer-events: none;
 }
 .chat-input-row:focus-within {
   border-color: var(--ink);
-  box-shadow: 0 8px 28px rgba(19, 19, 17, 0.12);
 }
 .chat-input-row input {
   flex: 1;
@@ -2495,7 +2579,7 @@ footer {
 /* Explicit placeholder colour — the browser default (ink @ .5) only hits ~3.9:1
    on the glass bg; bump to ≥4.5:1 (WCAG placeholder contrast). */
 .chat-input-row input::placeholder {
-  color: rgba(19, 19, 17, 0.64);
+  color: var(--muted);
   opacity: 1;
 }
 /* Round send button inside the composer (OWUI: rounded-full p-1.5). */

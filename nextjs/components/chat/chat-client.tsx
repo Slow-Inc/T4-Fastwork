@@ -246,37 +246,53 @@ export function ChatClient({
         </div>
       )}
       <div className="chat-scroll" ref={scrollRef}>
-        {messages.map((m, i) => (
-          <div key={i} className={`chat-msg chat-${m.role}`}>
-            <div className="chat-bubble">
-              {m.role === 'assistant' && m.reasoning && (
-                <ThinkingBox
-                  reasoning={m.reasoning}
-                  durationMs={m.reasoningMs}
-                  live={i === messages.length - 1 && status === 'thinking'}
-                />
-              )}
-              {m.parts.map((part, j) =>
-                part.type === 'text' ? (
-                  <span key={j} className="chat-text">
-                    {part.text}
-                  </span>
+        {messages.map((m, i) => {
+          const isLast = i === messages.length - 1;
+          return (
+            <article key={i} className={`chat-turn chat-${m.role}`}>
+              <div className="chat-turn-label">
+                {m.role === 'assistant' ? (
+                  <>
+                    <span className="chat-turn-dot" aria-hidden="true" />
+                    ผู้ช่วย AI
+                  </>
                 ) : (
-                  <InlineCard key={j} card={part.card} />
-                ),
-              )}
-              {m.role === 'assistant' &&
-                i === messages.length - 1 &&
-                status === 'thinking' &&
-                !m.reasoning && (
-                  <span className="chat-thinking">กำลังคิด…</span>
+                  'คุณ'
                 )}
-              {shouldShowTypingCursor(m.role, i === messages.length - 1, status) && (
-                <span className="typing-cursor" aria-hidden="true" />
-              )}
-            </div>
-          </div>
-        ))}
+              </div>
+              <div className="chat-turn-body">
+                {m.role === 'assistant' && m.reasoning && (
+                  <ThinkingBox
+                    reasoning={m.reasoning}
+                    durationMs={m.reasoningMs}
+                    live={isLast && status === 'thinking'}
+                  />
+                )}
+                {m.parts.map((part, j) =>
+                  part.type === 'text' ? (
+                    <span key={j} className="chat-text">
+                      {part.text}
+                    </span>
+                  ) : (
+                    <InlineCard key={j} card={part.card} />
+                  ),
+                )}
+                {m.role === 'assistant' &&
+                  isLast &&
+                  status === 'thinking' &&
+                  !m.reasoning && (
+                    <span className="chat-thinking">
+                      <span className="chat-caret" aria-hidden="true" />
+                      กำลังคิด
+                    </span>
+                  )}
+                {shouldShowTypingCursor(m.role, isLast, status) && (
+                  <span className="typing-cursor" aria-hidden="true" />
+                )}
+              </div>
+            </article>
+          );
+        })}
       </div>
 
       {status === 'error' && (
