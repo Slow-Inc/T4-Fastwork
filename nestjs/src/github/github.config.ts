@@ -59,3 +59,38 @@ export const githubUrl = {
   userReadme: (login: string) =>
     `https://api.github.com/repos/${login}/${login}/readme`,
 };
+
+/**
+ * Reverse a snapshot key to the GitHub URL that heals it (spec ADR 0004, R1).
+ * `readme: true` means the payload is a `/readme` response that must be decoded
+ * with `parseReadme` before storing. Returns `null` for keys that are not
+ * healable from GitHub (e.g. webhook `delivery:` markers, unknown shapes).
+ */
+export function resolveHealTarget(
+  key: string,
+): { url: string; readme: boolean } | null {
+  // repo:<owner>/<repo>:<sub>
+  const repo = key.match(/^repo:([^/]+)\/([^:]+):(contributors|pulls|readme)$/);
+  if (repo) {
+    const [, owner, name, sub] = repo;
+    if (sub === 'contributors')
+      return { url: githubUrl.repoContributors(owner, name), readme: false };
+    if (sub === 'pulls')
+      return { url: githubUrl.repoPulls(owner, name), readme: false };
+    return { url: githubUrl.repoReadme(owner, name), readme: true };
+  }
+  // user:<login>:readme  (must test before the plain user: case)
+  const userReadme = key.match(/^user:([^:]+):readme$/);
+  if (userReadme)
+    return { url: githubUrl.userReadme(userReadme[1]), readme: true };
+  // user:<login>
+  const user = key.match(/^user:([^:]+)$/);
+  if (user) return { url: githubUrl.userProfile(user[1]), readme: false };
+  // repos:<login>
+  const repos = key.match(/^repos:(.+)$/);
+  if (repos) return { url: githubUrl.userRepos(repos[1]), readme: false };
+  // org:<org>
+  const org = key.match(/^org:(.+)$/);
+  if (org) return { url: githubUrl.orgRepos(org[1]), readme: false };
+  return null;
+}
