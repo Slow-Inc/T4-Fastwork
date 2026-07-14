@@ -13,9 +13,15 @@ Design: ADR `docs/adr/0004-serverless-realtime-freshness.md` + spec `docs/superp
 | R4 Next.js `after()` stale-heal trigger on live-surface reads | ✅ shipped | `nextjs/lib/heal.ts` (keys mirror backend `resolveHealTarget`, stale-gate extractors, secret-guarded `postHeal`, `after()`-wired `scheduleHeal`); wired into `getMemberLiveRepos`/`getMemberLiveUser`/`getRepoDetail`; 13 unit tests; 189 nextjs unit + 42 e2e + build green |
 | R2 enable Supabase Realtime on `github_snapshots` + anon-SELECT RLS | ✅ shipped (prod) | anon-SELECT RLS already existed (ADR 0003); only added table to `supabase_realtime` publication (migration `enable_realtime_github_snapshots`). `/security-review` passed clean (+ regex-charset hardening `2694c71`). Realtime enforces the existing SELECT RLS → no new exposure; advisors show no `github_snapshots` warning |
 | R3 frontend `<LiveSnapshot>` client Realtime subscriber → swap UI (the "double") | ✅ shipped | `lib/live-snapshot.ts` (keys/filter/`tagForKey`/subscribe, 8 tests) + `lib/live-actions.ts` (`updateTag` Server Action — Next 16 read-your-own-writes; `revalidateTag`/route-handler can't do immediate-fresh) + `components/site/live-snapshot.tsx` (graceful: no env/failed WS/empty keys → server snapshot). Wired into team + project pages; 197 unit + 42 e2e + build green |
-| R5 wire webhook + cron safety-net to the heal path | 🔴 next | org webhook = human step; cron + webhook→heal wiring is code |
+| R5 wire webhook + cron safety-net to the heal path | ✅ shipped (code) | **Webhook** already reaches the "double" (its `refreshOwner` upsert broadcasts via Realtime since R2) — no change needed. **Cron safety-net** = committed Action `.github/workflows/github-refresh-cron.yml` (hourly POST `/github/refresh`; single-flight + ETag make idle runs cheap). Activates on merge to `master`; gated on Actions secret |
 
-**Gated deploy step (R4):** set `GITHUB_REFRESH_SECRET` on the **frontend** Vercel project (same value as the nestjs project's `GITHUB_REFRESH_SECRET`). Unset = heal is a silent no-op (pages still serve stale data). Added to `nextjs/.env.example`.
+**All #25 code phases (R1–R5) are implemented, tested, committed.** The "double" works end-to-end: idle = zero work · serve stale instantly · heal-on-read (R4→R1) · current viewer gets fresh via Realtime + `updateTag` (R3) · genuinely-new gate (ETag/304) · quiet on leave. See `docs/deploy/realtime-freshness-runbook.md`.
+
+**Human activation steps (can't be done AFK — external dashboards):**
+1. **Frontend Vercel env:** set `GITHUB_REFRESH_SECRET` on the *frontend* project (= nestjs value). Unset → heal no-ops (pages still serve stale).
+2. **Actions secret:** set repo secret `BACKEND_REFRESH_SECRET` (= backend `GITHUB_REFRESH_SECRET`; can't reuse the `GITHUB_`-prefixed name). Unset → cron no-ops.
+3. **Org webhook** on `Slow-Inc` → `POST <backend>/github/webhook`, secret = `GITHUB_WEBHOOK_SECRET`, events: push (carried over from ADR 0003).
+- **Known gap (non-blocking):** the webhook's `refreshOwner` re-syncs repo *lists*, not per-repo showcase *detail* (contributors/pulls/readme) — those freshen via the hourly cron + heal-on-read. Acceptable for a safety-net; expand only if push-latency on contributors matters.
 
 ## Active — Autonomous GitHub project showcase (epic #27, PR #29)
 
