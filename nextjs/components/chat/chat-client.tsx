@@ -64,15 +64,12 @@ export function ChatClient({
    * this key (used by the floating widget so closing/reopening keeps the chat). */
   persistKey?: string;
 } = {}) {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    // Restore a persisted floating conversation up front (client-only mount, so no
-    // SSR hydration mismatch — the /chat page doesn't pass persistKey).
-    if (persistKey && typeof window !== 'undefined') {
-      const saved = loadChat(window.sessionStorage, persistKey);
-      if (saved) return saved.messages as Message[];
-    }
-    return [GREETING];
-  });
+  // Always start from the deterministic greeting so the server and the first
+  // client render produce identical HTML. A persisted conversation is restored
+  // AFTER mount (effect below) — reading sessionStorage during render caused a
+  // hydration mismatch on the SSR'd /chat page, which passes persistKey since #31
+  // shared the popup↔page conversation.
+  const [messages, setMessages] = useState<Message[]>([GREETING]);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [projectSlug, setProjectSlug] = useState(initialProjectSlug);
@@ -214,12 +211,17 @@ export function ChatClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // The messages were restored in the useState initializer above; restore the matching
-  // backend sessionId here (a ref, so reopening keeps the assistant's memory too).
+  // Restore a persisted conversation after mount (client-only) — messages AND the
+  // backend sessionId (a ref, so reopening keeps the assistant's memory too). Doing
+  // this post-hydration (not in the useState initializer) keeps SSR/client HTML
+  // identical, avoiding a hydration mismatch on /chat.
   useEffect(() => {
     if (!persistKey) return;
     const saved = loadChat(window.sessionStorage, persistKey);
-    if (saved?.sessionId) sessionId.current = saved.sessionId;
+    if (saved) {
+      if (saved.messages?.length) setMessages(saved.messages as Message[]);
+      if (saved.sessionId) sessionId.current = saved.sessionId;
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
