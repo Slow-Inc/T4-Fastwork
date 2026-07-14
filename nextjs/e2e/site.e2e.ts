@@ -353,9 +353,10 @@ test('project detail shows an owner chip (team/personal) — spec P6', async ({
   const chip = page.locator('.owner-chip');
   await expect(chip).toBeVisible();
   await expect(chip).toContainText('T4 Labs');
-  // Live contributors/README overlay is graceful when the backend is offline —
-  // the page must still render its h1 with no console errors.
-  await expect(page.locator('h1')).toBeVisible();
+  // The page must render its title h1 with no console errors. `.first()` targets
+  // the project title — when the backend is up, the live README (spec P6/P7)
+  // renders its own markdown H1s below, so there are legitimately several.
+  await expect(page.locator('h1').first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 

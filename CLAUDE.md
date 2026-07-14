@@ -57,7 +57,21 @@ Uses **Bun** as the package manager/runtime (per spec §7.0) — commit `bun.loc
 - `bun test` — **Bun's native test runner** (not Jest). Test files: `*.spec.ts` under `test/`. e2e tests boot the Nest app via `@nestjs/testing` + `supertest`.
 - `bun run lint` — ESLint
 
-Backend env lives in `nestjs/.env.local` (gitignored; template in `nestjs/.env.example`).
+### Env files — dev vs production
+
+Both apps follow the same convention (env files are gitignored; the committed
+`*.env.example` is the template of names):
+
+- **Local development → `.env.local`.** Loaded when running `bun run dev` /
+  `start:dev` and the test runners on your machine.
+- **Production → `.env`.** The plain `.env` holds the production values (the same
+  keys as the example). Set the same keys in the Vercel project's Environment
+  Variables for the deployed runtime.
+
+So for `nestjs/`: local secrets in `nestjs/.env.local`, prod in `nestjs/.env`
+(both gitignored; template `nestjs/.env.example`). Same for `nextjs/`. When a
+value is shared across the two apps (e.g. `GITHUB_REFRESH_SECRET`), keep it
+identical in both apps' files for the environment you're running.
 
 ## Architecture — `nextjs/`
 

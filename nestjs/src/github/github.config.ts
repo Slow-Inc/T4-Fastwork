@@ -59,3 +59,46 @@ export const githubUrl = {
   userReadme: (login: string) =>
     `https://api.github.com/repos/${login}/${login}/readme`,
 };
+
+/**
+ * Reverse a snapshot key to the GitHub URL that heals it (spec ADR 0004, R1).
+ * `readme: true` means the payload is a `/readme` response that must be decoded
+ * with `parseReadme` before storing. Returns `null` for keys that are not
+ * healable from GitHub (e.g. webhook `delivery:` markers, unknown shapes).
+ */
+export function resolveHealTarget(
+  key: string,
+): { url: string; readme: boolean } | null {
+  // Segment charsets (defense-in-depth): GitHub logins/orgs are alphanumeric +
+  // hyphen; repo names also allow dot and underscore. Restricting to these keeps
+  // path/query characters (`/`, `..`, `?`, `#`, space) out of the fixed
+  // api.github.com URL, so nothing beyond the intended resource can be reached.
+  const OWNER = '[A-Za-z0-9-]+';
+  const REPO = '[A-Za-z0-9._-]+';
+  // repo:<owner>/<repo>:<sub>
+  const repo = key.match(
+    new RegExp(`^repo:(${OWNER})/(${REPO}):(contributors|pulls|readme)$`),
+  );
+  if (repo) {
+    const [, owner, name, sub] = repo;
+    if (sub === 'contributors')
+      return { url: githubUrl.repoContributors(owner, name), readme: false };
+    if (sub === 'pulls')
+      return { url: githubUrl.repoPulls(owner, name), readme: false };
+    return { url: githubUrl.repoReadme(owner, name), readme: true };
+  }
+  // user:<login>:readme  (must test before the plain user: case)
+  const userReadme = key.match(new RegExp(`^user:(${OWNER}):readme$`));
+  if (userReadme)
+    return { url: githubUrl.userReadme(userReadme[1]), readme: true };
+  // user:<login>
+  const user = key.match(new RegExp(`^user:(${OWNER})$`));
+  if (user) return { url: githubUrl.userProfile(user[1]), readme: false };
+  // repos:<login>
+  const repos = key.match(new RegExp(`^repos:(${OWNER})$`));
+  if (repos) return { url: githubUrl.userRepos(repos[1]), readme: false };
+  // org:<org>
+  const org = key.match(new RegExp(`^org:(${OWNER})$`));
+  if (org) return { url: githubUrl.orgRepos(org[1]), readme: false };
+  return null;
+}

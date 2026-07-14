@@ -1,0 +1,51 @@
+# Freshness safety-net for the live GitHub portfolio (ADR 0004, #25 R5).
+# The "double" is normally delivered by two event sources: heal-on-read (Next
+# after() → POST /github/heal when a viewer hits a stale snapshot) and the org
+# webhook (push → POST /github/webhook). This cron is the THIRD source — it keeps
+# data fresh when nobody is viewing AND no webhook fired. It POSTs the existing
+# secret-guarded /github/refresh, which runs under a single-flight advisory lock
+# and only upserts (→ Realtime broadcast) when GitHub returns genuinely-new data
+# (ETag/304 gate), so an idle run is cheap.
+#
+# Gated: needs the repo Actions secret BACKEND_REFRESH_SECRET (its VALUE must
+# equal the backend's GITHUB_REFRESH_SECRET env — the Actions secret can't be
+# named with the reserved GITHUB_ prefix). Optionally set the repo variable
+# BACKEND_URL to override the default prod backend. Until the secret is set the
+# job no-ops. Scheduled workflows only run on the default branch (activates on
+# merge to master).
+name: github-refresh-cron
+
+on:
+  schedule:
+    - cron: '0 * * * *' # hourly safety-net; heal-on-read + webhook cover active traffic
+  workflow_dispatch: {} # manual "refresh now"
+
+concurrency:
+  group: github-refresh-cron
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger backend refresh (safety-net)
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          if [ -z "$REFRESH_SECRET" ]; then
+            echo "BACKEND_REFRESH_SECRET not set — no-op (safety-net disabled)."
+            exit 0
+          fi
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" \
+            "$BACKEND_URL/github/refresh")
+          echo "POST $BACKEND_URL/github/refresh -> HTTP $code"
+          cat /tmp/body 2>/dev/null || true
+          echo
+          # 2xx = refreshed or single-flight-skipped (both fine). Anything else
+          # (401 bad secret, 5xx backend down) is a real failure worth surfacing.
+          case "$code" in
+            2*) exit 0 ;;
+            *) echo "::error::refresh failed with HTTP $code"; exit 1 ;;
+          esac

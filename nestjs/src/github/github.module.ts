@@ -15,6 +15,7 @@ import { DatabaseModule } from '../database/database.module';
 import { DrizzleSnapshotStore } from './drizzle-snapshot.store';
 import { GithubFetcher, GithubSnapshotService } from './github.service';
 import { GithubDetailService } from './github-detail.service';
+import { GithubHealService } from './github-heal.service';
 import {
   GithubRefreshService,
   SnapshotOwnerRefresher,
@@ -44,6 +45,14 @@ import { GithubWriteController } from './github-write.controller';
       useFactory: (syncer: GithubSnapshotService) =>
         new GithubDetailService(syncer),
       inject: [GithubSnapshotService],
+    },
+    {
+      provide: GithubHealService,
+      useFactory: (
+        syncer: GithubSnapshotService,
+        store: DrizzleSnapshotStore,
+      ) => new GithubHealService(syncer, store),
+      inject: [GithubSnapshotService, DrizzleSnapshotStore],
     },
     {
       provide: GithubRefreshService,

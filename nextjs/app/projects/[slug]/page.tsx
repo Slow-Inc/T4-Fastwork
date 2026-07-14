@@ -6,9 +6,11 @@ import { ChatButton } from '@/components/site/chat-button';
 import { FloatingChatProvider } from '@/components/site/floating-chat-context';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { ProjectDetailContent } from '@/components/pages/project-detail-content';
+import { LiveSnapshot } from '@/components/site/live-snapshot';
 import { projects } from '@/content/catalog';
 import { getProjectBySlug } from '@/lib/projects-repo';
 import { getRepoDetail } from '@/lib/github';
+import { keysForRepo } from '@/lib/live-snapshot';
 import { team } from '@/content/site';
 import { pageAlternates } from '@/lib/seo';
 
@@ -69,6 +71,9 @@ export default async function ProjectDetailPage({
   return (
     <>
       <SiteNav />
+      {p.github && (
+        <LiveSnapshot keys={keysForRepo(p.github.owner, p.github.repo)} />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

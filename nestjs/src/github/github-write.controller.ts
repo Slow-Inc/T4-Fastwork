@@ -11,6 +11,7 @@ import {
   Controller,
   Headers,
   Post,
+  Query,
   Req,
   Res,
   UnauthorizedException,
@@ -20,6 +21,9 @@ import type { Request, Response } from 'express';
 import { constantTimeEqual } from './webhook-verify';
 import { GithubRefreshService } from './github-refresh.service';
 import { GithubWebhookService } from './github-webhook.service';
+import { GithubHealService } from './github-heal.service';
+import { parseReadme } from './github-detail.service';
+import { resolveHealTarget } from './github.config';
 import { DrizzleSnapshotStore } from './drizzle-snapshot.store';
 
 @Controller('github')
@@ -27,6 +31,7 @@ export class GithubWriteController {
   constructor(
     private readonly refresh: GithubRefreshService,
     private readonly webhook: GithubWebhookService,
+    private readonly heal: GithubHealService,
     private readonly store: DrizzleSnapshotStore,
   ) {}
 
@@ -44,6 +49,31 @@ export class GithubWriteController {
     return outcome.ran
       ? outcome.result
       : { skipped: 'a refresh is already running' };
+  }
+
+  /**
+   * Stale-while-heal trigger (ADR 0004, R1). Called by the Next.js server
+   * `after()` when a page reads a stale snapshot. Secret-guarded (the caller is
+   * the frontend server, not the browser). Single-flight + ETag/304 keep it
+   * cheap; a successful upsert is what Supabase Realtime pushes to viewers.
+   */
+  @Post('heal')
+  async doHeal(
+    @Headers('x-refresh-secret') secret: string | undefined,
+    @Query('key') key: string | undefined,
+  ): Promise<unknown> {
+    const expected = process.env.GITHUB_REFRESH_SECRET;
+    if (!expected || !constantTimeEqual(secret, expected)) {
+      throw new UnauthorizedException();
+    }
+    const target = key ? resolveHealTarget(key) : null;
+    if (!target)
+      return { healing: false, changed: false, skipped: 'unhealable key' };
+    return this.heal.heal(
+      key!,
+      target.url,
+      target.readme ? { map: parseReadme } : undefined,
+    );
   }
 
   @Post('webhook')

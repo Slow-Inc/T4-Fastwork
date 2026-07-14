@@ -8,6 +8,13 @@
  * Caching: Next revalidate + a per-login tag (webhook/refresh can bust it via
  * `revalidateTag(`gh:<login>`)`); Cloudflare adds the edge SWR layer.
  */
+import {
+  scheduleHeal,
+  staleReposKeys,
+  staleUserKeys,
+  staleRepoDetailKeys,
+} from './heal';
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4100';
 
@@ -43,7 +50,9 @@ export async function getMemberLiveRepos(
       { next: { revalidate: 60, tags: [`gh:${login}`] } },
     );
     if (!res.ok) return null;
-    return parseRepos(await res.json());
+    const body = await res.json();
+    scheduleHeal(staleReposKeys(login, body)); // stale-while-heal (R4), post-response
+    return parseRepos(body);
   } catch {
     return null;
   }
@@ -116,7 +125,9 @@ export async function getRepoDetail(
       { next: { revalidate: 60, tags: [`gh:${owner}/${repo}`] } },
     );
     if (!res.ok) return null;
-    return parseRepoDetail(await res.json());
+    const body = await res.json();
+    scheduleHeal(staleRepoDetailKeys(owner, repo, body)); // stale-while-heal (R4)
+    return parseRepoDetail(body);
   } catch {
     return null;
   }
@@ -132,7 +143,9 @@ export async function getMemberLiveUser(
       { next: { revalidate: 60, tags: [`gh:${login}`] } },
     );
     if (!res.ok) return null;
-    return parseUser(await res.json());
+    const body = await res.json();
+    scheduleHeal(staleUserKeys(login, body)); // stale-while-heal (R4)
+    return parseUser(body);
   } catch {
     return null;
   }
