@@ -316,8 +316,13 @@ export function ChatClient({
           aria-label="พิมพ์ข้อความถึงผู้ช่วย AI"
           disabled={busy}
         />
-        <button type="submit" className="btn" disabled={busy || !input.trim()}>
-          ส่ง
+        <button
+          type="submit"
+          className="chat-send"
+          aria-label="ส่งข้อความ"
+          disabled={busy || !input.trim()}
+        >
+          ↑
         </button>
       </form>
 

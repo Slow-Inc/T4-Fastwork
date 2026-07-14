@@ -2236,17 +2236,56 @@ footer {
 }
 
 /* ---- CHAT PAGE (§5.1) ---- */
-.chat-full {
-  margin-top: 36px;
+/* App-shell layout (Open WebUI style): the page itself never scrolls — only the
+   message list does — and the composer is pinned to the bottom. Fixes the
+   "scroll ซ้อน scroll" (nested scrollbars) + floats the input to the bottom. */
+.chat-page {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  height: 100dvh;
+  overflow: hidden;
+}
+/* The app-shell page never scrolls, so the scroll-triggered reveal (.rv) would
+   otherwise stay stuck at opacity:0 — force reveal elements visible here. */
+.chat-page .rv {
+  opacity: 1;
+  transform: none;
+}
+/* Compact heading so the conversation gets the vertical space (OWUI has a
+   minimal header, not a giant hero on the chat surface). */
+.chat-page .page-head {
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+.chat-page .page-head h1 {
+  font-size: clamp(24px, 3.5vw, 38px);
+}
+.chat-page .page-lead {
+  display: none;
+}
+.chat-full {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+/* Centered conversation column (like OWUI's centered max-width), scoped to the
+   full page so the floating widget (.chat-panel .chat-full) is untouched. */
+.chat-page .chat-full {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .chat-scroll {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 18px;
-  max-height: 56vh;
   overflow-y: auto;
   padding: 8px 4px;
 }
@@ -2332,13 +2371,13 @@ footer {
     transform: rotate(360deg);
   }
 }
+/* No inner scroll — the reasoning expands inline and the outer .chat-scroll is
+   the single scroll region (removes the innermost of the stacked scrollbars). */
 .chat-thinking-body {
   font-size: 13px;
   line-height: 1.55;
   color: var(--faint);
   margin-top: 4px;
-  max-height: 40vh;
-  overflow-y: auto;
 }
 /* the reasoning is rendered via MarkdownContent (.md); tone it down to muted */
 .chat-thinking-body .md {
@@ -2404,23 +2443,67 @@ footer {
   opacity: 0.5;
   cursor: not-allowed;
 }
+/* Composer — a single rounded, elevated bar (Open WebUI: rounded-3xl + shadow +
+   backdrop-blur) with the attach + send controls inside it. */
 .chat-input-row {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 6px 8px;
+  border-radius: 26px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 6px 24px rgba(19, 19, 17, 0.08);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.chat-input-row:focus-within {
+  border-color: var(--ink);
+  box-shadow: 0 8px 28px rgba(19, 19, 17, 0.12);
 }
 .chat-input-row input {
   flex: 1;
   font-family: var(--body);
   font-size: 15px;
-  padding: 13px 16px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.6);
+  padding: 10px 8px;
+  border: 0;
+  background: transparent;
   color: var(--ink);
 }
 .chat-input-row input:focus {
   outline: none;
-  border-color: var(--ink);
+}
+/* Explicit placeholder colour — the browser default (ink @ .5) only hits ~3.9:1
+   on the glass bg; bump to ≥4.5:1 (WCAG placeholder contrast). */
+.chat-input-row input::placeholder {
+  color: rgba(19, 19, 17, 0.64);
+  opacity: 1;
+}
+/* Round send button inside the composer (OWUI: rounded-full p-1.5). */
+.chat-send {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: 0.2s;
+  background: var(--ink);
+  color: var(--paper);
+  border: 0;
+  font-size: 16px;
+}
+.chat-send:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.chat-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.chat-quick {
+  justify-content: flex-start;
 }
 .chat-error-cta {
   display: flex;

@@ -18,7 +18,7 @@ export default function ChatPage() {
       <div className="wrap">
         <section className="section section-page chat-page">
           <Breadcrumb items={[{ label: 'หน้าแรก', href: '/' }, { label: 'คุยกับ AI' }]} />
-          <div className="page-head rv">
+          <div className="page-head">
             <div className="t-idx">AI Assistant</div>
             <h1>คุยกับผู้ช่วย AI</h1>
             <p className="page-lead">
