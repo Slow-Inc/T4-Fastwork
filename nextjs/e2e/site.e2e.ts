@@ -779,6 +779,48 @@ test("assistant answers render full Markdown (GFM + code) like Open WebUI", asyn
   expect(clip).toContain("const answer = 42;");
 });
 
+test("you can keep typing while the assistant is responding, but cannot send until it finishes", async ({
+  page,
+}) => {
+  let release: () => void = () => {};
+  const gate = new Promise<void>((r) => {
+    release = r;
+  });
+  await page.route("**/chat/stream", async (route) => {
+    await gate; // hold the response open so the client stays "busy"
+    const body =
+      'event: session\ndata: {"sessionId":"e2e-busy"}\n\n' +
+      'event: token\ndata: {"text":"ตอบแล้วครับ"}\n\n' +
+      'event: done\ndata: {"latencyMs":10}\n\n';
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body,
+    });
+  });
+
+  await page.goto("/chat", { waitUntil: "networkidle" });
+  const composer = page.getByPlaceholder("พิมพ์ข้อความ…");
+  const sendBtn = page.locator(".chat-pane .chat-send");
+
+  // Fire a turn — the held-open route leaves the assistant "thinking" (busy).
+  await composer.fill("คำถามแรก");
+  await sendBtn.click();
+
+  // While busy: the composer stays editable, but sending is blocked.
+  await expect(composer).toBeEnabled();
+  await composer.fill("พิมพ์ต่อระหว่างรอ");
+  await expect(composer).toHaveValue("พิมพ์ต่อระหว่างรอ");
+  await expect(sendBtn).toBeDisabled();
+
+  // Let the reply arrive → once idle, the typed text can be sent.
+  release();
+  await expect(
+    page.locator(".chat-pane").getByText("ตอบแล้วครับ"),
+  ).toBeVisible();
+  await expect(sendBtn).toBeEnabled();
+});
+
 test("every page declares its own canonical + hreflang alternates", async ({
   page,
 }) => {

@@ -7,6 +7,7 @@ import {
   appendToken,
   appendCard,
   shouldShowTypingCursor,
+  canSendMessage,
   type MessagePart,
   type ChatStatus,
 } from "@/lib/chat-message";
@@ -180,7 +181,7 @@ export function ChatClient({
   async function send(text: string) {
     const trimmed = text.trim();
     const imgs = attachments;
-    if ((!trimmed && imgs.length === 0) || busy) return;
+    if (!canSendMessage(busy, text, imgs.length)) return;
 
     setMessages((prev) => [
       ...prev,
@@ -601,24 +602,25 @@ export function ChatClient({
           type="button"
           className="chat-attach"
           onClick={() => fileInputRef.current?.click()}
-          disabled={busy || attachments.length >= 4}
+          disabled={attachments.length >= 4}
           aria-label="แนบรูปภาพ"
         >
           <PlusIcon />
         </button>
+        {/* Editable while the assistant is responding — you can compose the next
+            message; only sending waits for the reply to finish. */}
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="พิมพ์ข้อความ…"
           aria-label="พิมพ์ข้อความถึงผู้ช่วย AI"
-          disabled={busy}
         />
         <button
           type="submit"
           className="chat-send"
           aria-label="ส่งข้อความ"
-          disabled={busy || (!input.trim() && attachments.length === 0)}
+          disabled={!canSendMessage(busy, input, attachments.length)}
         >
           ↑
         </button>
