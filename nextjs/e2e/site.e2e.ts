@@ -595,6 +595,51 @@ test("empty state shows the identity + suggestions, and a suggestion sends (#40)
   ).toBeVisible();
 });
 
+test("assistant turns get a copy + regenerate action row (#41)", async ({
+  page,
+  context,
+}) => {
+  let calls = 0;
+  await page.route("**/chat/stream", async (route) => {
+    calls += 1;
+    const body =
+      'event: session\ndata: {"sessionId":"e2e-actions"}\n\n' +
+      `event: token\ndata: {"text":"คำตอบที่ ${calls}"}\n\n` +
+      'event: done\ndata: {"latencyMs":10}\n\n';
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body,
+    });
+  });
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+
+  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.getByPlaceholder("พิมพ์ข้อความ…").fill("ทดสอบ actions");
+  await page.locator(".chat-pane").getByRole("button", { name: "ส่ง" }).click();
+  await expect(
+    page.locator(".chat-pane").getByText("คำตอบที่ 1"),
+  ).toBeVisible();
+
+  const turn = page.locator(".chat-turn.chat-assistant").last();
+  await turn.hover();
+
+  // Copy puts the assistant text on the clipboard + shows "copied" feedback.
+  await turn.getByRole("button", { name: /คัดลอก/ }).click();
+  await expect(turn.getByText("คัดลอกแล้ว")).toBeVisible();
+  const clip = await page.evaluate(() => navigator.clipboard.readText());
+  expect(clip).toContain("คำตอบที่ 1");
+
+  // Regenerate re-runs the previous user turn into a fresh answer.
+  await turn.getByRole("button", { name: "สร้างคำตอบใหม่" }).click();
+  await expect(
+    page.locator(".chat-pane").getByText("คำตอบที่ 2"),
+  ).toBeVisible();
+  await expect(page.locator(".chat-pane").getByText("คำตอบที่ 1")).toHaveCount(
+    0,
+  );
+});
+
 test("every page declares its own canonical + hreflang alternates", async ({
   page,
 }) => {

@@ -48,6 +48,14 @@ const QUICK_REPLIES = [
   "ประเมินงบเบื้องต้น",
 ];
 
+/** The plain text of a message (its text runs joined) — for copy + regenerate. */
+function messageText(parts: MessagePart[]): string {
+  return parts
+    .filter((p) => p.type === "text")
+    .map((p) => (p as { type: "text"; text: string }).text)
+    .join("");
+}
+
 /** Empty-state suggestion rows (Open WebUI's `⚡ Suggested`, in our style): a
  * bold prompt + a muted subtitle explaining what it does. The title is what gets
  * sent. Mirrors QUICK_REPLIES but richer for the first-run screen (#40). */
@@ -117,6 +125,10 @@ export function ChatClient({
   );
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<Status>("idle");
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
   const [projectSlug, setProjectSlug] = useState(initialProjectSlug);
   const sessionId = useRef<string | undefined>(initialSessionId);
   // Latest onPersist, held in a ref so the persist effect doesn't re-fire on the
@@ -168,6 +180,38 @@ export function ChatClient({
       { role: "assistant", parts: [] },
     ]);
     setInput("");
+    await streamAssistant(trimmed);
+  }
+
+  /** Resend the previous user turn to produce a fresh answer (#41): drop the
+   * trailing assistant turn, add an empty placeholder, and stream into it. */
+  async function regenerate() {
+    if (busy) return;
+    const lastUser = [...messages].reverse().find((m) => m.role === "user");
+    if (!lastUser) return;
+    setMessages((prev) => {
+      const next = [...prev];
+      if (next[next.length - 1]?.role === "assistant") next.pop();
+      next.push({ role: "assistant", parts: [] });
+      return next;
+    });
+    await streamAssistant(messageText(lastUser.parts));
+  }
+
+  async function copyMessage(index: number, parts: MessagePart[]) {
+    try {
+      await navigator.clipboard.writeText(messageText(parts));
+      setCopiedIndex(index);
+      clearTimeout(copyTimer.current);
+      copyTimer.current = setTimeout(() => setCopiedIndex(null), 1500);
+    } catch {
+      // clipboard blocked (insecure context / permission) — no-op.
+    }
+  }
+
+  /** Stream one assistant answer. Assumes the last message is an empty assistant
+   * placeholder (send() and regenerate() both guarantee this). */
+  async function streamAssistant(userText: string) {
     setStatus("thinking");
     reasoningStartRef.current = undefined;
     scrollToEnd();
@@ -177,7 +221,7 @@ export function ChatClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: trimmed,
+          message: userText,
           language: "th",
           sessionId: sessionId.current,
           projectSlug,
@@ -298,6 +342,9 @@ export function ChatClient({
     });
   }, [messages, persistKey]);
 
+  // Clear a pending "copied" reset if we unmount (e.g. switching conversations).
+  useEffect(() => () => clearTimeout(copyTimer.current), []);
+
   return (
     <div className="chat-full">
       {projectSlug && initialProjectTitle && (
@@ -392,6 +439,37 @@ export function ChatClient({
                   {shouldShowTypingCursor(m.role, isLast, status) && (
                     <span className="typing-cursor" aria-hidden="true" />
                   )}
+                  {m.role === "assistant" &&
+                    messageText(m.parts).length > 0 &&
+                    !(isLast && busy) && (
+                      <div className="chat-actions">
+                        <button
+                          type="button"
+                          className="chat-action"
+                          onClick={() => copyMessage(i, m.parts)}
+                          aria-label={
+                            copiedIndex === i ? "คัดลอกแล้ว" : "คัดลอกคำตอบ"
+                          }
+                        >
+                          {copiedIndex === i ? <CheckIcon /> : <CopyIcon />}
+                          <span className="chat-action-label">
+                            {copiedIndex === i ? "คัดลอกแล้ว" : "คัดลอก"}
+                          </span>
+                        </button>
+                        {isLast && (
+                          <button
+                            type="button"
+                            className="chat-action"
+                            onClick={regenerate}
+                            disabled={busy}
+                            aria-label="สร้างคำตอบใหม่"
+                          >
+                            <RegenIcon />
+                            <span className="chat-action-label">สร้างใหม่</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
                 </div>
               </article>
             );
@@ -466,6 +544,79 @@ function BoltIcon() {
       aria-hidden="true"
     >
       <path d="M9 1.5 3.5 9H7l-1 5.5L12.5 7H9z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="5.5"
+        y="5.5"
+        width="8"
+        height="8"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+      <path
+        d="M10.5 5.5V4A1.5 1.5 0 0 0 9 2.5H4A1.5 1.5 0 0 0 2.5 4v5A1.5 1.5 0 0 0 4 10.5h1.5"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M3 8.5 6.5 12 13 4.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function RegenIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M13 3.5v3h-3M3 12.5v-3h3"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12.4 6.5a4.5 4.5 0 0 0-8-1.2M3.6 9.5a4.5 4.5 0 0 0 8 1.2"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
