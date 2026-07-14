@@ -719,6 +719,66 @@ test("composer attaches an image, previews it, and sends it with the user turn (
   expect((sentImages as string[])[0]).toMatch(/^data:image\/png;base64,/);
 });
 
+test("assistant answers render full Markdown (GFM + code) like Open WebUI", async ({
+  page,
+  context,
+}) => {
+  const md = [
+    "# หัวข้อทดสอบ",
+    "",
+    "ข้อความ **ตัวหนา** กับ `inline code` และ [ลิงก์](https://t4labs.dev).",
+    "",
+    "- ข้อแรก",
+    "- ข้อสอง",
+    "",
+    "| ชื่อ | ค่า |",
+    "| --- | --- |",
+    "| alpha | 1 |",
+    "| beta | 2 |",
+    "",
+    "```js",
+    "const answer = 42;",
+    "console.log(answer);",
+    "```",
+  ].join("\n");
+  await page.route("**/chat/stream", async (route) => {
+    const body =
+      'event: session\ndata: {"sessionId":"e2e-md"}\n\n' +
+      "event: token\ndata: " +
+      JSON.stringify({ text: md }) +
+      "\n\n" +
+      'event: done\ndata: {"latencyMs":10}\n\n';
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body,
+    });
+  });
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+
+  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.getByPlaceholder("พิมพ์ข้อความ…").fill("ขอ markdown");
+  await page.locator(".chat-pane").getByRole("button", { name: "ส่ง" }).click();
+
+  const md0 = page.locator(".chat-md").last();
+  await expect(md0.locator("h1")).toHaveText("หัวข้อทดสอบ");
+  await expect(md0.locator("strong")).toHaveText("ตัวหนา");
+  await expect(md0.locator("li")).toHaveCount(2);
+  // GFM table renders with real cells.
+  await expect(md0.locator("table td").first()).toHaveText("alpha");
+  // Link opens in a new tab, safely.
+  const link = md0.locator('a[href="https://t4labs.dev"]');
+  await expect(link).toHaveAttribute("target", "_blank");
+  await expect(link).toHaveAttribute("rel", /noopener/);
+  // Fenced code block: language chip + highlighted code + working copy button.
+  await expect(md0.locator(".chat-code-lang")).toHaveText("js");
+  await expect(md0.locator("pre code .hljs-keyword").first()).toBeVisible();
+  await md0.locator(".chat-code-copy").click();
+  await expect(md0.getByText("คัดลอกแล้ว")).toBeVisible();
+  const clip = await page.evaluate(() => navigator.clipboard.readText());
+  expect(clip).toContain("const answer = 42;");
+});
+
 test("every page declares its own canonical + hreflang alternates", async ({
   page,
 }) => {

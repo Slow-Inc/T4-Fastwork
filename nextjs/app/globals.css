@@ -3220,6 +3220,263 @@ footer {
   }
 }
 
+/* ---- Assistant Markdown (Open WebUI parity, our Visible-Grid Swiss style) ----
+   Full GFM: headings, lists (incl. nested + task), tables, code (highlighted +
+   copy), blockquotes, links, hr. Legible reading measure; accent only on links. */
+.chat-md {
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.chat-md > *:first-child {
+  margin-top: 0;
+}
+.chat-md > *:last-child {
+  margin-bottom: 0;
+}
+.chat-md p {
+  margin: 0 0 0.75em;
+}
+.chat-md h1,
+.chat-md h2,
+.chat-md h3,
+.chat-md h4,
+.chat-md h5,
+.chat-md h6 {
+  font-family: var(--disp);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin: 1.3em 0 0.5em;
+  text-wrap: balance;
+}
+.chat-md h1 {
+  font-size: 1.5em;
+}
+.chat-md h2 {
+  font-size: 1.3em;
+}
+.chat-md h3 {
+  font-size: 1.13em;
+}
+.chat-md h4,
+.chat-md h5,
+.chat-md h6 {
+  font-size: 1em;
+}
+.chat-md a {
+  /* A darker rust than --accent (#E8461B is only 3.3:1 on paper) so link text
+     clears AA 4.5:1 while staying in the accent family; underlined too. */
+  color: #a8330f;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.chat-md strong {
+  font-weight: 600;
+}
+.chat-md em {
+  font-style: italic;
+}
+.chat-md del {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.chat-md ul,
+.chat-md ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.4em;
+}
+.chat-md li {
+  margin: 0.2em 0;
+}
+.chat-md li::marker {
+  color: var(--muted);
+}
+.chat-md ul ul,
+.chat-md ul ol,
+.chat-md ol ul,
+.chat-md ol ol {
+  margin-bottom: 0;
+}
+/* GFM task lists — flush checkboxes, no bullet. */
+.chat-md li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-left: -1.3em;
+  padding-left: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+}
+.chat-md input[type="checkbox"] {
+  accent-color: var(--accent);
+  transform: translateY(1px);
+}
+/* Blockquote — a paper-deep tint band, NOT a colored side-stripe (§14 ban). */
+.chat-md blockquote {
+  margin: 0 0 0.75em;
+  padding: 0.5em 0.9em;
+  background: var(--paper-deep);
+  border-radius: 8px;
+  color: var(--muted);
+}
+.chat-md blockquote p:last-child {
+  margin-bottom: 0;
+}
+.chat-md hr {
+  margin: 1.2em 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+/* Tables (GFM) — hairline grid, mono-tinted header, horizontal scroll on narrow. */
+.chat-table {
+  margin: 0 0 0.85em;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.chat-md table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.chat-md th,
+.chat-md td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line-soft);
+  border-right: 1px solid var(--line-soft);
+}
+.chat-md th:last-child,
+.chat-md td:last-child {
+  border-right: 0;
+}
+.chat-md tr:last-child td {
+  border-bottom: 0;
+}
+.chat-md thead th {
+  background: var(--paper-deep);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.chat-md img {
+  max-width: 100%;
+  border-radius: 10px;
+}
+/* Inline code. */
+.chat-md :not(pre) > code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  padding: 0.12em 0.36em;
+  background: var(--paper-deep);
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
+  overflow-wrap: anywhere;
+}
+/* Fenced code block — header (language + copy) over highlighted code. */
+.chat-code {
+  margin: 0 0 0.85em;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--paper-deep);
+}
+.chat-code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px 6px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.chat-code-lang {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.chat-code-copy {
+  font-size: 11px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition:
+    color 0.14s,
+    background 0.14s,
+    border-color 0.14s;
+}
+.chat-code-copy:hover {
+  color: var(--ink);
+  background: rgba(19, 19, 17, 0.05);
+  border-color: var(--line);
+}
+.chat-code pre {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink);
+  scrollbar-width: thin;
+}
+.chat-code pre code {
+  font-family: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+/* highlight.js theme — restrained, tuned to our palette (all AA on paper-deep). */
+.chat-md .hljs-comment,
+.chat-md .hljs-quote {
+  color: var(--muted);
+  font-style: italic;
+}
+.chat-md .hljs-keyword,
+.chat-md .hljs-literal,
+.chat-md .hljs-selector-tag,
+.chat-md .hljs-name,
+.chat-md .hljs-tag {
+  color: #9a3412;
+}
+.chat-md .hljs-string,
+.chat-md .hljs-regexp,
+.chat-md .hljs-meta .hljs-string {
+  color: #3f6212;
+}
+.chat-md .hljs-number,
+.chat-md .hljs-built_in,
+.chat-md .hljs-type,
+.chat-md .hljs-class .hljs-title,
+.chat-md .hljs-attr,
+.chat-md .hljs-attribute {
+  color: #1e40af;
+}
+.chat-md .hljs-title,
+.chat-md .hljs-title.function_,
+.chat-md .hljs-section {
+  color: var(--ink);
+  font-weight: 600;
+}
+.chat-md .hljs-variable,
+.chat-md .hljs-symbol,
+.chat-md .hljs-operator,
+.chat-md .hljs-punctuation {
+  color: var(--ink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-code-copy {
+    transition: none;
+  }
+}
+
 /* Scrim — desktop: never; mobile: dims the pane behind the drawer. */
 .chat-scrim {
   display: none;

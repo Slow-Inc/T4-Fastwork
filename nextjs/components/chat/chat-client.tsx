@@ -14,6 +14,7 @@ import { buildProjectGreetingMessage } from "@/lib/project-chat";
 import { loadChat, saveChat } from "@/lib/chat-persist";
 import { InlineCard, type CardData } from "./inline-card";
 import { ThinkingBox } from "./thinking-box";
+import { ChatMarkdown } from "./chat-markdown";
 import { useChatSession } from "./chat-session-context";
 
 const API_BASE =
@@ -475,9 +476,13 @@ export function ChatClient({
                   )}
                   {m.parts.map((part, j) =>
                     part.type === "text" ? (
-                      <span key={j} className="chat-text">
-                        {part.text}
-                      </span>
+                      m.role === "assistant" ? (
+                        <ChatMarkdown key={j}>{part.text}</ChatMarkdown>
+                      ) : (
+                        <span key={j} className="chat-text">
+                          {part.text}
+                        </span>
+                      )
                     ) : (
                       <InlineCard key={j} card={part.card} />
                     ),
