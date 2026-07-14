@@ -35,6 +35,13 @@ export function thinkingSummaryLabel(durationMs?: number): string {
     : 'ดูการคิดของ AI';
 }
 
+/** The thinking-box header label. While the model is thinking, "กำลังคิด…"
+ * (shown next to a spinner, collapsed by default like Open WebUI); once done, the
+ * "คิดอยู่ N วิ" summary. */
+export function thinkingBoxLabel(live: boolean, durationMs?: number): string {
+  return live ? 'กำลังคิด…' : thinkingSummaryLabel(durationMs);
+}
+
 export type ChatStatus = 'idle' | 'thinking' | 'streaming' | 'error';
 
 /** A blinking typing cursor only belongs on the assistant's in-progress reply. */

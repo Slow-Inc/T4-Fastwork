@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { thinkingSummaryLabel } from '@/lib/chat-message';
+import { thinkingBoxLabel } from '@/lib/chat-message';
+import { MarkdownContent } from '@/lib/markdown';
 
 /**
- * The model's chain-of-thought, Open WebUI style. While the model is still
- * thinking (`live`), the reasoning streams expanded under a "กำลังคิด…" header.
- * Once the answer starts (`live=false`), it collapses to a clickable
- * "💭 คิดอยู่ N วิ" summary that toggles the reasoning open. Renders nothing when
- * there is no reasoning (a non-thinking response).
+ * The model's chain-of-thought, Open WebUI style. Collapsed by default in BOTH
+ * states — while thinking it shows a spinner + "กำลังคิด…"; once the answer
+ * starts it shows "💭 คิดอยู่ N วิ". Clicking expands the reasoning, rendered as
+ * markdown (the model writes bold/lists/code). Renders nothing when there is no
+ * reasoning (a non-thinking response).
  */
 export function ThinkingBox({
   reasoning,
@@ -22,29 +23,27 @@ export function ThinkingBox({
   const [open, setOpen] = useState(false);
   if (!reasoning) return null;
 
-  if (live) {
-    return (
-      <div className="chat-thinking-box is-live">
-        <div className="chat-thinking-head">🧠 กำลังคิด…</div>
-        <div className="chat-thinking-body">{reasoning}</div>
-      </div>
-    );
-  }
-
-  const label = thinkingSummaryLabel(durationMs);
-
   return (
-    <div className="chat-thinking-box">
+    <div className={`chat-thinking-box${live ? ' is-live' : ''}`}>
       <button
         type="button"
         className="chat-thinking-summary"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
-        <span aria-hidden="true">💭</span> {label}{' '}
+        {live ? (
+          <span className="chat-thinking-spinner" aria-hidden="true" />
+        ) : (
+          <span aria-hidden="true">💭</span>
+        )}{' '}
+        {thinkingBoxLabel(live, durationMs)}{' '}
         <span aria-hidden="true">{open ? '▾' : '▸'}</span>
       </button>
-      {open && <div className="chat-thinking-body">{reasoning}</div>}
+      {open && (
+        <div className="chat-thinking-body">
+          <MarkdownContent source={reasoning} />
+        </div>
+      )}
     </div>
   );
 }

@@ -2293,18 +2293,12 @@ footer {
   50% { opacity: 1; }
 }
 
-/* AI thinking / chain-of-thought (Open WebUI style) */
+/* AI thinking / chain-of-thought (Open WebUI style): collapsed by default in
+   both states — a spinner + "กำลังคิด…" while thinking, "💭 คิดอยู่ N วิ" once done. */
 .chat-thinking-box {
   margin-bottom: 8px;
-  border-left: 2px solid var(--line, rgba(0,0,0,0.12));
+  border-left: 2px solid var(--line, rgba(0, 0, 0, 0.12));
   padding-left: 10px;
-}
-.chat-thinking-head {
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--faint);
-  animation: chatpulse 1.4s ease-in-out infinite;
-  margin-bottom: 4px;
 }
 .chat-thinking-summary {
   font-family: var(--mono);
@@ -2315,21 +2309,41 @@ footer {
   padding: 2px 0;
   cursor: pointer;
   display: inline-flex;
-  gap: 4px;
+  gap: 5px;
   align-items: center;
 }
-.chat-thinking-summary:hover { color: var(--ink, currentColor); }
+.chat-thinking-summary:hover {
+  color: var(--ink, currentColor);
+}
+.chat-thinking-box.is-live .chat-thinking-summary {
+  animation: chatpulse 1.4s ease-in-out infinite;
+}
+.chat-thinking-spinner {
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--line, rgba(0, 0, 0, 0.2));
+  border-top-color: currentColor;
+  border-radius: 50%;
+  display: inline-block;
+  animation: chatspin 0.7s linear infinite;
+}
+@keyframes chatspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .chat-thinking-body {
   font-size: 13px;
   line-height: 1.55;
   color: var(--faint);
-  white-space: pre-wrap;
   margin-top: 4px;
   max-height: 40vh;
   overflow-y: auto;
 }
-.chat-thinking-box.is-live .chat-thinking-body {
-  animation: none;
+/* the reasoning is rendered via MarkdownContent (.md); tone it down to muted */
+.chat-thinking-body .md {
+  font-size: 13px;
+  color: var(--faint);
 }
 .typing-cursor {
   display: inline-block;
