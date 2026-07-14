@@ -11,9 +11,9 @@ Design: ADR `docs/adr/0004-serverless-realtime-freshness.md` + spec `docs/superp
 |---|---|---|
 | R1 backend heal + single-flight + `POST /github/heal` | ✅ shipped (`2e6ac7b`) | `GithubHealService`, `resolveHealTarget`, wired; 8 tests |
 | R4 Next.js `after()` stale-heal trigger on live-surface reads | ✅ shipped | `nextjs/lib/heal.ts` (keys mirror backend `resolveHealTarget`, stale-gate extractors, secret-guarded `postHeal`, `after()`-wired `scheduleHeal`); wired into `getMemberLiveRepos`/`getMemberLiveUser`/`getRepoDetail`; 13 unit tests; 189 nextjs unit + 42 e2e + build green |
-| R2 enable Supabase Realtime on `github_snapshots` + anon-SELECT RLS | 🔴 not started | **security boundary + prod DB** — run `/security-review` first, then MCP apply |
-| R3 frontend `<LiveSnapshot>` client Realtime subscriber → swap UI (the "double") | 🔴 not started | needs R2 |
-| R5 wire webhook + cron safety-net to the heal path | 🔴 not started | org webhook = human step |
+| R2 enable Supabase Realtime on `github_snapshots` + anon-SELECT RLS | ✅ shipped (prod) | anon-SELECT RLS already existed (ADR 0003); only added table to `supabase_realtime` publication (migration `enable_realtime_github_snapshots`). `/security-review` passed clean (+ regex-charset hardening `2694c71`). Realtime enforces the existing SELECT RLS → no new exposure; advisors show no `github_snapshots` warning |
+| R3 frontend `<LiveSnapshot>` client Realtime subscriber → swap UI (the "double") | ✅ shipped | `lib/live-snapshot.ts` (keys/filter/`tagForKey`/subscribe, 8 tests) + `lib/live-actions.ts` (`updateTag` Server Action — Next 16 read-your-own-writes; `revalidateTag`/route-handler can't do immediate-fresh) + `components/site/live-snapshot.tsx` (graceful: no env/failed WS/empty keys → server snapshot). Wired into team + project pages; 197 unit + 42 e2e + build green |
+| R5 wire webhook + cron safety-net to the heal path | 🔴 next | org webhook = human step; cron + webhook→heal wiring is code |
 
 **Gated deploy step (R4):** set `GITHUB_REFRESH_SECRET` on the **frontend** Vercel project (same value as the nestjs project's `GITHUB_REFRESH_SECRET`). Unset = heal is a silent no-op (pages still serve stale data). Added to `nextjs/.env.example`.
 
@@ -51,6 +51,7 @@ Design: `docs/superpowers/specs/2026-07-14-github-project-showcase-design.md`. B
 
 - **nestjs lint ~692 errors on HEAD** — typescript-eslint type-resolution fails across `test/**`. Repo-wide; needs an eslint/tsconfig fix. New source files are clean. No issue yet.
 - **`github.service.spec.ts` "omits Authorization when no token" fails locally** — Bun auto-loads `nestjs/.env` (real `GITHUB_TOKEN`); passes in CI + with token unset. Env-dependent test; consider making it hermetic. No issue yet.
+- **Supabase advisors: `rls_disabled_in_public` ERROR on ~13 public tables** (faqs, services, projects, categories, tags, technologies, blog_posts, certificates, conversations, messages, project_tags, project_technologies, document_embeddings) + `sensitive_columns_exposed` on `conversations.session_id` — **pre-existing**, surfaced during #25 R2 advisor check (NOT introduced by R2; `github_snapshots` itself is clean). The backend reads these via the Postgres superuser pooler (bypasses RLS), so enabling RLS needs explicit anon policies to avoid breaking public frontend reads. Out of #25 scope; needs its own security pass. No issue yet.
 
 ## Carried over from ADR 0003 (epic #16, still open per prior handoff)
 

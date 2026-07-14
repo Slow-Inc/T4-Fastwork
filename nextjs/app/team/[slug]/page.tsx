@@ -5,8 +5,10 @@ import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { TeamMemberContent } from '@/components/pages/team-member-content';
+import { LiveSnapshot } from '@/components/site/live-snapshot';
 import { team } from '@/content/site';
 import { getMemberLiveRepos, getMemberLiveUser, githubLogin } from '@/lib/github';
+import { keysForMember } from '@/lib/live-snapshot';
 import { pageAlternates } from '@/lib/seo';
 
 type Params = Promise<{ slug: string }>;
@@ -42,6 +44,7 @@ export default async function TeamMemberPage({ params }: { params: Params }) {
   return (
     <>
       <SiteNav />
+      {login && <LiveSnapshot keys={keysForMember(login)} />}
       <div className="wrap">
         <TeamMemberContent member={m} liveRepos={liveRepos} liveUser={liveUser} />
         <SiteFooter />
