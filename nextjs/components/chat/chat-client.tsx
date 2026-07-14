@@ -1,26 +1,26 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { SSEParser } from '@/lib/sse-parser';
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { SSEParser } from "@/lib/sse-parser";
 import {
   appendToken,
   appendCard,
   shouldShowTypingCursor,
   type MessagePart,
   type ChatStatus,
-} from '@/lib/chat-message';
-import { buildProjectGreetingMessage } from '@/lib/project-chat';
-import { loadChat, saveChat } from '@/lib/chat-persist';
-import { InlineCard, type CardData } from './inline-card';
-import { ThinkingBox } from './thinking-box';
-import { useChatSession } from './chat-session-context';
+} from "@/lib/chat-message";
+import { buildProjectGreetingMessage } from "@/lib/project-chat";
+import { loadChat, saveChat } from "@/lib/chat-persist";
+import { InlineCard, type CardData } from "./inline-card";
+import { ThinkingBox } from "./thinking-box";
+import { useChatSession } from "./chat-session-context";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4100';
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4100";
 
-interface Message {
-  role: 'user' | 'assistant';
+export interface Message {
+  role: "user" | "assistant";
   parts: MessagePart[];
   /** The model's chain-of-thought (Open WebUI style), accumulated from reasoning
    * events; shown in a collapsible box above the answer. */
@@ -32,20 +32,20 @@ interface Message {
 type Status = ChatStatus;
 
 const GREETING: Message = {
-  role: 'assistant',
+  role: "assistant",
   parts: [
     {
-      type: 'text',
-      text: 'สวัสดีครับ ผมคือผู้ช่วย AI ของ T4 Labs — เล่าโจทย์ของคุณมาได้เลย ผมจะแนะนำเคสงานที่ใกล้เคียงและช่วยประเมินเบื้องต้นให้ครับ',
+      type: "text",
+      text: "สวัสดีครับ ผมคือผู้ช่วย AI ของ T4 Labs — เล่าโจทย์ของคุณมาได้เลย ผมจะแนะนำเคสงานที่ใกล้เคียงและช่วยประเมินเบื้องต้นให้ครับ",
     },
   ],
 };
 
 const QUICK_REPLIES = [
-  'อยากได้ SaaS platform',
-  'ทำ AI chatbot ได้ไหม',
-  'แนะนำเคสงานที่เหมาะกับฉัน',
-  'ประเมินงบเบื้องต้น',
+  "อยากได้ SaaS platform",
+  "ทำ AI chatbot ได้ไหม",
+  "แนะนำเคสงานที่เหมาะกับฉัน",
+  "ประเมินงบเบื้องต้น",
 ];
 
 /**
@@ -57,23 +57,39 @@ export function ChatClient({
   initialProjectSlug,
   initialProjectTitle,
   persistKey,
+  initialMessages,
+  initialSessionId,
+  onPersist,
 }: {
   initialProjectSlug?: string;
   initialProjectTitle?: string;
   /** When set, the conversation survives unmount/remount via sessionStorage under
    * this key (used by the floating widget so closing/reopening keeps the chat). */
   persistKey?: string;
+  /** Store-backed mode (the /chat app-shell, #39): seed this instance from a
+   * specific conversation and report every change back via `onPersist` instead of
+   * sessionStorage. The shell mounts these client-only (keyed by conversation id),
+   * so seeding from state here can't cause a hydration mismatch. */
+  initialMessages?: Message[];
+  initialSessionId?: string;
+  onPersist?: (data: { messages: Message[]; sessionId?: string }) => void;
 } = {}) {
   // Always start from the deterministic greeting so the server and the first
   // client render produce identical HTML. A persisted conversation is restored
   // AFTER mount (effect below) — reading sessionStorage during render caused a
   // hydration mismatch on the SSR'd /chat page, which passes persistKey since #31
   // shared the popup↔page conversation.
-  const [messages, setMessages] = useState<Message[]>([GREETING]);
-  const [input, setInput] = useState('');
-  const [status, setStatus] = useState<Status>('idle');
+  const [messages, setMessages] = useState<Message[]>(
+    initialMessages && initialMessages.length ? initialMessages : [GREETING],
+  );
+  const [input, setInput] = useState("");
+  const [status, setStatus] = useState<Status>("idle");
   const [projectSlug, setProjectSlug] = useState(initialProjectSlug);
-  const sessionId = useRef<string | undefined>(undefined);
+  const sessionId = useRef<string | undefined>(initialSessionId);
+  // Latest onPersist, held in a ref so the persist effect doesn't re-fire on the
+  // shell's re-renders (the callback identity changes each render).
+  const onPersistRef = useRef(onPersist);
+  onPersistRef.current = onPersist;
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoSentRef = useRef(false);
   // When the current turn's reasoning stream began (Date.now); used to time the
@@ -81,7 +97,7 @@ export function ChatClient({
   const reasoningStartRef = useRef<number | undefined>(undefined);
   const { reportSession, reportTurnComplete } = useChatSession();
 
-  const busy = status === 'thinking' || status === 'streaming';
+  const busy = status === "thinking" || status === "streaming";
 
   function scrollToEnd() {
     requestAnimationFrame(() => {
@@ -99,7 +115,7 @@ export function ChatClient({
     setMessages((prev) => {
       const next = [...prev];
       const last = next[next.length - 1];
-      if (last?.role === 'assistant') next[next.length - 1] = fn(last);
+      if (last?.role === "assistant") next[next.length - 1] = fn(last);
       return next;
     });
     scrollToEnd();
@@ -111,21 +127,21 @@ export function ChatClient({
 
     setMessages((prev) => [
       ...prev,
-      { role: 'user', parts: [{ type: 'text', text: trimmed }] },
-      { role: 'assistant', parts: [] },
+      { role: "user", parts: [{ type: "text", text: trimmed }] },
+      { role: "assistant", parts: [] },
     ]);
-    setInput('');
-    setStatus('thinking');
+    setInput("");
+    setStatus("thinking");
     reasoningStartRef.current = undefined;
     scrollToEnd();
 
     try {
       const res = await fetch(`${API_BASE}/chat/stream`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: trimmed,
-          language: 'th',
+          language: "th",
           sessionId: sessionId.current,
           projectSlug,
         }),
@@ -144,21 +160,21 @@ export function ChatClient({
         for (const ev of events) {
           const data = ev.data as Record<string, unknown>;
           switch (ev.event) {
-            case 'session':
+            case "session":
               sessionId.current = data.sessionId as string;
               reportSession(sessionId.current);
               break;
-            case 'reasoning':
+            case "reasoning":
               if (reasoningStartRef.current === undefined) {
                 reasoningStartRef.current = Date.now();
               }
               mutateLastAssistant((m) => ({
                 ...m,
-                reasoning: (m.reasoning ?? '') + (data.text as string),
+                reasoning: (m.reasoning ?? "") + (data.text as string),
               }));
               break;
-            case 'token': {
-              setStatus('streaming');
+            case "token": {
+              setStatus("streaming");
               // First answer token ends the thinking phase — stamp its duration.
               const started = reasoningStartRef.current;
               mutateLastAssistant((m) => ({
@@ -170,35 +186,36 @@ export function ChatClient({
               }));
               break;
             }
-            case 'card':
-              updateLastAssistant((p) => appendCard(p, data as unknown as CardData));
+            case "card":
+              updateLastAssistant((p) =>
+                appendCard(p, data as unknown as CardData),
+              );
               break;
-            case 'done':
-              setStatus('idle');
+            case "done":
+              setStatus("idle");
               reportTurnComplete();
               break;
-            case 'error':
+            case "error":
               updateLastAssistant((p) =>
                 appendToken(
                   p,
-                  (data.fallbackText as string) ??
-                    'ขออภัย ระบบขัดข้องชั่วคราว',
+                  (data.fallbackText as string) ?? "ขออภัย ระบบขัดข้องชั่วคราว",
                 ),
               );
-              setStatus('error');
+              setStatus("error");
               break;
           }
         }
       }
-      setStatus((s) => (s === 'error' ? 'error' : 'idle'));
+      setStatus((s) => (s === "error" ? "error" : "idle"));
     } catch {
       updateLastAssistant((p) =>
         appendToken(
           p,
-          'ขออภัยครับ ตอนนี้เชื่อมต่อผู้ช่วย AI ไม่ได้ ลองใหม่อีกครั้ง หรือติดต่อทีมโดยตรงได้เลย',
+          "ขออภัยครับ ตอนนี้เชื่อมต่อผู้ช่วย AI ไม่ได้ ลองใหม่อีกครั้ง หรือติดต่อทีมโดยตรงได้เลย",
         ),
       );
-      setStatus('error');
+      setStatus("error");
     }
   }
 
@@ -216,9 +233,13 @@ export function ChatClient({
   // this post-hydration (not in the useState initializer) keeps SSR/client HTML
   // identical, avoiding a hydration mismatch on /chat.
   useEffect(() => {
-    if (!persistKey) return;
+    // Store-backed instances are seeded via initialMessages, not sessionStorage.
+    if (onPersistRef.current || !persistKey) return;
     const saved = loadChat(window.sessionStorage, persistKey);
     if (saved) {
+      // Intentional post-mount restore: sessionStorage is SSR-unsafe, so seeding in
+      // the initializer would mismatch on hydration. One restore render, not a cascade.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved.messages?.length) setMessages(saved.messages as Message[]);
       if (saved.sessionId) sessionId.current = saved.sessionId;
     }
@@ -226,9 +247,18 @@ export function ChatClient({
   }, []);
 
   // Persist after every change (skip the lone greeting — nothing to remember yet).
+  // Store-backed mode reports to the app-shell; otherwise sessionStorage (popup).
   useEffect(() => {
-    if (!persistKey || messages.length <= 1) return;
-    saveChat(window.sessionStorage, persistKey, { messages, sessionId: sessionId.current });
+    if (messages.length <= 1) return;
+    if (onPersistRef.current) {
+      onPersistRef.current({ messages, sessionId: sessionId.current });
+      return;
+    }
+    if (!persistKey) return;
+    saveChat(window.sessionStorage, persistKey, {
+      messages,
+      sessionId: sessionId.current,
+    });
   }, [messages, persistKey]);
 
   return (
@@ -251,25 +281,25 @@ export function ChatClient({
           return (
             <article key={i} className={`chat-turn chat-${m.role}`}>
               <div className="chat-turn-label">
-                {m.role === 'assistant' ? (
+                {m.role === "assistant" ? (
                   <>
                     <span className="chat-turn-dot" aria-hidden="true" />
                     ผู้ช่วย AI
                   </>
                 ) : (
-                  'คุณ'
+                  "คุณ"
                 )}
               </div>
               <div className="chat-turn-body">
-                {m.role === 'assistant' && m.reasoning && (
+                {m.role === "assistant" && m.reasoning && (
                   <ThinkingBox
                     reasoning={m.reasoning}
                     durationMs={m.reasoningMs}
-                    live={isLast && status === 'thinking'}
+                    live={isLast && status === "thinking"}
                   />
                 )}
                 {m.parts.map((part, j) =>
-                  part.type === 'text' ? (
+                  part.type === "text" ? (
                     <span key={j} className="chat-text">
                       {part.text}
                     </span>
@@ -277,9 +307,9 @@ export function ChatClient({
                     <InlineCard key={j} card={part.card} />
                   ),
                 )}
-                {m.role === 'assistant' &&
+                {m.role === "assistant" &&
                   isLast &&
-                  status === 'thinking' &&
+                  status === "thinking" &&
                   !m.reasoning && (
                     <span className="chat-thinking">
                       <span className="chat-caret" aria-hidden="true" />
@@ -295,7 +325,7 @@ export function ChatClient({
         })}
       </div>
 
-      {status === 'error' && (
+      {status === "error" && (
         <div className="chat-error-cta">
           <Link href="/contact" className="btn ghost">
             ติดต่อทีมโดยตรง

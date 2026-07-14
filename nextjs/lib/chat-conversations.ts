@@ -11,7 +11,7 @@ import type { PersistedChat } from "./chat-persist";
 /** localStorage key holding the whole store. */
 export const STORE_KEY = "t4.chat.conversations";
 
-const DEFAULT_TITLE = "บทสนทนาใหม่";
+export const DEFAULT_TITLE = "บทสนทนาใหม่";
 
 export interface StoredConversation {
   id: string;
