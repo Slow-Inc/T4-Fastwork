@@ -69,8 +69,16 @@ export const githubUrl = {
 export function resolveHealTarget(
   key: string,
 ): { url: string; readme: boolean } | null {
+  // Segment charsets (defense-in-depth): GitHub logins/orgs are alphanumeric +
+  // hyphen; repo names also allow dot and underscore. Restricting to these keeps
+  // path/query characters (`/`, `..`, `?`, `#`, space) out of the fixed
+  // api.github.com URL, so nothing beyond the intended resource can be reached.
+  const OWNER = '[A-Za-z0-9-]+';
+  const REPO = '[A-Za-z0-9._-]+';
   // repo:<owner>/<repo>:<sub>
-  const repo = key.match(/^repo:([^/]+)\/([^:]+):(contributors|pulls|readme)$/);
+  const repo = key.match(
+    new RegExp(`^repo:(${OWNER})/(${REPO}):(contributors|pulls|readme)$`),
+  );
   if (repo) {
     const [, owner, name, sub] = repo;
     if (sub === 'contributors')
@@ -80,17 +88,17 @@ export function resolveHealTarget(
     return { url: githubUrl.repoReadme(owner, name), readme: true };
   }
   // user:<login>:readme  (must test before the plain user: case)
-  const userReadme = key.match(/^user:([^:]+):readme$/);
+  const userReadme = key.match(new RegExp(`^user:(${OWNER}):readme$`));
   if (userReadme)
     return { url: githubUrl.userReadme(userReadme[1]), readme: true };
   // user:<login>
-  const user = key.match(/^user:([^:]+)$/);
+  const user = key.match(new RegExp(`^user:(${OWNER})$`));
   if (user) return { url: githubUrl.userProfile(user[1]), readme: false };
   // repos:<login>
-  const repos = key.match(/^repos:(.+)$/);
+  const repos = key.match(new RegExp(`^repos:(${OWNER})$`));
   if (repos) return { url: githubUrl.userRepos(repos[1]), readme: false };
   // org:<org>
-  const org = key.match(/^org:(.+)$/);
+  const org = key.match(new RegExp(`^org:(${OWNER})$`));
   if (org) return { url: githubUrl.orgRepos(org[1]), readme: false };
   return null;
 }

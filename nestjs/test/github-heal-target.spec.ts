@@ -44,4 +44,30 @@ describe('resolveHealTarget', () => {
     expect(resolveHealTarget('nonsense')).toBeNull();
     expect(resolveHealTarget('')).toBeNull();
   });
+
+  // Defense-in-depth: the login/org/owner/repo segments must be a GitHub-safe
+  // charset so nothing can smuggle path/query characters into the fixed
+  // api.github.com URL (`/`, `..`, `?`, `#`, whitespace). Host/protocol are
+  // already fixed; this removes even path-level latitude.
+  it('rejects keys whose segments contain path/query-injection characters', () => {
+    expect(resolveHealTarget('repos:foo/bar')).toBeNull();
+    expect(resolveHealTarget('repos:foo?x=1')).toBeNull();
+    expect(resolveHealTarget('repos:../../etc')).toBeNull();
+    expect(resolveHealTarget('org:foo/../../x')).toBeNull();
+    expect(resolveHealTarget('user:foo/bar')).toBeNull();
+    expect(resolveHealTarget('user:foo/bar:readme')).toBeNull();
+    expect(resolveHealTarget('repo:ow ner/MangaDock:pulls')).toBeNull();
+    expect(resolveHealTarget('repo:owner/Man/goDock:pulls')).toBeNull();
+  });
+
+  it('still accepts valid GitHub logins with hyphens and repo dots', () => {
+    expect(resolveHealTarget('repos:akkanop-x')).toEqual({
+      url: 'https://api.github.com/users/akkanop-x/repos?per_page=100&sort=pushed',
+      readme: false,
+    });
+    expect(resolveHealTarget('repo:Slow-Inc/next.js:readme')).toEqual({
+      url: 'https://api.github.com/repos/Slow-Inc/next.js/readme',
+      readme: true,
+    });
+  });
 });
