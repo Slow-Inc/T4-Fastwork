@@ -8,7 +8,12 @@ import { RevealObserver } from '@/components/site/reveal-observer';
 import { ProjectDetailContent } from '@/components/pages/project-detail-content';
 import { projects } from '@/content/catalog';
 import { getProjectBySlug } from '@/lib/projects-repo';
+import { getRepoDetail } from '@/lib/github';
+import { team } from '@/content/site';
 import { pageAlternates } from '@/lib/seo';
+
+/** Team roster for contributor classification (login → /team slug). */
+const roster = team.map((m) => ({ slug: m.slug, githubUrl: m.githubUrl }));
 
 type Params = Promise<{ slug: string }>;
 
@@ -46,6 +51,11 @@ export default async function ProjectDetailPage({
   const p = await getProjectBySlug(slug);
   if (!p) notFound();
 
+  // Live GitHub overlay when the project is repo-backed; null → static only.
+  const detail = p.github
+    ? await getRepoDetail(p.github.owner, p.github.repo)
+    : null;
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CreativeWork',
@@ -65,7 +75,7 @@ export default async function ProjectDetailPage({
       />
       <FloatingChatProvider>
         <div className="wrap">
-          <ProjectDetailContent project={p} />
+          <ProjectDetailContent project={p} detail={detail} roster={roster} />
           <SiteFooter />
         </div>
         <ChatButton />

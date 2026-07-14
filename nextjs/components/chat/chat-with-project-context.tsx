@@ -6,6 +6,7 @@ import { projects } from '@/content/catalog';
 import { ChatClient } from './chat-client';
 import { ChatSessionProvider } from './chat-session-context';
 import { ScopeSummaryPanel } from './scope-summary-panel';
+import { SHARED_CHAT_KEY } from '@/lib/chat-persist';
 
 /**
  * Reads `?project=<slug>` (set by the "Ask AI about this project" CTA on a
@@ -22,7 +23,14 @@ function ChatWithProjectContextInner() {
 
   return (
     <ChatSessionProvider>
-      <ChatClient initialProjectSlug={slug} initialProjectTitle={title} />
+      {/* General conversation shares the floating popup's history (#31); a
+          project-grounded chat stays a fresh, unpersisted thread (matches the
+          floating widget, which also skips persistence when grounded). */}
+      <ChatClient
+        initialProjectSlug={slug}
+        initialProjectTitle={title}
+        persistKey={slug ? undefined : SHARED_CHAT_KEY}
+      />
       <ScopeSummaryPanel />
     </ChatSessionProvider>
   );
@@ -33,7 +41,7 @@ export function ChatWithProjectContext() {
     <Suspense
       fallback={
         <ChatSessionProvider>
-          <ChatClient />
+          <ChatClient persistKey={SHARED_CHAT_KEY} />
           <ScopeSummaryPanel />
         </ChatSessionProvider>
       }

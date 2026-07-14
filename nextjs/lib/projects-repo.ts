@@ -12,6 +12,7 @@ import { mapDbProject, mergeProjects, type DbProjectRow } from './project-map';
 
 const SELECT =
   'slug,title,title_en,description,content,live_url,snapshot_image,is_featured,published_at,' +
+  'gh_owner,gh_repo,owner_type,owner_login,' +
   'category:categories(name),' +
   'project_technologies(technologies(name)),' +
   'project_tags(tags(name))';

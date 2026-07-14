@@ -15,6 +15,13 @@
       "when": 1783955576613,
       "tag": "0001_daffy_ulik",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783972513972,
+      "tag": "0002_clumsy_deathstrike",
+      "breakpoints": true
     }
   ]
 }

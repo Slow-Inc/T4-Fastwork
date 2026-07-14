@@ -39,4 +39,25 @@ export class GithubReadService {
   getOrgRepos(org: string): Promise<ReadResult | null> {
     return this.getResource(snapshotKey.orgRepos(org));
   }
+
+  // Showcase detail resources (spec 2026-07-14, P6/P7).
+  getRepoContributors(owner: string, repo: string): Promise<ReadResult | null> {
+    return this.getResource(snapshotKey.repoContributors(owner, repo));
+  }
+
+  getRepoPulls(owner: string, repo: string): Promise<ReadResult | null> {
+    return this.getResource(snapshotKey.repoPulls(owner, repo));
+  }
+
+  getRepoReadme(owner: string, repo: string): Promise<ReadResult | null> {
+    return this.getResource(snapshotKey.repoReadme(owner, repo));
+  }
+
+  getUserProfile(login: string): Promise<ReadResult | null> {
+    return this.getResource(snapshotKey.userProfile(login));
+  }
+
+  getUserReadme(login: string): Promise<ReadResult | null> {
+    return this.getResource(snapshotKey.userReadme(login));
+  }
 }

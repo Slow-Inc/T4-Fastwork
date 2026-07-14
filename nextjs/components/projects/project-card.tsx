@@ -19,6 +19,19 @@ export function ProjectCardView({ project: p, en = false }: { project: Project; 
         <div className="pcard-badges">
           {p.isFeatured && <span className="badge badge-accent">{en ? 'Featured' : 'แนะนำ'}</span>}
           <span className="badge">{p.category}</span>
+          {p.ownerType && (
+            <span className={`badge owner-badge owner-${p.ownerType}`}>
+              {(p.ownerLabel ?? 'T4 Labs') +
+                ' · ' +
+                (p.ownerType === 'personal'
+                  ? en
+                    ? 'Personal'
+                    : 'ส่วนตัว'
+                  : en
+                    ? 'Team'
+                    : 'ทีม')}
+            </span>
+          )}
         </div>
       </Link>
       <div className="pcard-body">

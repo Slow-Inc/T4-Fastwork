@@ -13,6 +13,7 @@
 import {
   GITHUB_MEMBERS,
   GITHUB_ORG,
+  GITHUB_SHOWCASE_REPOS,
   githubUrl,
   snapshotKey,
 } from './github.config';
@@ -22,6 +23,15 @@ export interface ResourceSyncer {
     key: string,
     url: string,
   ): Promise<{ changed: boolean; data: unknown }>;
+}
+
+/** The showcase detail layer (GithubDetailService) — optional in the refresh. */
+export interface DetailSyncer {
+  syncRepoDetail(
+    owner: string,
+    repo: string,
+  ): Promise<{ readmeSha: string | null }>;
+  syncUserProfile(login: string): Promise<void>;
 }
 
 export interface RefreshSummary {
@@ -35,6 +45,15 @@ export class GithubRefreshService {
     private readonly syncer: ResourceSyncer,
     private readonly members: readonly string[] = GITHUB_MEMBERS,
     private readonly org: string = GITHUB_ORG,
+    /** When provided, the refresh also populates showcase detail (spec P6/P7):
+     *  each member's profile + profile README, and each showcase repo's
+     *  contributors/pulls/README. Optional so the repo-list refresh (and its
+     *  tests) work unchanged. */
+    private readonly detail?: DetailSyncer,
+    private readonly showcaseRepos: readonly {
+      owner: string;
+      repo: string;
+    }[] = GITHUB_SHOWCASE_REPOS,
   ) {}
 
   async refreshAll(): Promise<RefreshSummary> {
@@ -59,6 +78,29 @@ export class GithubRefreshService {
         // Serve-stale: a failed resource keeps its prior snapshot. Record and
         // continue so one bad member never blocks the whole refresh.
         summary.failed.push(t.key);
+      }
+    }
+
+    // Showcase detail (P6/P7): member profiles + tracked-repo detail. Each is
+    // independent — a failure records the key and never aborts the batch.
+    if (this.detail) {
+      for (const login of this.members) {
+        const key = snapshotKey.userProfile(login);
+        try {
+          await this.detail.syncUserProfile(login);
+          summary.synced.push(key);
+        } catch {
+          summary.failed.push(key);
+        }
+      }
+      for (const { owner, repo } of this.showcaseRepos) {
+        const key = snapshotKey.repoContributors(owner, repo);
+        try {
+          await this.detail.syncRepoDetail(owner, repo);
+          summary.synced.push(key);
+        } catch {
+          summary.failed.push(key);
+        }
       }
     }
     return summary;

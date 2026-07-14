@@ -1,0 +1,43 @@
+# Screenshot worker for the project showcase (spec 2026-07-14, P4).
+# Playwright can't run inside the Vercel serverless request path, so cover-image
+# capture runs here: on a schedule (and on demand) it screenshots each published
+# project's live_url that has no snapshot_image yet, uploads to Supabase Storage,
+# and writes the URL back to the projects row.
+#
+# Gated: needs repo Actions secrets SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY.
+# Until they're set the job no-ops (the script exits early on missing env).
+name: screenshot-projects
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # every 6h, aligned with the refresh cadence
+  workflow_dispatch: {} # manual "capture now" (e.g. after approving a project)
+
+concurrency:
+  group: screenshot-projects
+  cancel-in-progress: false
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: nextjs
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Capture missing project screenshots
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: bun run scripts/screenshot-projects.ts

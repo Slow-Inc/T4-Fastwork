@@ -24,6 +24,10 @@ export interface DbProjectRow {
   snapshot_image?: string | null;
   is_featured: boolean;
   published_at: string | null;
+  gh_owner?: string | null;
+  gh_repo?: string | null;
+  owner_type?: string | null;
+  owner_login?: string | null;
   category: { name: string } | null;
   project_technologies: { technologies: { name: string } | null }[];
   project_tags: { tags: { name: string } | null }[];
@@ -48,6 +52,13 @@ export function mapDbProject(row: DbProjectRow): Project {
     isFeatured: row.is_featured,
     tone: toneForSlug(row.slug),
     year: row.published_at ? row.published_at.slice(0, 4) : '',
+    ...(row.gh_owner && row.gh_repo
+      ? { github: { owner: row.gh_owner, repo: row.gh_repo } }
+      : {}),
+    ...(row.owner_type === 'team' || row.owner_type === 'personal'
+      ? { ownerType: row.owner_type }
+      : {}),
+    ...(row.owner_login ? { ownerLabel: row.owner_login } : {}),
   };
 }
 

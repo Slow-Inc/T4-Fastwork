@@ -51,4 +51,27 @@ describe('ProjectCard', () => {
     render(<ProjectCardView project={{ ...sample, liveUrl: undefined }} />);
     expect(screen.queryByRole('link', { name: /ดูเว็บจริง/i })).toBeNull();
   });
+
+  test('labels a team project with an owner badge (spec P5)', () => {
+    render(
+      <ProjectCardView
+        project={{ ...sample, ownerType: 'team', ownerLabel: 'T4 Labs' }}
+      />,
+    );
+    expect(screen.getByText(/T4 Labs · ทีม/)).toBeDefined();
+  });
+
+  test('labels a personal project as ส่วนตัว', () => {
+    render(
+      <ProjectCardView
+        project={{ ...sample, ownerType: 'personal', ownerLabel: '@xenodeve' }}
+      />,
+    );
+    expect(screen.getByText(/@xenodeve · ส่วนตัว/)).toBeDefined();
+  });
+
+  test('omits the owner badge when ownerType is absent', () => {
+    render(<ProjectCardView project={sample} />);
+    expect(screen.queryByText(/· ทีม|· ส่วนตัว/)).toBeNull();
+  });
 });

@@ -24,6 +24,12 @@ export interface Project {
   /** Visual tone for the snapshot placeholder (reuses the homepage palette). */
   tone: 'ink' | 'sand' | 'teal' | 'gray';
   year: string;
+  /** GitHub repo backing this project (spec 2026-07-14) — enables the live
+   * detail overlay (stars, contributors, README). Absent for non-GitHub work. */
+  github?: { owner: string; repo: string };
+  /** Whose project: the org (team) or a member (personal). */
+  ownerType?: 'team' | 'personal';
+  ownerLabel?: string;
 }
 
 export const projects: Project[] = [
@@ -47,6 +53,9 @@ export const projects: Project[] = [
     isFeatured: true,
     tone: 'teal',
     year: '2025',
+    github: { owner: 'Slow-Inc', repo: 'MangaDock' },
+    ownerType: 'team',
+    ownerLabel: 'T4 Labs',
   },
   {
     slug: 'listingthai',

@@ -325,6 +325,40 @@ test('project detail "ask AI about this project" opens the floating widget groun
   expect((requestBody?.message as string) ?? '').toContain('MangaDock');
 });
 
+test('home shows the team directory and a tech-stack marquee — spec P8', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  await page.goto('/', { waitUntil: 'networkidle' });
+
+  // The team is visible on the home page (credibility — real people).
+  await expect(page.locator('#team')).toBeVisible();
+  await expect(
+    page.locator('#team').getByRole('link', { name: /xenodev|Slowgers/ }).first(),
+  ).toBeVisible();
+  // The tech-stack marquee renders its track.
+  await expect(page.locator('.tech-marquee-track')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('project detail shows an owner chip (team/personal) — spec P6', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  await page.goto('/projects/mangadock', { waitUntil: 'networkidle' });
+
+  // The owner chip labels whose project this is (MangaDock = a team project).
+  const chip = page.locator('.owner-chip');
+  await expect(chip).toBeVisible();
+  await expect(chip).toContainText('T4 Labs');
+  // Live contributors/README overlay is graceful when the backend is offline —
+  // the page must still render its h1 with no console errors.
+  await expect(page.locator('h1')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('arriving at /chat with ?project= shows a banner and grounds the auto-sent question', async ({
   page,
 }) => {
@@ -395,6 +429,12 @@ test('home credentials open in the same lightbox as team, and it is dismissable'
   const modal = page.locator('.tm-modal');
   await expect(modal).toBeVisible();
 
+  // The lightbox must show a REAL certificate image using the SAME design as the
+  // per-person team lightbox (.tm-modal-img, full/contained) — spec P8 fix.
+  const img = modal.locator('img.tm-modal-img');
+  await expect(img).toBeVisible();
+  await expect(img).toHaveAttribute('src', /\/certificates\//);
+
   // Same regression guard as the team lightbox: fixed, full-viewport overlay.
   const vp = page.viewportSize()!;
   const box = (await modal.boundingBox())!;
@@ -430,4 +470,27 @@ test('the floating chat keeps its conversation when closed and reopened', async 
   await expect(page.locator('.chat-panel')).toHaveCount(0);
   await page.getByRole('button', { name: /Ask T4 AI/i }).click();
   await expect(page.locator('.chat-panel').getByText('APPLE123')).toBeVisible();
+});
+
+test('the floating popup and the /chat page share one conversation (#31)', async ({
+  page,
+}) => {
+  // Type a message in the floating popup...
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: /Ask T4 AI/i }).click();
+  const panel = page.locator('.chat-panel');
+  await expect(panel).toBeVisible();
+  await panel.locator('input, textarea').first().fill('ต่อเนื่อง BANANA456');
+  await panel.getByRole('button', { name: 'ส่ง' }).click();
+  await expect(panel.getByText('BANANA456')).toBeVisible();
+
+  // ...expand into the full /chat page — the history carries over (shared key).
+  await page.goto('/chat', { waitUntil: 'networkidle' });
+  await expect(page.getByText('BANANA456')).toBeVisible();
+
+  // ...and the /chat page writes back to the same shared conversation, so
+  // returning to the popup still shows the history (symmetric persistence).
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: /Ask T4 AI/i }).click();
+  await expect(page.locator('.chat-panel').getByText('BANANA456')).toBeVisible();
 });

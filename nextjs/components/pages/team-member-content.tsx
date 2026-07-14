@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import type { TeamMember, TeamCertificate } from '@/content/site';
-import type { LiveRepo } from '@/lib/github';
+import type { LiveRepo, LiveUser } from '@/lib/github';
 import { useLocale } from '@/i18n/locale-context';
 import { TeamMemberView } from '@/components/site/team-member-view';
 import { CertLightbox } from '@/components/site/cert-lightbox';
@@ -12,9 +12,11 @@ import { CertLightbox } from '@/components/site/cert-lightbox';
 export function TeamMemberContent({
   member,
   liveRepos,
+  liveUser,
 }: {
   member: TeamMember;
   liveRepos?: LiveRepo[] | null;
+  liveUser?: LiveUser | null;
 }) {
   const { locale } = useLocale();
   const en = locale === 'en';
@@ -27,6 +29,7 @@ export function TeamMemberContent({
         en={en}
         onOpenCert={setActive}
         liveRepos={liveRepos}
+        liveUser={liveUser}
       />
       <Link href="/about#team" className="tm-back">
         ← {en ? 'Back to the team' : 'กลับไปหน้าทีม'}

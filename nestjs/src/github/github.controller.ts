@@ -42,4 +42,38 @@ export class GithubController {
   repos(@Param('login') login: string): Promise<ReadResult | null> {
     return this.read.getMemberRepos(login);
   }
+
+  /** Detail for one repo (project detail page, spec P6): contributors + open
+   * pulls + README. Each field is `null` when its snapshot is missing. */
+  @Get('repos/:owner/:repo/detail')
+  @Header('Cache-Control', SWR_CACHE)
+  async repoDetail(
+    @Param('owner') owner: string,
+    @Param('repo') repo: string,
+  ): Promise<{
+    contributors: ReadResult | null;
+    pulls: ReadResult | null;
+    readme: ReadResult | null;
+  }> {
+    const [contributors, pulls, readme] = await Promise.all([
+      this.read.getRepoContributors(owner, repo),
+      this.read.getRepoPulls(owner, repo),
+      this.read.getRepoReadme(owner, repo),
+    ]);
+    return { contributors, pulls, readme };
+  }
+
+  /** A member's profile + profile README (team page, spec P7). */
+  @Get('users/:login')
+  @Header('Cache-Control', SWR_CACHE)
+  async user(@Param('login') login: string): Promise<{
+    profile: ReadResult | null;
+    readme: ReadResult | null;
+  }> {
+    const [profile, readme] = await Promise.all([
+      this.read.getUserProfile(login),
+      this.read.getUserReadme(login),
+    ]);
+    return { profile, readme };
+  }
 }

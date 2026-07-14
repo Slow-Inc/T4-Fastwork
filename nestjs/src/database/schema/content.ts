@@ -49,6 +49,34 @@ export const projects = pgTable('projects', {
   isFeatured: boolean('is_featured').notNull().default(false),
   publishedAt: timestamp('published_at', { withTimezone: true }),
   sortOrder: integer('sort_order').notNull().default(0),
+
+  // --- Autonomous GitHub showcase (spec 2026-07-14, P2) ---------------------
+  // Existing rows default to a human-authored, published CMS project so the
+  // curated catalog/CMS content is never touched by auto-regeneration.
+  source: text('source').notNull().default('cms'), // 'cms' | 'github'
+  status: text('status').notNull().default('published'), // 'draft' | 'published' | 'hidden'
+
+  // GitHub linkage (null for manual/cms entries)
+  ghOwner: text('gh_owner'),
+  ghRepo: text('gh_repo'),
+  ghHtmlUrl: text('gh_html_url'),
+  ownerType: text('owner_type').notNull().default('team'), // 'team' | 'personal'
+  ownerLogin: text('owner_login'),
+
+  // Per-field provenance ('auto' | 'human'). A human CMS edit flips a field to
+  // 'human'; regeneration only rewrites 'auto'-owned fields.
+  titleOwner: text('title_owner').notNull().default('human'),
+  titleEnOwner: text('title_en_owner').notNull().default('human'),
+  descriptionOwner: text('description_owner').notNull().default('human'),
+  contentOwner: text('content_owner').notNull().default('human'),
+  categoryOwner: text('category_owner').notNull().default('human'),
+  tagsOwner: text('tags_owner').notNull().default('human'),
+  technologiesOwner: text('technologies_owner').notNull().default('human'),
+
+  // Reconciliation metadata
+  readmeSha: text('readme_sha'),
+  generatedAt: timestamp('generated_at', { withTimezone: true }),
+  approvedAt: timestamp('approved_at', { withTimezone: true }),
 });
 
 // Many-to-many: projects ↔ technologies / tags.
