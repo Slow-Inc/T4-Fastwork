@@ -13,6 +13,7 @@ import {
 import { buildProjectGreetingMessage } from '@/lib/project-chat';
 import { loadChat, saveChat } from '@/lib/chat-persist';
 import { InlineCard, type CardData } from './inline-card';
+import { ThinkingBox } from './thinking-box';
 import { useChatSession } from './chat-session-context';
 
 const API_BASE =
@@ -21,6 +22,11 @@ const API_BASE =
 interface Message {
   role: 'user' | 'assistant';
   parts: MessagePart[];
+  /** The model's chain-of-thought (Open WebUI style), accumulated from reasoning
+   * events; shown in a collapsible box above the answer. */
+  reasoning?: string;
+  /** Thinking duration (reasoning start → first answer token), ms. */
+  reasoningMs?: number;
 }
 
 type Status = ChatStatus;
@@ -73,6 +79,9 @@ export function ChatClient({
   const sessionId = useRef<string | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoSentRef = useRef(false);
+  // When the current turn's reasoning stream began (Date.now); used to time the
+  // thinking duration at the first answer token.
+  const reasoningStartRef = useRef<number | undefined>(undefined);
   const { reportSession, reportTurnComplete } = useChatSession();
 
   const busy = status === 'thinking' || status === 'streaming';
@@ -85,12 +94,15 @@ export function ChatClient({
 
   // Mutate the last assistant message's parts through a reducer.
   function updateLastAssistant(fn: (parts: MessagePart[]) => MessagePart[]) {
+    mutateLastAssistant((m) => ({ ...m, parts: fn(m.parts) }));
+  }
+
+  // Mutate the whole last assistant message (parts + reasoning fields).
+  function mutateLastAssistant(fn: (m: Message) => Message) {
     setMessages((prev) => {
       const next = [...prev];
       const last = next[next.length - 1];
-      if (last?.role === 'assistant') {
-        next[next.length - 1] = { role: 'assistant', parts: fn(last.parts) };
-      }
+      if (last?.role === 'assistant') next[next.length - 1] = fn(last);
       return next;
     });
     scrollToEnd();
@@ -107,6 +119,7 @@ export function ChatClient({
     ]);
     setInput('');
     setStatus('thinking');
+    reasoningStartRef.current = undefined;
     scrollToEnd();
 
     try {
@@ -138,10 +151,28 @@ export function ChatClient({
               sessionId.current = data.sessionId as string;
               reportSession(sessionId.current);
               break;
-            case 'token':
-              setStatus('streaming');
-              updateLastAssistant((p) => appendToken(p, data.text as string));
+            case 'reasoning':
+              if (reasoningStartRef.current === undefined) {
+                reasoningStartRef.current = Date.now();
+              }
+              mutateLastAssistant((m) => ({
+                ...m,
+                reasoning: (m.reasoning ?? '') + (data.text as string),
+              }));
               break;
+            case 'token': {
+              setStatus('streaming');
+              // First answer token ends the thinking phase — stamp its duration.
+              const started = reasoningStartRef.current;
+              mutateLastAssistant((m) => ({
+                ...m,
+                parts: appendToken(m.parts, data.text as string),
+                reasoningMs:
+                  m.reasoningMs ??
+                  (started !== undefined ? Date.now() - started : undefined),
+              }));
+              break;
+            }
             case 'card':
               updateLastAssistant((p) => appendCard(p, data as unknown as CardData));
               break;
@@ -216,6 +247,13 @@ export function ChatClient({
         {messages.map((m, i) => (
           <div key={i} className={`chat-msg chat-${m.role}`}>
             <div className="chat-bubble">
+              {m.role === 'assistant' && m.reasoning && (
+                <ThinkingBox
+                  reasoning={m.reasoning}
+                  durationMs={m.reasoningMs}
+                  live={i === messages.length - 1 && status === 'thinking'}
+                />
+              )}
               {m.parts.map((part, j) =>
                 part.type === 'text' ? (
                   <span key={j} className="chat-text">
@@ -227,7 +265,8 @@ export function ChatClient({
               )}
               {m.role === 'assistant' &&
                 i === messages.length - 1 &&
-                status === 'thinking' && (
+                status === 'thinking' &&
+                !m.reasoning && (
                   <span className="chat-thinking">กำลังคิด…</span>
                 )}
               {shouldShowTypingCursor(m.role, i === messages.length - 1, status) && (

@@ -22,6 +22,19 @@ export function appendCard(parts: MessagePart[], card: CardData): MessagePart[] 
   return [...parts, { type: 'card', card }];
 }
 
+/** "N วิ" — whole-second thinking duration for the collapsed thinking summary. */
+export function formatThinkingDuration(ms: number): string {
+  return `${Math.round(ms / 1000)} วิ`;
+}
+
+/** Collapsed thinking-summary label: "คิดอยู่ N วิ", or a generic prompt if the
+ * duration is unknown. */
+export function thinkingSummaryLabel(durationMs?: number): string {
+  return durationMs !== undefined
+    ? `คิดอยู่ ${formatThinkingDuration(durationMs)}`
+    : 'ดูการคิดของ AI';
+}
+
 export type ChatStatus = 'idle' | 'thinking' | 'streaming' | 'error';
 
 /** A blinking typing cursor only belongs on the assistant's in-progress reply. */
