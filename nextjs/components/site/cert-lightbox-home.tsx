@@ -82,6 +82,11 @@ export function CertLightboxHome({
 
   if (!cert) return null;
 
+  // Same preview resolution as CertCard: a real (non-PDF) image if we have one.
+  const previewSrc =
+    cert.fullImage && !isPdfUrl(cert.fullImage) ? cert.fullImage : cert.thumbnail;
+  const pdfHref = cert.fullImage && isPdfUrl(cert.fullImage) ? cert.fullImage : null;
+
   return (
     <div
       className="tm-modal"
@@ -99,13 +104,39 @@ export function CertLightboxHome({
         >
           ✕
         </button>
-        <div className="tm-modal-body">
-          <CertCard cert={cert} />
-        </div>
+        {/* Match the per-person team lightbox exactly: the real image displays
+            full and contained (.tm-modal-img); only certs with no image at all
+            fall back to the typographic CertCard. */}
+        {previewSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className="tm-modal-img"
+            src={previewSrc}
+            alt={`${cert.title} — ${cert.issuer}`}
+          />
+        ) : (
+          <div className="tm-modal-body">
+            <CertCard cert={cert} />
+          </div>
+        )}
         <div className="tm-modal-bar">
           <div className="tm-modal-cap">
             <span className="t-meta">{cert.issuer}</span> {cert.title}
           </div>
+          {(pdfHref || cert.verifyUrl) && (
+            <div className="tm-modal-dl">
+              {pdfHref && (
+                <a href={pdfHref} target="_blank" rel="noopener noreferrer">
+                  PDF
+                </a>
+              )}
+              {cert.verifyUrl && (
+                <a href={cert.verifyUrl} target="_blank" rel="noopener noreferrer">
+                  {en ? 'Verify' : 'ตรวจสอบ'}
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

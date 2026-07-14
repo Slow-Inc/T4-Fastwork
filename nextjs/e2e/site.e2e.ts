@@ -429,9 +429,9 @@ test('home credentials open in the same lightbox as team, and it is dismissable'
   const modal = page.locator('.tm-modal');
   await expect(modal).toBeVisible();
 
-  // The lightbox must show a REAL certificate image (spec P8 fix) — not a blank
-  // placeholder. The preview <img> points at a real file under /certificates/.
-  const img = modal.locator('img.cert-preview-img');
+  // The lightbox must show a REAL certificate image using the SAME design as the
+  // per-person team lightbox (.tm-modal-img, full/contained) — spec P8 fix.
+  const img = modal.locator('img.tm-modal-img');
   await expect(img).toBeVisible();
   await expect(img).toHaveAttribute('src', /\/certificates\//);
 
