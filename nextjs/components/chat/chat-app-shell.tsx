@@ -145,17 +145,25 @@ export function ChatAppShell() {
           onClick={() => setSidebarOpen(false)}
         />
         <div className="chat-pane">
-          {!sidebarOpen && (
-            <button
-              type="button"
-              className="chat-open-sidebar"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="เปิดแถบประวัติ"
-            >
-              <PanelIcon />
-              ประวัติ
-            </button>
-          )}
+          {/* Slim identity strip (#43) — OWUI's top bar without the model selector. */}
+          <div className="chat-topstrip">
+            {!sidebarOpen && (
+              <button
+                type="button"
+                className="chat-open-sidebar"
+                onClick={() => setSidebarOpen(true)}
+                aria-label="เปิดแถบประวัติ"
+              >
+                <PanelIcon />
+                ประวัติ
+              </button>
+            )}
+            <span className="chat-topstrip-id">ผู้ช่วย AI</span>
+            <span className="chat-topstrip-sep" aria-hidden="true">
+              ·
+            </span>
+            <span className="chat-topstrip-org">T4 Labs</span>
+          </div>
           <ChatClient
             key={state.activeId ?? "none"}
             emptyState

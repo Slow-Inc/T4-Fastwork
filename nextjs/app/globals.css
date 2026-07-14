@@ -2390,6 +2390,16 @@ footer {
 .chat-text {
   white-space: pre-wrap;
 }
+/* User turns read as a subtle right-aligned pill (#43); the assistant stays flat
+   (hairline + whitespace, no bubble). */
+.chat-user .chat-text {
+  display: inline-block;
+  padding: 9px 14px;
+  background: var(--paper-deep);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  max-width: 100%;
+}
 /* Mechanical thinking indicator — mono label + accent block caret (terminal
    feel), not bouncing dots (research: quiet-luxury motion). */
 .chat-thinking {
@@ -2927,11 +2937,41 @@ footer {
   flex-direction: column;
   position: relative;
 }
-/* Reopen affordance shown when the sidebar is collapsed. */
+/* Top identity strip (#43) — a slim `ผู้ช่วย AI · T4 Labs` bar, mono, hairline
+   underline; OWUI's top bar without a model selector. */
+.chat-topstrip {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+}
+.chat-topstrip-id {
+  color: var(--ink);
+  font-weight: 600;
+}
+.chat-topstrip-sep {
+  color: var(--faint);
+}
+.chat-topstrip-org {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 10.5px;
+}
+/* Reopen affordance shown (inside the strip, left) when the sidebar is collapsed. */
 .chat-open-sidebar {
   position: absolute;
-  top: 4px;
-  left: 8px;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
   z-index: 2;
   display: inline-flex;
   align-items: center;
@@ -2942,8 +2982,7 @@ footer {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
-  background: rgba(244, 242, 237, 0.7);
-  backdrop-filter: blur(8px);
+  background: transparent;
   border: 1px solid var(--line);
   border-radius: 9px;
   cursor: pointer;

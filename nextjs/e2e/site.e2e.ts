@@ -640,6 +640,43 @@ test("assistant turns get a copy + regenerate action row (#41)", async ({
   );
 });
 
+test("/chat shows a top identity strip and renders user turns as a pill (#43)", async ({
+  page,
+}) => {
+  await page.route("**/chat/stream", async (route) => {
+    const body =
+      'event: session\ndata: {"sessionId":"e2e-strip-pill"}\n\n' +
+      'event: token\ndata: {"text":"รับทราบครับ"}\n\n' +
+      'event: done\ndata: {"latencyMs":10}\n\n';
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body,
+    });
+  });
+
+  await page.goto("/chat", { waitUntil: "networkidle" });
+
+  // Slim identity strip at the top of the conversation pane.
+  const strip = page.locator(".chat-topstrip");
+  await expect(strip).toContainText("ผู้ช่วย AI");
+  await expect(strip).toContainText("T4 Labs");
+
+  // A user turn renders as a subtle pill (bordered + rounded), not bare text.
+  await page.getByPlaceholder("พิมพ์ข้อความ…").fill("สวัสดี PILL1");
+  await page.locator(".chat-pane").getByRole("button", { name: "ส่ง" }).click();
+  const pill = page
+    .locator(".chat-user .chat-text")
+    .filter({ hasText: "PILL1" });
+  await expect(pill).toBeVisible();
+  const style = await pill.evaluate((el) => {
+    const s = getComputedStyle(el);
+    return { border: s.borderTopWidth, radius: s.borderTopLeftRadius };
+  });
+  expect(style.border).not.toBe("0px");
+  expect(style.radius).not.toBe("0px");
+});
+
 test("every page declares its own canonical + hreflang alternates", async ({
   page,
 }) => {
