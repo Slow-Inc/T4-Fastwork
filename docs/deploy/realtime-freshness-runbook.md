@@ -55,6 +55,14 @@ Event sources feeding the "double" (no loop, no timer held): **heal-on-read**
 - **Cron**: Actions tab → `github-refresh-cron` → "Run workflow" → the run logs
   `POST … /github/refresh -> HTTP 2xx`.
 
+## Env files
+
+Convention (both apps; see `CLAUDE.md`): **local development uses `.env.local`,
+production uses `.env`** (both gitignored; `*.env.example` is the committed
+template). The Vercel dashboard env vars drive the *deployed* runtime. Keep a
+shared value like `GITHUB_REFRESH_SECRET` identical across the backend and
+frontend for whichever environment you run.
+
 ## Notes / gotchas
 
 - `updateTag` (Next 16) is used, not `revalidateTag(tag,'max')` — the latter is
