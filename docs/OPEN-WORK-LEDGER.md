@@ -3,6 +3,25 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## Active — Open WebUI-style app-shell for /chat (epic #37)
+
+PRD: `docs/superpowers/specs/2026-07-15-owui-app-shell-chat.md`. Design inputs: `docs/design/openwebui-layout-study.md` + `docs/design/expensive-minimalism.md` + `nextjs/DESIGN.md`. Branch `feat/chat-thinking-mode` (HEAD `ddf892a`). **No implementation code yet** — PRD + issues filed only. Build order P0→P5.
+
+| Phase | Issue | State | Notes |
+|---|---|---|---|
+| P0 conversation store (`lib/chat-conversations.ts`, pure, migrate `floating` key) | #38 | ⬜ next — TDD | list/create/switch/rename/delete/touch + recency-group; foundation for sidebar |
+| P1 `<ChatSidebar>` + two-pane app-shell | #39 | ⬜ | collapsible, grouped history, identity footer; the big one |
+| P2 empty-state + suggestions | #40 | ⬜ | centered identity + composer + `⚡ แนะนำ` rows |
+| P3 message actions (copy/regenerate) | #41 | ⬜ | hover-reveal action row on assistant turns |
+| P4 composer attach + image (subsumes #35) | #42 | ⬜ | wire vision-capable backend |
+| P5 top identity strip + user pill | #43 | ⬜ | slim `ผู้ช่วย AI · T4 Labs` strip |
+
+Prereqs shipped: Visible-Grid Swiss redesign (`f45f7e8`, verified live). Style translation rules in the PRD (never OWUI's flat look). Bilingual issues/PRs; TDD; `bun run e2e` every FE change; `/impeccable` every UI edit.
+
+## Active — bug: interrupted AI turn (#36) 🔵
+
+Switching popup ↔ /chat mid-stream loses the in-progress reply → blank `ผู้ช่วย AI` turn. Root cause traced (shared `SHARED_CHAT_KEY` sessionStorage + per-instance SSE + no `AbortController`); architectural, pre-existing since #31 — NOT a redesign regression. Detail: scratchpad `issue-chat-switch-bug.md`. Separate from #37; fix independently.
+
 ## Active — Serverless-native live freshness (#25)
 
 Design: ADR `docs/adr/0004-serverless-realtime-freshness.md` + spec `docs/superpowers/specs/2026-07-14-serverless-realtime-freshness-design.md`. Branch `feat/25-serverless-realtime-freshness`.
