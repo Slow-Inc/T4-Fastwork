@@ -21,8 +21,8 @@ Design: ADR `docs/adr/0004-serverless-realtime-freshness.md` + spec `docs/superp
 
 **Human activation steps (external dashboards):**
 1. ✅ **Frontend Vercel env** — `GITHUB_REFRESH_SECRET` set on `t4-fastwork-nextjs` (production, Sensitive) via Vercel CLI + redeploy. See `docs/deploy/vercel-cli.md`.
-2. 🔴 **Actions secret:** set repo secret `BACKEND_REFRESH_SECRET` (= backend `GITHUB_REFRESH_SECRET`; can't reuse the `GITHUB_`-prefixed name; `gh secret set` works). Unset → cron no-ops.
-3. 🔴 **Org webhook** on `Slow-Inc` → `POST <backend>/github/webhook`, secret = `GITHUB_WEBHOOK_SECRET`, events: push (carried over from ADR 0003).
+2. ✅ **Actions secret** — `BACKEND_REFRESH_SECRET` set via `gh secret set`. Cron verified end-to-end (manual dispatch run 29322271919: `POST /github/refresh → HTTP 201`, synced 12 keys, `changed: org:Slow-Inc`). Runs hourly.
+3. 🔴 **Org webhook** on `Slow-Inc` → `POST <backend>/github/webhook`, secret = `GITHUB_WEBHOOK_SECRET`, events: push (carried over from ADR 0003). Needs org admin.
 - **Known gap (non-blocking):** the webhook's `refreshOwner` re-syncs repo *lists*, not per-repo showcase *detail* (contributors/pulls/readme) — those freshen via the hourly cron + heal-on-read. Acceptable for a safety-net; expand only if push-latency on contributors matters.
 
 ## Active — Autonomous GitHub project showcase (epic #27, PR #29)
