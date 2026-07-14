@@ -562,6 +562,39 @@ test("sidebar conversations can be renamed and deleted (#39)", async ({
   ).toHaveCount(0);
 });
 
+test("empty state shows the identity + suggestions, and a suggestion sends (#40)", async ({
+  page,
+}) => {
+  await page.route("**/chat/stream", async (route) => {
+    const body =
+      'event: session\ndata: {"sessionId":"e2e-empty-state"}\n\n' +
+      'event: token\ndata: {"text":"รับทราบครับ"}\n\n' +
+      'event: done\ndata: {"latencyMs":10}\n\n';
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body,
+    });
+  });
+
+  await page.goto("/chat", { waitUntil: "networkidle" });
+
+  // First-run screen: centered identity + suggestion list + composer.
+  await expect(page.locator(".chat-empty-title")).toHaveText("ผู้ช่วย AI");
+  await expect(page.locator(".chat-suggest-row")).toHaveCount(4);
+  await expect(page.getByPlaceholder("พิมพ์ข้อความ…")).toBeVisible();
+
+  // Clicking a suggestion sends it → the empty state gives way to the conversation.
+  await page.locator(".chat-suggest-row").first().click();
+  await expect(page.locator(".chat-empty")).toHaveCount(0);
+  await expect(
+    page.locator(".chat-pane").getByText("อยากได้ SaaS platform"),
+  ).toBeVisible();
+  await expect(
+    page.locator(".chat-pane").getByText("รับทราบครับ"),
+  ).toBeVisible();
+});
+
 test("every page declares its own canonical + hreflang alternates", async ({
   page,
 }) => {

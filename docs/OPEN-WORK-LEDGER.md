@@ -10,8 +10,8 @@ PRD: `docs/superpowers/specs/2026-07-15-owui-app-shell-chat.md`. Design inputs: 
 | Phase | Issue | State | Notes |
 |---|---|---|---|
 | P0 conversation store (`lib/chat-conversations.ts`, pure, migrate `floating` key) | #38 | ✅ shipped (`dc0fc3e`) | list/create/switch/rename/delete/touch + `groupByRecency` + `migrateFloating` (idempotent) + `deriveTitle`; 23 unit tests. Pure lib — not wired to UI yet (P1). Issue still OPEN pending confirm-to-close |
-| P1 `<ChatSidebar>` + two-pane app-shell | #39 | ⬜ | collapsible, grouped history, identity footer; the big one |
-| P2 empty-state + suggestions | #40 | ⬜ | centered identity + composer + `⚡ แนะนำ` rows |
+| P1 `<ChatSidebar>` + two-pane app-shell | #39 | ✅ shipped (`9af0f0f`) | `ChatSidebar` + `ChatAppShell` + store-backed `ChatClient` mode + `chat-relative-time` (8 TDD); mirrors active→`floating` for popup continuity (#31); 45 e2e green; /impeccable pass. Issue OPEN pending confirm-to-close |
+| P2 empty-state + suggestions | #40 | ✅ shipped (`9af0f0f`→next) | first-run hero (accent dot + `ผู้ช่วย AI` + tagline) + `⚡ แนะนำ` suggestion ledger (title+subtitle, click sends) replacing the greeting bubble + chips; gated by `emptyState` prop so popup keeps the compact greeting. 46 e2e green. Issue OPEN pending confirm-to-close |
 | P3 message actions (copy/regenerate) | #41 | ⬜ | hover-reveal action row on assistant turns |
 | P4 composer attach + image (subsumes #35) | #42 | ⬜ | wire vision-capable backend |
 | P5 top identity strip + user pill | #43 | ⬜ | slim `ผู้ช่วย AI · T4 Labs` strip |

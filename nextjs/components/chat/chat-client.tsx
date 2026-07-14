@@ -48,6 +48,28 @@ const QUICK_REPLIES = [
   "ประเมินงบเบื้องต้น",
 ];
 
+/** Empty-state suggestion rows (Open WebUI's `⚡ Suggested`, in our style): a
+ * bold prompt + a muted subtitle explaining what it does. The title is what gets
+ * sent. Mirrors QUICK_REPLIES but richer for the first-run screen (#40). */
+const SUGGESTIONS: { title: string; subtitle: string }[] = [
+  {
+    title: "อยากได้ SaaS platform",
+    subtitle: "เล่าโจทย์ แล้วให้ AI แนะนำสถาปัตยกรรม + เคสงานที่ใกล้เคียง",
+  },
+  {
+    title: "ทำ AI chatbot ได้ไหม",
+    subtitle: "ดูว่าเราสร้าง RAG / แชตบอทให้ธุรกิจได้อย่างไร",
+  },
+  {
+    title: "แนะนำเคสงานที่เหมาะกับฉัน",
+    subtitle: "บอกอุตสาหกรรมหรืองบ แล้วรับผลงานที่ตรงที่สุด",
+  },
+  {
+    title: "ประเมินงบเบื้องต้น",
+    subtitle: "สรุปขอบเขตงาน + ช่วงราคาเบื้องต้นจากโจทย์ของคุณ",
+  },
+];
+
 /**
  * @param initialProjectSlug When set (Requirement §5.4), grounds every turn in
  * this exact project (deterministic, not just semantic retrieval) and opens
@@ -60,6 +82,7 @@ export function ChatClient({
   initialMessages,
   initialSessionId,
   onPersist,
+  emptyState,
 }: {
   initialProjectSlug?: string;
   initialProjectTitle?: string;
@@ -73,6 +96,10 @@ export function ChatClient({
   initialMessages?: Message[];
   initialSessionId?: string;
   onPersist?: (data: { messages: Message[]; sessionId?: string }) => void;
+  /** Open WebUI-style first-run screen (the /chat app-shell, #40): before any user
+   * turn, show a centered identity + suggestion list instead of a greeting bubble
+   * and quick-reply chips. The popup keeps the compact greeting (emptyState off). */
+  emptyState?: boolean;
 } = {}) {
   // Always start from the deterministic greeting so the server and the first
   // client render produce identical HTML. A persisted conversation is restored
@@ -80,7 +107,13 @@ export function ChatClient({
   // hydration mismatch on the SSR'd /chat page, which passes persistKey since #31
   // shared the popup↔page conversation.
   const [messages, setMessages] = useState<Message[]>(
-    initialMessages && initialMessages.length ? initialMessages : [GREETING],
+    initialMessages && initialMessages.length
+      ? initialMessages
+      : // Empty-state mode opens on the first-run hero (no greeting bubble); the
+        // popup/grounded modes open on the greeting message.
+        emptyState
+        ? []
+        : [GREETING],
   );
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -98,6 +131,10 @@ export function ChatClient({
   const { reportSession, reportTurnComplete } = useChatSession();
 
   const busy = status === "thinking" || status === "streaming";
+  // First-run screen: only in emptyState mode (the /chat app-shell) and only until
+  // the first user turn. The popup/grounded modes never show it.
+  const showEmpty =
+    Boolean(emptyState) && !messages.some((m) => m.role === "user");
 
   function scrollToEnd() {
     requestAnimationFrame(() => {
@@ -275,54 +312,91 @@ export function ChatClient({
           </button>
         </div>
       )}
-      <div className="chat-scroll" ref={scrollRef}>
-        {messages.map((m, i) => {
-          const isLast = i === messages.length - 1;
-          return (
-            <article key={i} className={`chat-turn chat-${m.role}`}>
-              <div className="chat-turn-label">
-                {m.role === "assistant" ? (
-                  <>
-                    <span className="chat-turn-dot" aria-hidden="true" />
-                    ผู้ช่วย AI
-                  </>
-                ) : (
-                  "คุณ"
-                )}
+      <div
+        className={`chat-scroll${showEmpty ? " is-empty" : ""}`}
+        ref={scrollRef}
+      >
+        {showEmpty ? (
+          <div className="chat-empty">
+            <div className="chat-empty-head">
+              <span className="chat-empty-dot" aria-hidden="true" />
+              <h2 className="chat-empty-title">ผู้ช่วย AI</h2>
+              <p className="chat-empty-tagline">
+                เล่าโจทย์ของคุณ —
+                ผมจะแนะนำเคสงานที่ใกล้เคียงและช่วยประเมินเบื้องต้นให้ครับ
+              </p>
+            </div>
+            <div className="chat-suggest">
+              <div className="chat-suggest-label">
+                <BoltIcon />
+                แนะนำ
               </div>
-              <div className="chat-turn-body">
-                {m.role === "assistant" && m.reasoning && (
-                  <ThinkingBox
-                    reasoning={m.reasoning}
-                    durationMs={m.reasoningMs}
-                    live={isLast && status === "thinking"}
-                  />
-                )}
-                {m.parts.map((part, j) =>
-                  part.type === "text" ? (
-                    <span key={j} className="chat-text">
-                      {part.text}
-                    </span>
+              <ul>
+                {SUGGESTIONS.map((s) => (
+                  <li key={s.title}>
+                    <button
+                      type="button"
+                      className="chat-suggest-row"
+                      disabled={busy}
+                      onClick={() => send(s.title)}
+                    >
+                      <span className="chat-suggest-title">{s.title}</span>
+                      <span className="chat-suggest-sub">{s.subtitle}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ) : (
+          messages.map((m, i) => {
+            const isLast = i === messages.length - 1;
+            return (
+              <article key={i} className={`chat-turn chat-${m.role}`}>
+                <div className="chat-turn-label">
+                  {m.role === "assistant" ? (
+                    <>
+                      <span className="chat-turn-dot" aria-hidden="true" />
+                      ผู้ช่วย AI
+                    </>
                   ) : (
-                    <InlineCard key={j} card={part.card} />
-                  ),
-                )}
-                {m.role === "assistant" &&
-                  isLast &&
-                  status === "thinking" &&
-                  !m.reasoning && (
-                    <span className="chat-thinking">
-                      <span className="chat-caret" aria-hidden="true" />
-                      กำลังคิด
-                    </span>
+                    "คุณ"
                   )}
-                {shouldShowTypingCursor(m.role, isLast, status) && (
-                  <span className="typing-cursor" aria-hidden="true" />
-                )}
-              </div>
-            </article>
-          );
-        })}
+                </div>
+                <div className="chat-turn-body">
+                  {m.role === "assistant" && m.reasoning && (
+                    <ThinkingBox
+                      reasoning={m.reasoning}
+                      durationMs={m.reasoningMs}
+                      live={isLast && status === "thinking"}
+                    />
+                  )}
+                  {m.parts.map((part, j) =>
+                    part.type === "text" ? (
+                      <span key={j} className="chat-text">
+                        {part.text}
+                      </span>
+                    ) : (
+                      <InlineCard key={j} card={part.card} />
+                    ),
+                  )}
+                  {m.role === "assistant" &&
+                    isLast &&
+                    status === "thinking" &&
+                    !m.reasoning && (
+                      <span className="chat-thinking">
+                        <span className="chat-caret" aria-hidden="true" />
+                        กำลังคิด
+                      </span>
+                    )}
+                  {shouldShowTypingCursor(m.role, isLast, status) && (
+                    <span className="typing-cursor" aria-hidden="true" />
+                  )}
+                </div>
+              </article>
+            );
+          })
+        )}
       </div>
 
       {status === "error" && (
@@ -333,19 +407,21 @@ export function ChatClient({
         </div>
       )}
 
-      <div className="chat-quick">
-        {QUICK_REPLIES.map((q) => (
-          <button
-            key={q}
-            type="button"
-            className="quick-chip"
-            disabled={busy}
-            onClick={() => send(q)}
-          >
-            {q}
-          </button>
-        ))}
-      </div>
+      {!emptyState && (
+        <div className="chat-quick">
+          {QUICK_REPLIES.map((q) => (
+            <button
+              key={q}
+              type="button"
+              className="quick-chip"
+              disabled={busy}
+              onClick={() => send(q)}
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
 
       <form
         className="chat-input-row"
@@ -376,5 +452,20 @@ export function ChatClient({
         AI อาจมีข้อผิดพลาด โปรดตรวจสอบข้อมูลก่อนตัดสินใจ
       </p>
     </div>
+  );
+}
+
+/** The one accent mark on the empty-state — a small lightning bolt beside แนะนำ. */
+function BoltIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path d="M9 1.5 3.5 9H7l-1 5.5L12.5 7H9z" fill="currentColor" />
+    </svg>
   );
 }

@@ -158,6 +158,7 @@ export function ChatAppShell() {
           )}
           <ChatClient
             key={state.activeId ?? "none"}
+            emptyState
             initialMessages={
               active && active.messages.length
                 ? (active.messages as Message[])
