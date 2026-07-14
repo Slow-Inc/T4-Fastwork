@@ -104,6 +104,8 @@ export class ChatService {
           }),
           history,
           input.message,
+          10,
+          input.images ?? [],
         ),
       );
       for await (const delta of stream) {

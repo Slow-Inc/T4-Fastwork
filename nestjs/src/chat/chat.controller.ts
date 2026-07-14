@@ -10,6 +10,7 @@ import type { Response } from 'express';
 import { TurnstileGuard } from '../security/turnstile.guard';
 import { ChatService } from './chat.service';
 import { ScopeSummaryService } from './scope-summary.service';
+import { sanitizeImages } from './image-guard';
 import type { ScopeSummary } from './scope-summary.types';
 
 class ChatRequestDto {
@@ -19,6 +20,8 @@ class ChatRequestDto {
   turnstileToken?: string;
   /** Set when the visitor is chatting from a project's detail page (§5.4). */
   projectSlug?: string;
+  /** Inline images for the vision model (#42); sanitized before use. */
+  images?: string[];
 }
 
 class ScopeSummaryRequestDto {
@@ -54,6 +57,7 @@ export class ChatController {
         language: body.language === 'en' ? 'en' : 'th',
         sessionId: body.sessionId,
         projectSlug: body.projectSlug,
+        images: sanitizeImages(body.images),
       })) {
         switch (ev.type) {
           case 'session':

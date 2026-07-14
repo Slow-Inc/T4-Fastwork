@@ -6,6 +6,9 @@ export interface ChatInput {
   sessionId?: string;
   /** Set when the visitor is chatting from a project's detail page (§5.4). */
   projectSlug?: string;
+  /** Inline images (sanitized `data:image/*;base64` URLs) for the vision model
+   * (#42). Not persisted to the conversation log — only the text is. */
+  images?: string[];
 }
 
 /** The SSE event stream the chat endpoint emits. */

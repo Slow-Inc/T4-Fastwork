@@ -5,7 +5,7 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
 
 ## Active — Open WebUI-style app-shell for /chat (epic #37)
 
-PRD: `docs/superpowers/specs/2026-07-15-owui-app-shell-chat.md`. Design inputs: `docs/design/openwebui-layout-study.md` + `docs/design/expensive-minimalism.md` + `nextjs/DESIGN.md`. Branch `feat/chat-thinking-mode` (HEAD `ddf892a`). **No implementation code yet** — PRD + issues filed only. Build order P0→P5.
+PRD: `docs/superpowers/specs/2026-07-15-owui-app-shell-chat.md`. Design inputs: `docs/design/openwebui-layout-study.md` + `docs/design/expensive-minimalism.md` + `nextjs/DESIGN.md`. Branch `feat/chat-thinking-mode`. **✅ All phases P0–P5 shipped** (commits `dc0fc3e`, `9af0f0f`, `06189eb`, `5b97857`, `6337f69`, + P4). Issues #38–#43 still OPEN pending confirm-to-close (not self-merged). Remaining: PR + close issues on the user's go.
 
 | Phase | Issue | State | Notes |
 |---|---|---|---|
@@ -14,7 +14,7 @@ PRD: `docs/superpowers/specs/2026-07-15-owui-app-shell-chat.md`. Design inputs: 
 | P2 empty-state + suggestions | #40 | ✅ shipped (`9af0f0f`→next) | first-run hero (accent dot + `ผู้ช่วย AI` + tagline) + `⚡ แนะนำ` suggestion ledger (title+subtitle, click sends) replacing the greeting bubble + chips; gated by `emptyState` prop so popup keeps the compact greeting. 46 e2e green. Issue OPEN pending confirm-to-close |
 | P3 message actions (copy/regenerate) | #41 | ✅ shipped (next commit) | hover/focus-reveal action row on assistant turns: copy (clipboard + "คัดลอกแล้ว" feedback) + regenerate (last turn; `streamAssistant` refactor resends prior user turn); hidden mid-stream; mobile always-on. 47 e2e green. Issue OPEN pending confirm-to-close |
 | P5 top identity strip + user pill | #43 | ✅ shipped (next commit) | slim `ผู้ช่วย AI · T4 Labs` mono strip (hairline underline) at pane top + reopen button relocated into it; user turns render as a subtle right pill (paper-deep + hairline + rounded-lg), assistant stays flat. 48 e2e green. Issue OPEN pending confirm-to-close |
-| P4 composer attach + image (subsumes #35) | #42 | ⬜ next — backend + frontend | last phase (done after P5); needs nestjs multimodal + attach UI |
+| P4 composer attach + image (subsumes #35) | #42 | ✅ shipped (next commit) | backend: `sanitizeImages` guard (7 TDD) + multimodal `buildChatMessages` (3 TDD) + `ChatMessage.content` union + 12mb body limit; frontend: composer `+` attach → preview/remove → send, images render in user turn, stripped on persist. **Real vision probe passed** (red PNG → model answered "สีแดงครับ"). 49 e2e green + nest build. Subsumes #35. Issue OPEN pending confirm-to-close |
 
 Prereqs shipped: Visible-Grid Swiss redesign (`f45f7e8`, verified live). Style translation rules in the PRD (never OWUI's flat look). Bilingual issues/PRs; TDD; `bun run e2e` every FE change; `/impeccable` every UI edit.
 

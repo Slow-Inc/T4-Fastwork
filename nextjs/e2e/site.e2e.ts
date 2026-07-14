@@ -677,6 +677,48 @@ test("/chat shows a top identity strip and renders user turns as a pill (#43)", 
   expect(style.radius).not.toBe("0px");
 });
 
+test("composer attaches an image, previews it, and sends it with the user turn (#42)", async ({
+  page,
+}) => {
+  let sentImages: unknown = null;
+  await page.route("**/chat/stream", async (route) => {
+    sentImages = (route.request().postDataJSON() as { images?: unknown }).images;
+    const body =
+      'event: session\ndata: {"sessionId":"e2e-image"}\n\n' +
+      'event: token\ndata: {"text":"เห็นรูปแล้วครับ"}\n\n' +
+      'event: done\ndata: {"latencyMs":10}\n\n';
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body,
+    });
+  });
+
+  await page.goto("/chat", { waitUntil: "networkidle" });
+
+  // Stage a real 1×1 PNG on the (hidden) file input.
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "base64",
+  );
+  await page
+    .locator('.chat-input-row input[type="file"]')
+    .setInputFiles({ name: "shot.png", mimeType: "image/png", buffer: png });
+
+  // A preview thumbnail appears; sending clears it.
+  await expect(page.locator(".chat-attach-thumb")).toHaveCount(1);
+  await page.locator(".chat-pane .chat-send").click();
+  await expect(page.locator(".chat-attach-thumb")).toHaveCount(0);
+
+  // The image renders in the user turn and reached the backend as a data URL.
+  await expect(page.locator(".chat-user .chat-msg-image")).toBeVisible();
+  await expect(
+    page.locator(".chat-pane").getByText("เห็นรูปแล้วครับ"),
+  ).toBeVisible();
+  expect(Array.isArray(sentImages)).toBe(true);
+  expect((sentImages as string[])[0]).toMatch(/^data:image\/png;base64,/);
+});
+
 test("every page declares its own canonical + hreflang alternates", async ({
   page,
 }) => {
@@ -769,7 +811,10 @@ test("the floating chat keeps its conversation when closed and reopened", async 
 
   const panel = page.locator(".chat-panel");
   await expect(panel).toBeVisible();
-  await panel.locator("input, textarea").first().fill("จำคำนี้ได้ไหม APPLE123");
+  await panel
+    .locator('input[type="text"], textarea')
+    .first()
+    .fill("จำคำนี้ได้ไหม APPLE123");
   await panel.getByRole("button", { name: "ส่ง" }).click();
   await expect(panel.getByText("APPLE123")).toBeVisible();
 
@@ -788,7 +833,10 @@ test("the floating popup and the /chat page share one conversation (#31)", async
   await page.getByRole("button", { name: /Ask T4 AI/i }).click();
   const panel = page.locator(".chat-panel");
   await expect(panel).toBeVisible();
-  await panel.locator("input, textarea").first().fill("ต่อเนื่อง BANANA456");
+  await panel
+    .locator('input[type="text"], textarea')
+    .first()
+    .fill("ต่อเนื่อง BANANA456");
   await panel.getByRole("button", { name: "ส่ง" }).click();
   await expect(panel.getByText("BANANA456")).toBeVisible();
 

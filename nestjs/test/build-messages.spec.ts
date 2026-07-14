@@ -34,6 +34,34 @@ describe('buildChatMessages', () => {
     expect(msgs[6].content).toBe('m19');
   });
 
+  it('keeps the user message as a plain string when there are no images', () => {
+    const msgs = buildChatMessages('SYS', [], 'hello', 10, []);
+    expect(msgs[msgs.length - 1]).toEqual({ role: 'user', content: 'hello' });
+  });
+
+  it('makes the new user message multimodal when images are supplied', () => {
+    const img = 'data:image/png;base64,AAAA';
+    const msgs = buildChatMessages('SYS', [], 'ดูรูปนี้', 10, [img]);
+    expect(msgs[msgs.length - 1]).toEqual({
+      role: 'user',
+      content: [
+        { type: 'text', text: 'ดูรูปนี้' },
+        { type: 'image_url', image_url: { url: img } },
+      ],
+    });
+  });
+
+  it('adds one image_url part per image, after the text', () => {
+    const imgs = ['data:image/png;base64,AAAA', 'data:image/jpeg;base64,BBBB'];
+    const msgs = buildChatMessages('SYS', [], 'สองรูป', 10, imgs);
+    const last = msgs[msgs.length - 1];
+    const content = last.content as { type: string }[];
+    expect(content).toHaveLength(3);
+    expect(content[0].type).toBe('text');
+    expect(content[1].type).toBe('image_url');
+    expect(content[2].type).toBe('image_url');
+  });
+
   it('drops empty-content history entries', () => {
     const history = [
       { role: 'assistant' as const, content: '' },

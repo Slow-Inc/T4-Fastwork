@@ -27,6 +27,9 @@ export interface Message {
   reasoning?: string;
   /** Thinking duration (reasoning start → first answer token), ms. */
   reasoningMs?: number;
+  /** Inline images (data URLs) attached to a user turn (#42). Rendered in the
+   * turn; NOT persisted (stripped before storage to keep it lean). */
+  images?: string[];
 }
 
 type Status = ChatStatus;
@@ -129,6 +132,9 @@ export function ChatClient({
   const copyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
+  // Inline image attachments (data URLs) staged for the next turn (#42).
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [projectSlug, setProjectSlug] = useState(initialProjectSlug);
   const sessionId = useRef<string | undefined>(initialSessionId);
   // Latest onPersist, held in a ref so the persist effect doesn't re-fire on the
@@ -172,15 +178,42 @@ export function ChatClient({
 
   async function send(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || busy) return;
+    const imgs = attachments;
+    if ((!trimmed && imgs.length === 0) || busy) return;
 
     setMessages((prev) => [
       ...prev,
-      { role: "user", parts: [{ type: "text", text: trimmed }] },
+      {
+        role: "user",
+        parts: trimmed ? [{ type: "text", text: trimmed }] : [],
+        images: imgs.length ? imgs : undefined,
+      },
       { role: "assistant", parts: [] },
     ]);
     setInput("");
-    await streamAssistant(trimmed);
+    setAttachments([]);
+    await streamAssistant(trimmed, imgs);
+  }
+
+  function addFiles(files: FileList | null) {
+    if (!files) return;
+    const room = 4 - attachments.length;
+    [...files]
+      .filter((f) => f.type.startsWith("image/"))
+      .slice(0, Math.max(0, room))
+      .forEach((f) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === "string") {
+            setAttachments((prev) => [...prev, reader.result as string]);
+          }
+        };
+        reader.readAsDataURL(f);
+      });
+  }
+
+  function removeAttachment(index: number) {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   }
 
   /** Resend the previous user turn to produce a fresh answer (#41): drop the
@@ -195,7 +228,7 @@ export function ChatClient({
       next.push({ role: "assistant", parts: [] });
       return next;
     });
-    await streamAssistant(messageText(lastUser.parts));
+    await streamAssistant(messageText(lastUser.parts), lastUser.images ?? []);
   }
 
   async function copyMessage(index: number, parts: MessagePart[]) {
@@ -211,7 +244,7 @@ export function ChatClient({
 
   /** Stream one assistant answer. Assumes the last message is an empty assistant
    * placeholder (send() and regenerate() both guarantee this). */
-  async function streamAssistant(userText: string) {
+  async function streamAssistant(userText: string, images: string[] = []) {
     setStatus("thinking");
     reasoningStartRef.current = undefined;
     scrollToEnd();
@@ -225,6 +258,7 @@ export function ChatClient({
           language: "th",
           sessionId: sessionId.current,
           projectSlug,
+          images: images.length ? images : undefined,
         }),
       });
 
@@ -331,13 +365,20 @@ export function ChatClient({
   // Store-backed mode reports to the app-shell; otherwise sessionStorage (popup).
   useEffect(() => {
     if (messages.length <= 1) return;
+    // Never persist base64 images (quota); keep only the text of each turn.
+    const persistable = messages.map((m) =>
+      m.images ? { ...m, images: undefined } : m,
+    );
     if (onPersistRef.current) {
-      onPersistRef.current({ messages, sessionId: sessionId.current });
+      onPersistRef.current({
+        messages: persistable,
+        sessionId: sessionId.current,
+      });
       return;
     }
     if (!persistKey) return;
     saveChat(window.sessionStorage, persistKey, {
-      messages,
+      messages: persistable,
       sessionId: sessionId.current,
     });
   }, [messages, persistKey]);
@@ -411,6 +452,20 @@ export function ChatClient({
                   )}
                 </div>
                 <div className="chat-turn-body">
+                  {m.images && m.images.length > 0 && (
+                    <div className="chat-msg-images">
+                      {m.images.map((src, k) => (
+                        // Inline data-URL image — next/image can't optimize these.
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={k}
+                          src={src}
+                          alt="รูปที่แนบ"
+                          className="chat-msg-image"
+                        />
+                      ))}
+                    </div>
+                  )}
                   {m.role === "assistant" && m.reasoning && (
                     <ThinkingBox
                       reasoning={m.reasoning}
@@ -501,6 +556,24 @@ export function ChatClient({
         </div>
       )}
 
+      {attachments.length > 0 && (
+        <div className="chat-attachments">
+          {attachments.map((src, k) => (
+            <div key={k} className="chat-attach-thumb">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt={`รูปที่แนบ ${k + 1}`} />
+              <button
+                type="button"
+                onClick={() => removeAttachment(k)}
+                aria-label={`ลบรูปที่แนบ ${k + 1}`}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <form
         className="chat-input-row"
         onSubmit={(e) => {
@@ -508,6 +581,26 @@ export function ChatClient({
           send(input);
         }}
       >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          onChange={(e) => {
+            addFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
+        <button
+          type="button"
+          className="chat-attach"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={busy || attachments.length >= 4}
+          aria-label="แนบรูปภาพ"
+        >
+          <PlusIcon />
+        </button>
         <input
           type="text"
           value={input}
@@ -520,7 +613,7 @@ export function ChatClient({
           type="submit"
           className="chat-send"
           aria-label="ส่งข้อความ"
-          disabled={busy || !input.trim()}
+          disabled={busy || (!input.trim() && attachments.length === 0)}
         >
           ↑
         </button>
@@ -544,6 +637,25 @@ function BoltIcon() {
       aria-hidden="true"
     >
       <path d="M9 1.5 3.5 9H7l-1 5.5L12.5 7H9z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M8 3.5v9M3.5 8h9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

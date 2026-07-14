@@ -1,9 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import OpenAI from 'openai';
 
+/** A multimodal content part — text or an inline image (OpenAI vision format). */
+export type ContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } };
+
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
+  /** A plain string, or multimodal parts when the turn carries images (#42). */
+  content: string | ContentPart[];
 }
 
 /**
@@ -68,7 +74,10 @@ export class LlmService {
   async *streamChat(messages: ChatMessage[]): AsyncGenerator<LlmDelta> {
     const stream = await this.getClient().chat.completions.create({
       model: this.model,
-      messages,
+      // Our ChatMessage is a simplified union; only user turns carry array
+      // (multimodal) content. The SDK's per-role param types are stricter, so
+      // cast at this boundary.
+      messages: messages as OpenAI.Chat.ChatCompletionMessageParam[],
       stream: true,
     });
     for await (const chunk of stream) {
@@ -81,7 +90,7 @@ export class LlmService {
   async complete(messages: ChatMessage[]): Promise<string> {
     const res = await this.getClient().chat.completions.create({
       model: this.model,
-      messages,
+      messages: messages as OpenAI.Chat.ChatCompletionMessageParam[],
       stream: false,
     });
     return res.choices[0]?.message?.content ?? '';

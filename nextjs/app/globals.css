@@ -2562,7 +2562,7 @@ footer {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 8px 7px 14px;
+  padding: 7px 8px;
   border-radius: 14px;
   border: 1px solid var(--line);
   background: rgba(244, 242, 237, 0.6);
@@ -3134,6 +3134,88 @@ footer {
 @media (prefers-reduced-motion: reduce) {
   .chat-actions,
   .chat-action {
+    transition: none;
+  }
+}
+
+/* Composer attach control + staged previews + inline message images (#42). */
+.chat-attach {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  transition:
+    color 0.14s,
+    background 0.14s;
+}
+.chat-attach:hover:not(:disabled) {
+  color: var(--ink);
+  background: rgba(19, 19, 17, 0.05);
+}
+.chat-attach:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.chat-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 2px 0;
+}
+.chat-attach-thumb {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.chat-attach-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.chat-attach-thumb button {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--paper);
+  background: rgba(19, 19, 17, 0.7);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.chat-msg-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chat-user .chat-msg-images {
+  justify-content: flex-end;
+}
+.chat-msg-image {
+  max-width: 220px;
+  max-height: 220px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  object-fit: cover;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-attach {
     transition: none;
   }
 }
