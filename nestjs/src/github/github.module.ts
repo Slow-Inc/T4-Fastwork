@@ -14,6 +14,7 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { DrizzleSnapshotStore } from './drizzle-snapshot.store';
 import { GithubFetcher, GithubSnapshotService } from './github.service';
+import { GithubDetailService } from './github-detail.service';
 import {
   GithubRefreshService,
   SnapshotOwnerRefresher,
@@ -39,10 +40,18 @@ import { GithubWriteController } from './github-write.controller';
       inject: [GithubFetcher, DrizzleSnapshotStore],
     },
     {
-      provide: GithubRefreshService,
+      provide: GithubDetailService,
       useFactory: (syncer: GithubSnapshotService) =>
-        new GithubRefreshService(syncer),
+        new GithubDetailService(syncer),
       inject: [GithubSnapshotService],
+    },
+    {
+      provide: GithubRefreshService,
+      useFactory: (
+        syncer: GithubSnapshotService,
+        detail: GithubDetailService,
+      ) => new GithubRefreshService(syncer, undefined, undefined, detail),
+      inject: [GithubSnapshotService, GithubDetailService],
     },
     {
       provide: SnapshotOwnerRefresher,

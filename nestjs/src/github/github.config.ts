@@ -16,6 +16,15 @@ export const GITHUB_MEMBERS: readonly string[] = [
   'CableMoMo2027',
 ];
 
+/**
+ * Repos whose detail (contributors, open PRs, README) the refresh fetches for
+ * the project showcase (spec 2026-07-14, P6). Kept in sync with the GitHub-linked
+ * projects in `nextjs/content/catalog.ts`. Once the CurateService flow populates
+ * github-linked rows in the `projects` table, this is superseded by that query.
+ */
+export const GITHUB_SHOWCASE_REPOS: readonly { owner: string; repo: string }[] =
+  [{ owner: GITHUB_ORG, repo: 'MangaDock' }];
+
 /** Snapshot keys — the stable identity of a cached resource. */
 export const snapshotKey = {
   memberRepos: (login: string) => `repos:${login}`,
