@@ -4,6 +4,21 @@
 > (bilingual applies to the GitHub tracker). Shared decisions D1–D5 live in the
 > umbrella; this PRD applies them to member profiles. Largest epic; Phase-2 (DB).
 
+> **STATUS — SHIPPED + MERGED (PR #34, `c8a131f`), 2026-07-15.** C1–C6 delivered +
+> verified; issues **#52–#57 closed** (epic #46). Two things CHANGED during
+> implementation vs the plan below — the ADRs are the shipped truth:
+> - **Auth (C2) — UNIFIED, not "admin path unchanged".** Admin is now a member flagged
+>   `members.is_admin` (same GitHub login); `ADMIN_EMAILS` is only a break-glass
+>   fallback; member scoping is by `auth_user_id`. **Supersedes** the "Auth (C2)" section
+>   + "admin stays authoritative / admin path unchanged" (lines below).
+>   → [ADR 0006](../../adr/0006-unified-github-auth-member-is-admin.md).
+> - **Authorization is DB-enforced** — RLS on every content table + column grants +
+>   `is_app_admin()` SECURITY DEFINER, **no service-role key** (far beyond the "fold RLS
+>   into C2's review" note in §Risks). → [ADR 0007](../../adr/0007-db-enforced-authz-rls-is-app-admin.md).
+> - Data model + `*_owner` provenance + additive draft→approve →
+>   [ADR 0005](../../adr/0005-member-content-to-db-provenance-additive.md).
+> - Beyond the plan: README-content **override** shipped (not just the visibility toggle).
+
 ## Problem
 
 Team/member profiles are **hardcoded** in `nextjs/content/site.ts` (`team:

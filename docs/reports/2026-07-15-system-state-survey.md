@@ -1,5 +1,16 @@
 # System-State Survey — T4 Fastwork
 
+> **⚠️ SUPERSEDED SNAPSHOT — captured before PR #34 (`c8a131f`, 2026-07-15).** This
+> was the pre-implementation baseline (branch `feat/chat-thinking-mode`, HEAD
+> `c639344`). Its "GENUINE GAPS" were then CLOSED by that PR: a `members` DB table +
+> per-member GitHub-OAuth self-service CMS now exist, admin auth was unified onto
+> GitHub (`members.is_admin`, `ADMIN_EMAILS` now a fallback — the "empty allowlist
+> admits any user" hole is fixed, fail-closed), AI display-ranking shipped, and every
+> public content table is RLS-gated. So claims below like "no `members` table",
+> "single-tier admin", "AI ranking — zero exists", "/team is static" are **historical,
+> not current**. Kept as a point-in-time record. Current truth: ADRs 0005–0008 + the
+> ledger. Do not treat the gap list below as open work.
+
 > **Purpose:** a durable snapshot of what actually exists in this codebase, so a
 > future session does not have to re-survey from scratch. If the anchors below no
 > longer match, re-verify the areas that changed (`git log <sha>..HEAD`).

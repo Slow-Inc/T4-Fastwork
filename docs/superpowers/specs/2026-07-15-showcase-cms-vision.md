@@ -10,6 +10,17 @@
 > - Memory: `showcase-system-already-built`, `showcase-vision-2026-07`
 > - Committed doc = English (CLAUDE.md scopes bilingual to the GitHub tracker).
 
+> **STATUS — Epics A/B/C SHIPPED + MERGED (PR #34, `c8a131f`), 2026-07-15.** Issues
+> **#44 · #46–#50 · #52–#57 closed**; **#45 · #51 open** (B5's project-content→DB
+> remainder). The load-bearing decisions are now recorded as ADRs:
+> [0005](../../adr/0005-member-content-to-db-provenance-additive.md) content→DB ·
+> [0006](../../adr/0006-unified-github-auth-member-is-admin.md) unified auth ·
+> [0007](../../adr/0007-db-enforced-authz-rls-is-app-admin.md) DB-enforced authz ·
+> [0008](../../adr/0008-ai-display-ranking-order-not-content.md) AI ranking.
+> **⚠️ §3 D3 + D5 below are SUPERSEDED**: admin auth was UNIFIED onto GitHub (admin =
+> a member flagged `members.is_admin`; `ADMIN_EMAILS` demoted to a fallback), NOT kept
+> separate/unchanged — see ADR 0006. The §4 checklist is marked done below.
+
 ## 1. North star
 
 A portfolio/profile system that **adjusts itself automatically from data** —
@@ -58,6 +69,9 @@ PRDs consistent.
   data is GitHub-sourced; "Log in with GitHub" auto-links the session to the member's
   handle (`github.config.ts` member list), so no separate account/mapping to maintain.
   Admins stay on the existing `ADMIN_EMAILS` allowlist with global scope.
+  **⚠️ SUPERSEDED (shipped): admin auth was UNIFIED onto GitHub — admin = a member flagged
+  `members.is_admin`; `ADMIN_EMAILS` demoted to a break-glass fallback. See
+  [ADR 0006](../../adr/0006-unified-github-auth-member-is-admin.md).**
 - **D4 — Additive member content is draft → admin-approve.** Member-authored items
   with no GitHub source (certificates, blog articles) are created as `draft` and
   published by an admin — matching the existing draft/approve philosophy and keeping
@@ -66,6 +80,10 @@ PRDs consistent.
 - **D5 — Admin retains global override; members are scoped to their own record.**
   The existing admin CMS is unchanged and authoritative; member self-service is an
   additional, row-scoped surface, not a replacement.
+  **⚠️ PARTLY SUPERSEDED (shipped): the admin CMS auth changed (unified onto GitHub;
+  admin = `members.is_admin`) and authorization is now DB-enforced (RLS + `is_app_admin()`).
+  Admins still have global scope. See [ADR 0006](../../adr/0006-unified-github-auth-member-is-admin.md)
+  + [ADR 0007](../../adr/0007-db-enforced-authz-rls-is-app-admin.md).**
 
 ## 4. Task inventory (anti-forget checklist)
 
@@ -73,22 +91,22 @@ Every planned issue, so nothing drops. Detailed acceptance criteria live in each
 epic PRD; `→ #` filled in when the issue is created.
 
 **Epic A — Tech carousel** — #44
-- [ ] A1 — `teamTechnologies` derivation (union of `member.stack`, deduped) + `TeamTechCarousel` presentational component (reuse `TechChips`/`tech-logos`), placed between Hero and Featured; icon-first with text fallback; `prefers-reduced-motion`; hook-free + unit-tested; e2e. Config flag for icon-only vs all (default icon-first).
+- [x] A1 — `teamTechnologies` derivation (union of `member.stack`, deduped) + `TeamTechCarousel` presentational component (reuse `TechChips`/`tech-logos`), placed between Hero and Featured; icon-first with text fallback; `prefers-reduced-motion`; hook-free + unit-tested; e2e. Config flag for icon-only vs all (default icon-first).
 
 **Epic B — AI display-ranking** — epic #45 · B1 #47 · B2 #48 · B3 #49 · B4 #50 · B5 #51
-- [ ] B1 — ranking service: `RankService` reusing `LlmService.complete()` with a rubric prompt (impact-to-customer, credibility/issuer prestige + verifiability, recency, audience relevance); pure scoring/parsing unit-tested; injected LLM client (like `github-generate`).
-- [ ] B2 — schema + persistence: `ai_rank` (or reuse `sort_order` with an owner flag per D1) on `projects`, `certificates`, `blog_posts`; migration + `RankStore`.
-- [ ] B3 — cron wiring: compute ranks on the refresh cadence (D2); admin/manual override wins (D1).
-- [ ] B4 — read-path ordering: `getAllProjects`/certs/blog repos `ORDER BY` the rank; certificates **best 9 + "see more"** (today renders all, no limit).
-- [ ] B5 — surfaces: apply to home Featured, Selected-work, team collaborative work, `/projects`, blog. e2e per surface.
+- [x] B1 — ranking service: `RankService` reusing `LlmService.complete()` with a rubric prompt (impact-to-customer, credibility/issuer prestige + verifiability, recency, audience relevance); pure scoring/parsing unit-tested; injected LLM client (like `github-generate`).
+- [x] B2 — schema + persistence: `ai_rank` (or reuse `sort_order` with an owner flag per D1) on `projects`, `certificates`, `blog_posts`; migration + `RankStore`.
+- [x] B3 — cron wiring: compute ranks on the refresh cadence (D2); admin/manual override wins (D1).
+- [x] B4 — read-path ordering: `getAllProjects`/certs/blog repos `ORDER BY` the rank; certificates **best 9 + "see more"** (today renders all, no limit).
+- [x] B5 — surfaces: apply to home Featured, Selected-work, team collaborative work, `/projects`, blog. e2e per surface.
 
 **Epic C — Member self-service profile CMS** — epic #46 · C1 #52 · C2 #53 · C3 #54 · C4 #55 · C5 #56 · C6 #57
-- [ ] C1 — `members` table (migrate team out of static `content/site.ts`): identity (handle/slug/github), profile fields + `*_owner` provenance (D1), relations to certs/projects selection.
-- [ ] C2 — GitHub OAuth login for members (D3) + session→member linking + route guard scoped to own record.
-- [ ] C3 — member edit UI: profile, skills, tech stack, README toggle, **project selection** (pick which fetched GitHub repos to show).
-- [ ] C4 — additive content: member certificates + blog authoring, draft → admin-approve (D4); add the missing edit actions to admin blog/certs.
-- [ ] C5 — public read path: `/team/[slug]` + home team sections read members from DB (with the static fallback pattern) instead of `content/site.ts`.
-- [ ] C6 — admin: a Team/Members section in the admin dash (global override, approve queue for D4).
+- [x] C1 — `members` table (migrate team out of static `content/site.ts`): identity (handle/slug/github), profile fields + `*_owner` provenance (D1), relations to certs/projects selection.
+- [x] C2 — GitHub OAuth login for members (D3) + session→member linking + route guard scoped to own record.
+- [x] C3 — member edit UI: profile, skills, tech stack, README toggle, **project selection** (pick which fetched GitHub repos to show).
+- [x] C4 — additive content: member certificates + blog authoring, draft → admin-approve (D4); add the missing edit actions to admin blog/certs.
+- [x] C5 — public read path: `/team/[slug]` + home team sections read members from DB (with the static fallback pattern) instead of `content/site.ts`.
+- [x] C6 — admin: a Team/Members section in the admin dash (global override, approve queue for D4).
 
 **Epic D — (already tracked)** wire curate/generate P2/P3 — see ledger Deferred.
 

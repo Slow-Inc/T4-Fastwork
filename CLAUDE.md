@@ -2,6 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Operating defaults (mandatory)
+
+**Invoke `/using-t4` and `/karpathy-guidelines` by default at the start of every coding
+task in this repo — before writing or changing code, not after.**
+
+- **`/using-t4`** routes the task through the T4 operating standard (memory/ledger →
+  issue → PRD → issues → TDD → records → bilingual tracker → PR). It is the map; follow it
+  rather than working from memory of it. (Session start: also read `docs/OPEN-WORK-LEDGER.md`
+  + the relevant memory before picking up work.)
+- **`/karpathy-guidelines`** enforces: think before coding (state assumptions, surface
+  tradeoffs, don't pick silently), simplicity first, surgical changes, goal-driven execution
+  with verification.
+- Also standing: **TDD is mandatory** and **every frontend change is verified end-to-end**
+  (`bun run e2e`) — see the ⚠️ note under Commands. Run **`/scrutinize` + `/security-review`**
+  on any auth / RLS / admin-write / security-sensitive change.
+
+Skip only for trivial, non-code conversational replies. These override default behavior; the
+user's explicit instructions still win.
+
 ## Repository layout
 
 Bun-workspaces monorepo (root `package.json` → `workspaces: ["nextjs","nestjs"]`). It contains:
@@ -15,14 +34,19 @@ Bun-workspaces monorepo (root `package.json` → `workspaces: ["nextjs","nestjs"
 
 ## Product context
 
-This is not a blank scaffold — it's the start of **T4 Labs**' agency/portfolio website (Bigzweb-style): a project/portfolio showcase with category+tech filtering, an AI chat assistant (RAG over projects/services/FAQ) that recommends matching case studies, a bilingual (TH/EN) blog, an admin/CMS, and lead-gen flows funneling visitors to hiring (Fastwork or a contact form).
+This is a **live** T4 Labs agency/portfolio website (Bigzweb-style): a project/portfolio
+showcase with category+tech filtering + **AI display-ranking**, an AI chat assistant (RAG over
+projects/services/FAQ), a bilingual (TH/EN) blog, an admin CMS, a **GitHub-sourced,
+member-editable member CMS** (members log in with GitHub and edit their own profile / add
+certificates + articles as drafts → admin approve), and lead-gen flows. See the ADRs
+(`docs/adr/`) for the load-bearing decisions.
 
 **Full requirements (Thai): `Requirement.MD` at the repo root — read the relevant section before implementing any page, component, or data model.**
 
-Target stack per the spec (§7) — not yet fully reflected in the current scaffold:
+Target stack per the spec (§7) — **now implemented**:
 
 - Package manager/runtime: **Bun** (migrated — see Commands below)
-- Frontend: Next.js App Router + TypeScript + Tailwind + `next-intl` for i18n (scaffold matches everything except i18n)
+- Frontend: Next.js App Router + TypeScript + Tailwind + client-side locale context for i18n (TH/EN)
 - Backend: **Nest.js as a separate API layer** in `nestjs/` (decided — see the wayfinder map #1)
 - Database: Supabase (Postgres + pgvector for RAG + Auth + Storage + Realtime); backend connects via the Supavisor transaction pooler (6543) with Drizzle
 - AI: streaming LLM via an OpenAI-compatible gateway (`CUSTOM_OPENAI_*` env) + RAG via pgvector
@@ -75,24 +99,44 @@ identical in both apps' files for the environment you're running.
 
 ## Architecture — `nextjs/`
 
-Standard Next.js App Router layout:
+Next.js App Router, Tailwind v4 (CSS-based config, no `tailwind.config.js`), `next-intl`-style
+locale context, path alias `@/*` → `nextjs/` root. This is a **large, live app** — not a scaffold.
+When touching an area, read the code + the relevant ADR (`docs/adr/`); highlights:
 
-- `app/layout.tsx` — root layout; loads the Geist Sans/Mono fonts via `next/font/google` and sets base HTML/body structure.
-- `app/page.tsx` — the home page (currently the default `create-next-app` starter content).
-- `app/globals.css` — global styles, Tailwind CSS v4 entry point (via `@tailwindcss/postcss`, no `tailwind.config.js` — v4 uses CSS-based config).
-- `public/` — static assets (SVGs).
-
-Path alias `@/*` resolves to the `nextjs/` root (see `nextjs/tsconfig.json`).
-
-The codebase is currently the unmodified `create-next-app` scaffold — no custom routes, components, or data layer exist yet.
+- **Public site** (`app/`): `page.tsx` (home), `about`, `projects` + `projects/[slug]`,
+  `team/[slug]`, `blog` + `[slug]`, `faq`, `contact`, `chat`. Sections in
+  `components/site/**` + `components/pages/**` (mostly hook-free presentational + a server
+  wrapper that injects data — the tested pattern; see `e2e/` note above).
+- **Member self-service CMS** (`app/member/**`, `app/auth/callback/`): GitHub-OAuth login →
+  a member edits their own profile / skills / stack / README (toggle + override) / project
+  selection, and authors certificates + blog as drafts. See **ADR 0005** (content model) +
+  **ADR 0006** (auth).
+- **Admin CMS** (`app/admin/(dash)/**`): projects/services/blog/faqs/certificates/taxonomy CRUD,
+  a members roster + an approvals queue. Admin = a member flagged `members.is_admin` (same
+  GitHub login) OR the `ADMIN_EMAILS` fallback — `lib/admin-access.ts`. **ADR 0006**.
+- **Data layer** (`lib/`): Supabase, **DB-first with a static fallback** — `*-repo.ts` read via
+  three clients: `public-db.ts` (anon, cookieless, for static/ISR public reads), `server.ts`
+  (cookie, authenticated — admin actions + member session reads), `client.ts` (browser —
+  member self-edit writes). Pure snake→camel mappers (`*-map.ts`) are unit-tested; content
+  seeds/fallbacks live in `content/{site,catalog,blog,faqs}.ts`.
+- **Authorization is enforced in the DB, not the app** — RLS on every content table + column
+  grants + `is_app_admin()` SECURITY DEFINER (no service-role key). App-layer `assertAdmin()`
+  is defense-in-depth only. **Read [ADR 0007](docs/adr/0007-db-enforced-authz-rls-is-app-admin.md)
+  before touching any auth/RLS/admin-write path**, and `/security-review` every such change.
+- **Chat** (`app/chat`, `components/chat/**`): Open WebUI-style app-shell, streaming SSE,
+  image/vision, full Markdown, a floating popup sharing the conversation.
 
 ## Architecture — `nestjs/`
 
-Nest.js backend, Bun runtime. Feature modules live under `src/<feature>/` (module + controller + service), wired into `src/app.module.ts`; `src/main.ts` bootstraps (CORS for the frontend origin, port 4100).
-
-- `src/health/` — liveness/readiness probes (`GET /health`, `/health/live`, `/health/ready`).
-
-Planned modules per the wayfinder map (#1): `database/` (Drizzle + pgvector), `ingestion/` (chunk→embed→upsert), `rag/` (retrieval), `chat/` (SSE streaming), `content/`. Keep RAG modules framework-agnostic — Nest.js only wires them.
+Nest.js backend, Bun runtime, port 4100. Feature modules under `src/<feature>/` (module +
+controller + service), wired into `src/app.module.ts`; `src/main.ts` bootstraps (CORS, body
+limits). Shipped modules include: `health/`, `database/` (Drizzle over the Supabase Supavisor
+pooler; schema in `src/database/schema/*.ts`, migrations in `drizzle/`), `llm/` +
+`chat/` (RAG + streaming SSE), `ingestion/`/`rag/`/embeddings (pgvector), `github/` (sync +
+curate + generate + detail + heal), `rank/` (AI display-ranking — **ADR 0008**), `content/`.
+The DB connection is the **Postgres superuser pooler** (bypasses RLS) — so backend writes
+(GitHub sync, rank job, seeds) are not subject to the frontend's RLS policies. Keep the RAG
+core framework-agnostic — Nest.js only wires it.
 
 ## Writing conventions
 
@@ -110,4 +154,9 @@ Default label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `read
 
 ### Domain docs
 
-Single-context layout (`CONTEXT.md` + `docs/adr/` at the repo root). See `docs/agents/domain.md`. Revisit as multi-context (`CONTEXT-MAP.md`) once a second package (e.g. `backend/`) is added.
+Architecture decisions live in `docs/adr/` (indexed by `docs/adr/README.md`) — read the
+relevant ADR before touching its area, and **write a new ADR (never edit-to-reverse) for any
+hard-to-reverse decision** (see the `t4-engineering-records` skill). ADRs 0005–0008 cover the
+member CMS, unified GitHub auth, DB-enforced authz, and AI ranking. The `nextjs/` + `nestjs/`
+packages both exist; a `CONTEXT-MAP.md` can be added if the domain docs grow to need it. See
+`docs/agents/domain.md`.

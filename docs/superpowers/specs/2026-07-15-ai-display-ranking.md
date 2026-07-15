@@ -4,6 +4,19 @@
 > (bilingual applies to the GitHub tracker). Shared decisions D1–D5 live in the
 > umbrella; this PRD applies them to ranking.
 
+> **STATUS — SHIPPED + MERGED (PR #34, `c8a131f`), 2026-07-15.** B1–B4 delivered
+> (issues **#47–#50 closed**); **B5 partial** (**#51 open** — the deferred project-content
+> → DB migration). The shipped approach DIFFERS from the plan below — see
+> [ADR 0008](../../adr/0008-ai-display-ranking-order-not-content.md):
+> - **Content keeps its source; only the display ORDER comes from a persisted `ai_rank`.**
+>   The static projects **catalog was NOT moved to the DB** — its 8 rows are seeded as
+>   *rank-holders* (migration `0014`) and reordered **in place** by
+>   `lib/project-rank.ts::orderByRank` over `content/catalog.ts`. So B4/B5's "DB `ORDER BY`"
+>   is, for Featured / Selected-work / `/projects`, a **static-catalog reorder**, not a DB read.
+> - `ai_rank` also landed on a **fourth** table — **`team_projects`** (home collaborative work).
+> - The "decide in B2" question (§Decisions) is resolved: cert/member lists order
+>   `sort_order` then `ai_rank`; blog + team-work lead with `ai_rank` (no human pin).
+
 ## Problem
 
 Every public listing today renders its source array in raw/insertion order (proven

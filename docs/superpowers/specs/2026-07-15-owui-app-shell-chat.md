@@ -2,6 +2,14 @@
 
 Date: 2026-07-15. Epic. One PRD → the issues below.
 
+> **STATUS — SHIPPED + MERGED (PR #34, `c8a131f`), 2026-07-15.** All phases P0–P5
+> delivered (conversation store, sidebar app-shell, empty-state, message actions,
+> composer image/vision, identity strip) + a follow-up full-Markdown pass. The code
+> is on `master` via PR #34, but issues **#38–#43 were NOT in that PR's `Closes` list**
+> (only #44–#57 were) — so they're delivered-but-still-open pending confirm-to-close.
+> The acceptance boxes below reflect the original plan, not live state — see the
+> ledger's chat-app-shell section for the shipped detail.
+
 ## Why
 
 `/chat` is the site's AI assistant and a showcase of T4's engineering. Today it is a single-session
