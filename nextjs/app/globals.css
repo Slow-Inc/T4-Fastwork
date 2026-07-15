@@ -785,6 +785,30 @@ h1 em {
     gap: 3px;
   }
 }
+/* Credentials "see more" (#50) — the overflow past the best 9 collapses behind a
+   native <details> (hook-free). Rows inside keep the .crow rhythm. */
+.cert-more-summary {
+  cursor: pointer;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  list-style: none;
+  user-select: none;
+  transition: color 0.2s;
+}
+.cert-more-summary::-webkit-details-marker {
+  display: none;
+}
+.cert-more-summary:hover {
+  color: var(--ink);
+}
+.cert-more[open] .cert-more-summary {
+  color: var(--muted);
+}
 
 /* ---- CTA ---- */
 .cta {

@@ -23,7 +23,11 @@ export async function getAllProjects(): Promise<Project[]> {
     const { data, error } = await supabase
       .from('projects')
       .select(SELECT)
-      .not('published_at', 'is', null);
+      .not('published_at', 'is', null)
+      // AI display-rank orders the DB set (nulls last). NOTE: the public list
+      // merges the static catalog first (mergeProjects), so ranking only reorders
+      // DB-sourced projects until the catalog moves to the DB.
+      .order('ai_rank', { ascending: true, nullsFirst: false });
     if (error || !data) return staticProjects;
     const dbProjects = (data as unknown as DbProjectRow[]).map(mapDbProject);
     return mergeProjects(staticProjects, dbProjects);

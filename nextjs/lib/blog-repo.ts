@@ -36,6 +36,8 @@ export async function getPosts(q?: string): Promise<BlogPost[]> {
     const { data, error } = await supabase
       .from('blog_posts')
       .select(SELECT)
+      // AI display-rank (views + content) leads; recency breaks ties / unranked.
+      .order('ai_rank', { ascending: true, nullsFirst: false })
       .order('published_at', { ascending: false });
     if (error || !data || data.length === 0) return staticSearch(q);
     let posts = (data as unknown as DbPostRow[]).map(mapDbPost);
