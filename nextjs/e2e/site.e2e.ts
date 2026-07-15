@@ -960,3 +960,18 @@ test("the floating popup and the /chat page share one conversation (#31)", async
     page.locator(".chat-panel").getByText("BANANA456"),
   ).toBeVisible();
 });
+
+test("member area redirects to GitHub login when signed out (#53)", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  // Not signed in → the member area bounces to the login page.
+  await page.goto("/member", { waitUntil: "networkidle" });
+  await expect(page).toHaveURL(/\/member\/login$/);
+  await expect(
+    page.getByRole("button", { name: /เข้าสู่ระบบด้วย GitHub/ }),
+  ).toBeVisible();
+  await expect(page.locator("h1")).toBeVisible();
+  expect(errors).toEqual([]);
+});
