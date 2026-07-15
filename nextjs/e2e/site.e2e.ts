@@ -394,7 +394,7 @@ test('project detail "ask AI about this project" opens the floating widget groun
   expect((requestBody?.message as string) ?? "").toContain("MangaDock");
 });
 
-test("home shows the team directory and a tech-stack marquee — spec P8", async ({
+test("home shows the team directory and a filterable tech-stack — spec P8 / §4.1.8", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -409,8 +409,12 @@ test("home shows the team directory and a tech-stack marquee — spec P8", async
       .getByRole("link", { name: /xenodev|Slowgers/ })
       .first(),
   ).toBeVisible();
-  // The tech-stack marquee renders its track.
-  await expect(page.locator(".tech-marquee-track")).toBeVisible();
+  // The tech-stack section renders clickable chips that filter /projects
+  // (§4.1.8) — the single, non-redundant tech display (the duplicate marquee
+  // was removed).
+  const chip = page.locator("#tech .tech-chip").first();
+  await expect(chip).toBeVisible();
+  await expect(chip).toHaveAttribute("href", /\/projects\?tech=/);
   expect(errors).toEqual([]);
 });
 
