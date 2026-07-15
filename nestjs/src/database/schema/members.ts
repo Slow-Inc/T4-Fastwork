@@ -6,6 +6,7 @@ import {
   integer,
   jsonb,
   boolean,
+  uuid,
 } from 'drizzle-orm/pg-core';
 
 /**
@@ -21,6 +22,12 @@ export const members = pgTable('members', {
   handle: text('handle').notNull().unique(),
   slug: varchar('slug', { length: 160 }).notNull().unique(),
   githubUserId: integer('github_user_id'),
+  // Lowercased GitHub login (from github_url; may differ from `handle`) — the key
+  // a "Log in with GitHub" session is matched against (C2).
+  githubLogin: text('github_login'),
+  // Set on a member's first GitHub login; links their Supabase auth user so RLS
+  // can scope writes to their own row (C2).
+  authUserId: uuid('auth_user_id').unique(),
   githubUrl: text('github_url'),
   role: text('role').notNull(),
   roleEn: text('role_en').notNull(),

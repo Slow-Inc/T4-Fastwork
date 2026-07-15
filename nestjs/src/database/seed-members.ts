@@ -30,7 +30,10 @@ const members: SeedMember[] = [
     roleEn: 'Project Manager',
     skills: ['Project Manager'],
     stack: [],
-    education: { program: 'วิทยาการคอมพิวเตอร์', institution: 'มหาวิทยาลัยกรุงเทพ (BU)' },
+    education: {
+      program: 'วิทยาการคอมพิวเตอร์',
+      institution: 'มหาวิทยาลัยกรุงเทพ (BU)',
+    },
   },
   {
     handle: '_InI4',
@@ -134,7 +137,10 @@ const members: SeedMember[] = [
       'Radmin',
       'Tailscale',
     ],
-    education: { program: 'วิทยาการคอมพิวเตอร์', institution: 'มหาวิทยาลัยกรุงเทพ (BU)' },
+    education: {
+      program: 'วิทยาการคอมพิวเตอร์',
+      institution: 'มหาวิทยาลัยกรุงเทพ (BU)',
+    },
   },
   {
     handle: 'Paradise',
@@ -171,6 +177,9 @@ async function main() {
       handle: m.handle,
       slug: m.slug,
       githubUrl: m.githubUrl,
+      githubLogin: m.githubUrl
+        ? m.githubUrl.replace(/.*\//, '').toLowerCase()
+        : null,
       role: m.role,
       roleEn: m.roleEn,
       skills: m.skills,
