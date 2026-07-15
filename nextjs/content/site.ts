@@ -560,3 +560,17 @@ export const teamProjects: TeamOrgProject[] = [
     contributors: ['xenodev'],
   },
 ];
+
+/**
+ * Deduped, sorted union of every member's tech `stack` (members without a stack
+ * contribute nothing). Feeds the home team tech-stack carousel (#44). Pure so the
+ * derivation is unit-testable independently of the live `team` data.
+ */
+export function deriveTeamTechnologies(
+  members: { stack?: string[] }[],
+): string[] {
+  return Array.from(new Set(members.flatMap((m) => m.stack ?? []))).sort();
+}
+
+/** The real team's tech union — the carousel's data source (swaps to DB in #46). */
+export const teamTechnologies = deriveTeamTechnologies(team);

@@ -10,6 +10,8 @@ import { TeamSection } from "@/components/site/team-section";
 import { FeaturedCarousel } from "@/components/site/featured-carousel";
 import { Certificates } from "@/components/site/certificates";
 import { projectTechnologies, filterProjects } from "@/content/catalog";
+import { teamTechnologies } from "@/content/site";
+import { TeamTechCarousel } from "@/components/site/team-tech-carousel";
 import { CtaSection } from "@/components/site/cta-section";
 import { SiteFooter } from "@/components/site/site-footer";
 import { ChatButton } from "@/components/site/chat-button";
@@ -22,6 +24,7 @@ export default function Home() {
       <SiteNav />
       <div className="wrap">
         <Hero />
+        <TeamTechCarousel techs={teamTechnologies} />
         <FeaturedCarousel projects={filterProjects({ featured: true })} />
         <SolutionSelector />
         <ProjectGallery />

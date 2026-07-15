@@ -1796,6 +1796,56 @@ footer {
 .owner-badge.owner-personal {
   background: color-mix(in srgb, var(--ink) 10%, transparent);
 }
+/* Team tech-stack carousel (#44) — ambient marquee of the team's tech union.
+   Reuses TechChips pills; two lanes duplicate the list for a seamless loop. */
+.team-tech {
+  overflow: hidden;
+  width: 100%;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+}
+.team-tech-track {
+  display: flex;
+  width: max-content;
+  animation: team-tech-scroll 50s linear infinite;
+}
+.team-tech-lane {
+  flex: none;
+}
+.team-tech-lane .chip-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  padding: 0 6px;
+  margin: 0;
+}
+@keyframes team-tech-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .team-tech-track {
+    animation: none;
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: center;
+  }
+  .team-tech-lane[aria-hidden] {
+    display: none;
+  }
+}
 .tm-hero h1 {
   font-size: clamp(30px, 5vw, 46px);
   line-height: 1.05;
