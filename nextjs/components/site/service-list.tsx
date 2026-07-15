@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
 import { services, type Service } from "@/content/services";
 import { useLocale } from "@/i18n/locale-context";
 
-/** Presentational services list — pure-ish (the flair is local state). */
+/** Presentational services list — pure (the flair is CSS-only). */
 export function ServiceListView({
   items,
   en,
@@ -12,18 +11,6 @@ export function ServiceListView({
   items: Service[];
   en: boolean;
 }) {
-  const stripRef = useRef<HTMLDivElement>(null);
-  // Magnetic accent marker: tracks the hovered column along the bottom rail.
-  const [marker, setMarker] = useState<{ x: number; w: number } | null>(null);
-
-  function trackColumn(col: HTMLElement) {
-    const strip = stripRef.current;
-    if (!strip) return;
-    const c = col.getBoundingClientRect();
-    const s = strip.getBoundingClientRect();
-    setMarker({ x: c.left - s.left, w: c.width });
-  }
-
   return (
     <section id="services" className="section">
       <div className="srv-head rv">
@@ -31,18 +18,11 @@ export function ServiceListView({
         <h2>From one page to a whole platform.</h2>
       </div>
       {/* Capability strip — grid-divided columns whose hairline rails draw in on
-          reveal, react on hover, and are tracked by a magnetic accent marker. */}
-      <div
-        className="srv-strip rv"
-        ref={stripRef}
-        onMouseLeave={() => setMarker(null)}
-      >
+          reveal, react on hover, and are tracked by a magnetic accent marker
+          (positioned via :has(), no JS). */}
+      <div className="srv-strip rv">
         {items.map((s) => (
-          <div
-            className="srv-col"
-            key={s.no}
-            onMouseEnter={(e) => trackColumn(e.currentTarget)}
-          >
+          <div className="srv-col" key={s.no}>
             <span className="srv-plus" aria-hidden="true">
               +
             </span>
@@ -53,19 +33,7 @@ export function ServiceListView({
             </p>
           </div>
         ))}
-        <span
-          className="srv-marker"
-          aria-hidden="true"
-          style={
-            marker
-              ? {
-                  transform: `translateX(${marker.x}px)`,
-                  width: `${marker.w}px`,
-                  opacity: 1,
-                }
-              : undefined
-          }
-        />
+        <span className="srv-marker" aria-hidden="true" />
       </div>
     </section>
   );

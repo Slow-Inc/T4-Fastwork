@@ -676,20 +676,40 @@ h1 em {
   line-height: 1.55;
   color: var(--muted);
 }
-/* Magnetic accent marker gliding along the bottom rail to the hovered column. */
+/* Magnetic accent marker gliding along the bottom rail to the hovered column —
+   positioned by :has() (one column wide, translated per column), no JS. */
 .srv-marker {
   position: absolute;
   left: 0;
   bottom: -1px;
-  width: 0;
+  width: 20%;
   height: 2px;
   background: var(--accent);
   opacity: 0;
   pointer-events: none;
   transition:
     transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    width 0.45s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.3s ease;
+}
+.srv-strip:has(.srv-col:nth-child(1):hover) .srv-marker {
+  opacity: 1;
+  transform: translateX(0%);
+}
+.srv-strip:has(.srv-col:nth-child(2):hover) .srv-marker {
+  opacity: 1;
+  transform: translateX(100%);
+}
+.srv-strip:has(.srv-col:nth-child(3):hover) .srv-marker {
+  opacity: 1;
+  transform: translateX(200%);
+}
+.srv-strip:has(.srv-col:nth-child(4):hover) .srv-marker {
+  opacity: 1;
+  transform: translateX(300%);
+}
+.srv-strip:has(.srv-col:nth-child(5):hover) .srv-marker {
+  opacity: 1;
+  transform: translateX(400%);
 }
 @media (max-width: 900px) {
   .srv-strip {
