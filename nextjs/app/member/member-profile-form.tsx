@@ -9,6 +9,7 @@ interface Initial {
   skills: string[];
   stack: string[];
   readmeVisible: boolean;
+  readmeOverride: string;
 }
 
 /**
@@ -22,6 +23,7 @@ export function MemberProfileForm({ initial }: { initial: Initial }) {
   const [skills, setSkills] = useState(initial.skills.join('\n'));
   const [stack, setStack] = useState(initial.stack.join('\n'));
   const [readmeVisible, setReadmeVisible] = useState(initial.readmeVisible);
+  const [readmeOverride, setReadmeOverride] = useState(initial.readmeOverride);
   const [pending, setPending] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -44,6 +46,7 @@ export function MemberProfileForm({ initial }: { initial: Initial }) {
         skills: parseTechList(skills),
         stack: parseTechList(stack),
         readme_visible: readmeVisible,
+        readme_override: readmeOverride.trim() || null,
       })
       .eq('auth_user_id', user.id);
     setPending(false);
@@ -75,7 +78,17 @@ export function MemberProfileForm({ initial }: { initial: Initial }) {
           checked={readmeVisible}
           onChange={(e) => setReadmeVisible(e.target.checked)}
         />
-        <span className="t-meta">แสดง GitHub README บนโปรไฟล์</span>
+        <span className="t-meta">แสดง README บนโปรไฟล์</span>
+      </label>
+      <label className="field">
+        <span className="t-meta">
+          README ของฉัน (Markdown — เว้นว่างเพื่อใช้ README จาก GitHub)
+        </span>
+        <textarea
+          rows={6}
+          value={readmeOverride}
+          onChange={(e) => setReadmeOverride(e.target.value)}
+        />
       </label>
       {msg && <p className="t-meta">{msg}</p>}
       <button type="submit" className="btn" disabled={pending}>

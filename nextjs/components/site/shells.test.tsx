@@ -155,4 +155,16 @@ describe('TeamMemberView (profile page)', () => {
     );
     expect(container.querySelector('.tm-readme')).toBeNull();
   });
+
+  it('shows the custom README override instead of the GitHub one (C3)', () => {
+    const { container } = render(
+      <TeamMemberView
+        member={{ ...xeno, readmeOverride: '# My override\n\nHello.' }}
+        en={false}
+      />,
+    );
+    const readme = container.querySelector('.tm-readme');
+    expect(readme).not.toBeNull();
+    expect(readme?.textContent).toContain('My override');
+  });
 });

@@ -162,6 +162,8 @@ export interface TeamMember {
   /** Whether to show the GitHub profile README on the public profile (Epic C / C3);
    * undefined (static members) is treated as visible. */
   readmeVisible?: boolean;
+  /** Custom README markdown that replaces the live GitHub README when set (Epic C / C3). */
+  readmeOverride?: string;
 }
 
 export const team: TeamMember[] = [

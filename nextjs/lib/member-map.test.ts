@@ -17,6 +17,7 @@ describe('mapDbMember', () => {
           institution: 'KMUTNB',
         },
         readme_visible: true,
+        readme_override: '# Custom\n\nMy own README.',
       }),
     ).toEqual({
       handle: 'xenodev',
@@ -31,6 +32,7 @@ describe('mapDbMember', () => {
         institution: 'KMUTNB',
       },
       readmeVisible: true,
+      readmeOverride: '# Custom\n\nMy own README.',
     });
   });
 
@@ -46,6 +48,7 @@ describe('mapDbMember', () => {
         stack: null,
         education: null,
         readme_visible: true,
+        readme_override: null,
       }),
     ).toEqual({
       handle: 'Slowgers',
@@ -68,8 +71,10 @@ describe('mapDbMember', () => {
       stack: null,
       education: null,
       readme_visible: false,
+      readme_override: null,
     });
     expect(m.skills).toEqual([]);
     expect(m.readmeVisible).toBe(false);
+    expect(m.readmeOverride).toBeUndefined();
   });
 });

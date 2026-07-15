@@ -47,6 +47,7 @@ export default async function MemberPage() {
                 skills: member.skills,
                 stack: member.stack,
                 readmeVisible: member.readmeVisible,
+                readmeOverride: member.readmeOverride,
               }}
             />
           </div>

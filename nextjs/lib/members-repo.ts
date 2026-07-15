@@ -8,7 +8,7 @@ import {
 } from '@/lib/member-content-repo';
 
 const MEMBER_SELECT =
-  'handle,slug,github_url,role,role_en,skills,stack,education,readme_visible';
+  'handle,slug,github_url,role,role_en,skills,stack,education,readme_visible,readme_override';
 
 /**
  * Team tech union from the `members` DB table (`members.stack`) — the home tech

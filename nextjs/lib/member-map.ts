@@ -16,6 +16,7 @@ export interface DbMemberRow {
   stack: string[] | null;
   education: { program: string; institution: string } | null;
   readme_visible: boolean | null;
+  readme_override: string | null;
 }
 
 export function mapDbMember(row: DbMemberRow): TeamMember {
@@ -30,5 +31,6 @@ export function mapDbMember(row: DbMemberRow): TeamMember {
   if (row.github_url) member.githubUrl = row.github_url;
   if (row.stack) member.stack = row.stack;
   if (row.education) member.education = row.education;
+  if (row.readme_override) member.readmeOverride = row.readme_override;
   return member;
 }

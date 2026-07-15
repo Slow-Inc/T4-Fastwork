@@ -10,6 +10,7 @@ export interface CurrentMember {
   skills: string[];
   stack: string[];
   readmeVisible: boolean;
+  readmeOverride: string;
 }
 
 /**
@@ -26,7 +27,7 @@ export async function getCurrentMember(): Promise<CurrentMember | null> {
 
   const { data, error } = await supabase
     .from('members')
-    .select('id, slug, handle, role, role_en, skills, stack, readme_visible')
+    .select('id, slug, handle, role, role_en, skills, stack, readme_visible, readme_override')
     .eq('auth_user_id', user.id)
     .maybeSingle();
   if (error || !data) return null;
@@ -39,6 +40,7 @@ export async function getCurrentMember(): Promise<CurrentMember | null> {
     skills: data.skills ?? [],
     stack: data.stack ?? [],
     readmeVisible: data.readme_visible ?? true,
+    readmeOverride: data.readme_override ?? '',
   };
 }
 
