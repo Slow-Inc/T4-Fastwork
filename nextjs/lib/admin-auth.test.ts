@@ -2,9 +2,12 @@ import { test, expect, describe } from 'bun:test';
 import { isAllowedAdmin } from './admin-auth';
 
 describe('isAllowedAdmin', () => {
-  test('no allowlist → any authenticated user is allowed', () => {
-    expect(isAllowedAdmin('anyone@example.com', undefined)).toBe(true);
-    expect(isAllowedAdmin('anyone@example.com', '')).toBe(true);
+  test('empty/unset allowlist → nobody is admin (fail closed)', () => {
+    // Members can authenticate (GitHub OAuth), so an empty allowlist must NOT admit
+    // everyone or any member could reach /admin — set ADMIN_EMAILS to grant access.
+    expect(isAllowedAdmin('anyone@example.com', undefined)).toBe(false);
+    expect(isAllowedAdmin('anyone@example.com', '')).toBe(false);
+    expect(isAllowedAdmin('anyone@example.com', '  ,  ')).toBe(false);
   });
 
   test('allowlist → only listed emails pass', () => {
