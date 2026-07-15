@@ -30,9 +30,9 @@ Three value pillars, mapped to what already exists:
 
 | Epic | Size | Own PRD | Summary |
 |---|---|---|---|
-| **A. Team tech-stack carousel** | S | issue-level (this doc §5A) | icon marquee of the union of members' `stack`, between Hero and Featured |
-| **B. AI display-ranking** | M | `2026-07-15-ai-display-ranking.md` (to write) | rank certs/projects/featured/team-work/blog for display via `LlmService` |
-| **C. Member self-service profile CMS** | L | `2026-07-15-member-profile-cms.md` (to write) | members table + per-member auth + member-scoped edit UI |
+| **A. Team tech-stack carousel** | S | issue-level (this doc §5) — #44 | icon marquee of the union of members' `stack`, between Hero and Featured |
+| **B. AI display-ranking** | M | `2026-07-15-ai-display-ranking.md` — epic #45 (#47–#51) | rank certs/projects/featured/team-work/blog for display via `LlmService` |
+| **C. Member self-service profile CMS** | L | `2026-07-15-member-profile-cms.md` — epic #46 (#52–#57) | members table + per-member auth + member-scoped edit UI |
 | _(D. Wire curate/generate P2/P3)_ | M | — | already tracked (ledger Deferred); not part of this vision's new work |
 
 **Sequencing:** A → B → C. A is a quick, forward-compatible win; B builds on
@@ -72,17 +72,17 @@ PRDs consistent.
 Every planned issue, so nothing drops. Detailed acceptance criteria live in each
 epic PRD; `→ #` filled in when the issue is created.
 
-**Epic A — Tech carousel** (→ 1 issue)
+**Epic A — Tech carousel** — #44
 - [ ] A1 — `teamTechnologies` derivation (union of `member.stack`, deduped) + `TeamTechCarousel` presentational component (reuse `TechChips`/`tech-logos`), placed between Hero and Featured; icon-first with text fallback; `prefers-reduced-motion`; hook-free + unit-tested; e2e. Config flag for icon-only vs all (default icon-first).
 
-**Epic B — AI display-ranking** (→ ~5 issues)
+**Epic B — AI display-ranking** — epic #45 · B1 #47 · B2 #48 · B3 #49 · B4 #50 · B5 #51
 - [ ] B1 — ranking service: `RankService` reusing `LlmService.complete()` with a rubric prompt (impact-to-customer, credibility/issuer prestige + verifiability, recency, audience relevance); pure scoring/parsing unit-tested; injected LLM client (like `github-generate`).
 - [ ] B2 — schema + persistence: `ai_rank` (or reuse `sort_order` with an owner flag per D1) on `projects`, `certificates`, `blog_posts`; migration + `RankStore`.
 - [ ] B3 — cron wiring: compute ranks on the refresh cadence (D2); admin/manual override wins (D1).
 - [ ] B4 — read-path ordering: `getAllProjects`/certs/blog repos `ORDER BY` the rank; certificates **best 9 + "see more"** (today renders all, no limit).
 - [ ] B5 — surfaces: apply to home Featured, Selected-work, team collaborative work, `/projects`, blog. e2e per surface.
 
-**Epic C — Member self-service profile CMS** (→ ~6 issues)
+**Epic C — Member self-service profile CMS** — epic #46 · C1 #52 · C2 #53 · C3 #54 · C4 #55 · C5 #56 · C6 #57
 - [ ] C1 — `members` table (migrate team out of static `content/site.ts`): identity (handle/slug/github), profile fields + `*_owner` provenance (D1), relations to certs/projects selection.
 - [ ] C2 — GitHub OAuth login for members (D3) + session→member linking + route guard scoped to own record.
 - [ ] C3 — member edit UI: profile, skills, tech stack, README toggle, **project selection** (pick which fetched GitHub repos to show).

@@ -75,13 +75,17 @@ Design: `docs/superpowers/specs/2026-07-14-github-project-showcase-design.md`. *
 
 _(#31 share-conversation popup↔/chat: DONE — `SHARED_CHAT_KEY`, closed. #30 stats-fix: DONE, closed.)_
 
-## Backlog — AI-curated member CMS vision (2026-07-15, no issues yet) 🔴
+## Backlog — AI-curated member CMS vision (2026-07-15) — filed as #44–#57
 
 From a product-vision session + a 5-agent system survey (2026-07-15) — full
 snapshot with file:line anchors: `docs/reports/2026-07-15-system-state-survey.md`.
 Foundation already built (see epic #27 above + memory `showcase-system-already-built`);
 these are the confirmed **gaps** the vision (`showcase-vision-2026-07`) still needs.
-Needs a PRD → issues pass before building. Ordered roughly by size.
+
+**Vision PRD:** `docs/superpowers/specs/2026-07-15-showcase-cms-vision.md`. **Issues filed
+(bilingual):** Epic A carousel **#44** · Epic B AI-ranking **#45** (B1–B5 **#47–#51**,
+PRD `…ai-display-ranking.md`) · Epic C member CMS **#46** (C1–C6 **#52–#57**, PRD
+`…member-profile-cms.md`). Sequence **A → B → C**. Details below; ordered roughly by size.
 
 - **AI display-ranking** (NEW — zero exists anywhere; proven by exhaustive survey).
   Rank/order listings by impact-to-customer + credibility via `LlmService.complete()`
