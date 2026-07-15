@@ -128,6 +128,44 @@ export async function getCurrentMemberProjects(): Promise<EditableProject[]> {
   }));
 }
 
+export interface EditableBlogPost {
+  id: number;
+  title: string;
+  slug: string;
+  published: boolean;
+}
+
+/**
+ * The current member's authored blog posts (Epic C / C4c), incl. their own drafts —
+ * via the cookie client so the own-row RLS policy applies (the public read shows only
+ * published). For the additive-authoring UI. Empty when not a member.
+ */
+export async function getCurrentMemberPosts(): Promise<EditableBlogPost[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data: m } = await supabase
+    .from('members')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .maybeSingle();
+  if (!m) return [];
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select('id, title, slug, published_at')
+    .eq('author_id', m.id)
+    .order('id', { ascending: false });
+  if (error || !data) return [];
+  return data.map((r) => ({
+    id: r.id as number,
+    title: r.title as string,
+    slug: r.slug as string,
+    published: r.published_at != null,
+  }));
+}
+
 /** Whether someone is signed in (regardless of member status) — for the login page. */
 export async function hasSession(): Promise<boolean> {
   const supabase = await createClient();

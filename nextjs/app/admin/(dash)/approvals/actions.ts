@@ -25,3 +25,23 @@ export async function setMemberCertStatus(formData: FormData) {
   revalidatePath('/admin/approvals');
   if (slug) revalidatePath(`/team/${slug}`);
 }
+
+/**
+ * Publish / unpublish a member-authored blog post (Epic C / C4c). Admins hold the
+ * is_app_admin RLS policy on blog_posts, so a direct update of published_at is allowed
+ * (members can't set it — their policies require published_at is null).
+ */
+export async function setBlogStatus(formData: FormData) {
+  const id = Number(formData.get('id'));
+  const publish = formData.get('publish') === '1';
+  if (!id) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from('blog_posts')
+    .update({ published_at: publish ? new Date().toISOString().slice(0, 10) : null })
+    .eq('id', id);
+
+  revalidatePath('/admin/approvals');
+  revalidatePath('/blog');
+}

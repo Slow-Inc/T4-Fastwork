@@ -6,10 +6,12 @@ import {
   getCurrentMember,
   getCurrentMemberProjects,
   getCurrentMemberCertificates,
+  getCurrentMemberPosts,
 } from '@/lib/member-session';
 import { MemberProfileForm } from './member-profile-form';
 import { MemberProjectSelector } from './member-project-selector';
 import { MemberCertificateManager } from './member-certificate-manager';
+import { MemberBlogManager } from './member-blog-manager';
 
 export const metadata: Metadata = {
   title: 'พื้นที่สมาชิก — T4 Labs',
@@ -25,6 +27,7 @@ export default async function MemberPage() {
   if (!member) redirect('/member/login');
   const projects = await getCurrentMemberProjects();
   const certificates = await getCurrentMemberCertificates();
+  const posts = await getCurrentMemberPosts();
 
   return (
     <>
@@ -62,6 +65,17 @@ export default async function MemberPage() {
               เพิ่มใบรับรองของคุณ — จะแสดงบนโปรไฟล์หลังแอดมินอนุมัติ
             </p>
             <MemberCertificateManager memberId={member.id} initial={certificates} />
+          </div>
+          <div style={{ marginTop: 32, maxWidth: '52ch' }}>
+            <div className="t-idx">บทความของฉัน</div>
+            <p className="t-meta" style={{ marginBottom: 12 }}>
+              เขียนบทความ — จะเผยแพร่บน /blog หลังแอดมินอนุมัติ
+            </p>
+            <MemberBlogManager
+              memberId={member.id}
+              authorName={member.handle}
+              initial={posts}
+            />
           </div>
         </section>
         <SiteFooter />
