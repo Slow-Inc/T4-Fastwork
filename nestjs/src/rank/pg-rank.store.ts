@@ -40,14 +40,18 @@ export class PgRankStore implements RankStore {
   }
 
   async applyRanks(kind: RankKind, rows: RankRow[]): Promise<void> {
+    if (rows.length === 0) return;
     const table = TABLE[kind];
     const key = KEY[kind];
-    for (const row of rows) {
-      const id = key === 'id' ? sql`${row.id}::bigint` : sql`${row.id}`;
-      await this.db.execute(
-        sql`update ${sql.raw(table)} set ai_rank = ${row.aiRank}, ai_rank_rationale = ${row.aiRankRationale ?? null} where ${sql.raw(key)} = ${id}`,
-      );
-    }
+    // One transaction so a mid-loop failure never leaves ranks half-updated.
+    await this.db.transaction(async (tx) => {
+      for (const row of rows) {
+        const id = key === 'id' ? sql`${row.id}::bigint` : sql`${row.id}`;
+        await tx.execute(
+          sql`update ${sql.raw(table)} set ai_rank = ${row.aiRank}, ai_rank_rationale = ${row.aiRankRationale ?? null} where ${sql.raw(key)} = ${id}`,
+        );
+      }
+    });
   }
 
   private selectSql(kind: RankKind) {
