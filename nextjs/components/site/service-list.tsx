@@ -3,7 +3,7 @@
 import { services, type Service } from "@/content/services";
 import { useLocale } from "@/i18n/locale-context";
 
-/** Presentational services list — pure (the flair is CSS-only). */
+/** Presentational services list — pure, unit-testable. */
 export function ServiceListView({
   items,
   en,
@@ -17,23 +17,14 @@ export function ServiceListView({
         <div className="t-idx">03 — Services</div>
         <h2>From one page to a whole platform.</h2>
       </div>
-      {/* Capability strip — grid-divided columns whose hairline rails draw in on
-          reveal, react on hover, and are tracked by a magnetic accent marker
-          (positioned via :has(), no JS). */}
-      <div className="srv-strip rv">
+      <div className="rv">
         {items.map((s) => (
-          <div className="srv-col" key={s.no}>
-            <span className="srv-plus" aria-hidden="true">
-              +
-            </span>
-            <span className="srv-col-no t-meta">{s.no}</span>
-            <h3 className="srv-col-title">{s.title}</h3>
-            <p className="srv-col-desc">
-              {en ? s.descriptionEn : s.description}
-            </p>
+          <div className="srv-row" key={s.no}>
+            <span className="t-meta">{s.no}</span>
+            <span className="sn">{s.title}</span>
+            <span className="sd">{en ? s.descriptionEn : s.description}</span>
           </div>
         ))}
-        <span className="srv-marker" aria-hidden="true" />
       </div>
     </section>
   );
