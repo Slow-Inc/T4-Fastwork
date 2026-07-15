@@ -562,31 +562,113 @@ h1 em {
   max-width: 16ch;
   margin-top: 14px;
 }
-/* Capability strip — a row of grid-divided columns; the hairline rails ARE the
-   layout (§14 visible grid). Recomposes 5 → 2 → 1 columns; descriptions stay on
-   every breakpoint (the old ledger dropped them on mobile). */
+/* Capability strip — grid-divided columns; the hairline rails ARE the layout
+   (§14 visible grid). Flair: the vertical dividers DRAW IN on reveal, each column
+   reacts on hover (tint + a `+` registration mark + accent index + an underline
+   that draws), and a magnetic accent marker tracks the pointer along the bottom
+   rail. Recomposes 5 → 2 → 1 columns; descriptions survive every breakpoint. */
 .srv-strip {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
 .srv-col {
-  padding: 24px 20px 26px;
-  border-left: 1px solid var(--line);
+  position: relative;
+  padding: 26px 20px 28px;
+  transition: background 0.28s ease;
 }
-.srv-col:first-child {
-  border-left: 0;
+/* Vertical divider as a pseudo-element so it can draw in (scaleY) on reveal. */
+.srv-col::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+  transform-origin: top;
+}
+.srv-col:first-child::before {
+  content: none;
+}
+.srv-strip.in .srv-col::before {
+  animation: srv-draw 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.srv-strip.in .srv-col:nth-child(2)::before {
+  animation-delay: 0.06s;
+}
+.srv-strip.in .srv-col:nth-child(3)::before {
+  animation-delay: 0.13s;
+}
+.srv-strip.in .srv-col:nth-child(4)::before {
+  animation-delay: 0.2s;
+}
+.srv-strip.in .srv-col:nth-child(5)::before {
+  animation-delay: 0.27s;
+}
+@keyframes srv-draw {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.srv-col:hover {
+  background: var(--paper-deep);
+}
+/* + registration mark — the grid cell "activating" on hover (§14.9). */
+.srv-plus {
+  position: absolute;
+  top: 7px;
+  left: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1;
+  color: var(--accent);
+  opacity: 0;
+  transform: translate(-2px, -2px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.srv-col:hover .srv-plus {
+  opacity: 1;
+  transform: none;
 }
 .srv-col-no {
   display: block;
+  transition: color 0.2s ease;
+}
+.srv-col:hover .srv-col-no {
+  color: var(--accent);
 }
 .srv-col-title {
+  position: relative;
+  display: inline-block;
   font-family: var(--disp);
   font-weight: 600;
   font-size: 19px;
   letter-spacing: -0.01em;
   margin: 12px 0 8px;
+}
+/* Accent underline drawing left → right on hover. */
+.srv-col-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 100%;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.srv-col:hover .srv-col-title::after {
+  transform: scaleX(1);
 }
 .srv-col-desc {
   margin: 0;
@@ -594,12 +676,29 @@ h1 em {
   line-height: 1.55;
   color: var(--muted);
 }
+/* Magnetic accent marker gliding along the bottom rail to the hovered column. */
+.srv-marker {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease;
+}
 @media (max-width: 900px) {
   .srv-strip {
     grid-template-columns: 1fr 1fr;
   }
+  .srv-col::before {
+    content: none;
+  }
   .srv-col {
-    border-left: 0;
     border-top: 1px solid var(--line);
   }
   .srv-col:nth-child(1),
@@ -608,6 +707,9 @@ h1 em {
   }
   .srv-col:nth-child(odd) {
     border-right: 1px solid var(--line);
+  }
+  .srv-marker {
+    display: none;
   }
 }
 @media (max-width: 520px) {
@@ -620,6 +722,18 @@ h1 em {
   }
   .srv-col:first-child {
     border-top: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .srv-strip.in .srv-col::before {
+    animation: none;
+  }
+  .srv-col,
+  .srv-plus,
+  .srv-col-no,
+  .srv-col-title::after,
+  .srv-marker {
+    transition: none;
   }
 }
 
