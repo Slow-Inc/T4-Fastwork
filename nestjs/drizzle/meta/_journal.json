@@ -43,6 +43,13 @@
       "when": 1784106938402,
       "tag": "0005_luxuriant_white_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784113676114,
+      "tag": "0006_smart_green_goblin",
+      "breakpoints": true
     }
   ]
 }
