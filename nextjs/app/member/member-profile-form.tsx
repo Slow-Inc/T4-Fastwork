@@ -19,8 +19,8 @@ interface Initial {
  */
 export function MemberProfileForm({ initial }: { initial: Initial }) {
   const router = useRouter();
-  const [skills, setSkills] = useState(initial.skills.join(', '));
-  const [stack, setStack] = useState(initial.stack.join(', '));
+  const [skills, setSkills] = useState(initial.skills.join('\n'));
+  const [stack, setStack] = useState(initial.stack.join('\n'));
   const [readmeVisible, setReadmeVisible] = useState(initial.readmeVisible);
   const [pending, setPending] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -54,12 +54,20 @@ export function MemberProfileForm({ initial }: { initial: Initial }) {
   return (
     <form onSubmit={save} className="member-form">
       <label className="field">
-        <span className="t-meta">Skills (คั่นด้วยคอมมา)</span>
-        <input value={skills} onChange={(e) => setSkills(e.target.value)} />
+        <span className="t-meta">Skills (บรรทัดละ 1 รายการ)</span>
+        <textarea
+          rows={4}
+          value={skills}
+          onChange={(e) => setSkills(e.target.value)}
+        />
       </label>
       <label className="field">
-        <span className="t-meta">Tech stack (คั่นด้วยคอมมา)</span>
-        <input value={stack} onChange={(e) => setStack(e.target.value)} />
+        <span className="t-meta">Tech stack (บรรทัดละ 1 รายการ)</span>
+        <textarea
+          rows={8}
+          value={stack}
+          onChange={(e) => setStack(e.target.value)}
+        />
       </label>
       <label className="field field-row">
         <input

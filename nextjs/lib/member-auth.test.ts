@@ -22,10 +22,17 @@ describe('githubLoginFromUser', () => {
 });
 
 describe('parseTechList', () => {
-  it('splits on commas, trims, drops empties, and de-dupes (case-insensitive)', () => {
-    expect(parseTechList('React, Next.js ,  , react')).toEqual([
+  it('splits on newlines, trims, drops empties, and de-dupes (case-insensitive)', () => {
+    expect(parseTechList('React\nNext.js \n\n  \nreact')).toEqual([
       'React',
       'Next.js',
+    ]);
+  });
+
+  it('keeps a value that contains commas as a single item', () => {
+    expect(parseTechList('Cloudflare (CDN, DNS, Tunnel)\nMongoDB')).toEqual([
+      'Cloudflare (CDN, DNS, Tunnel)',
+      'MongoDB',
     ]);
   });
 

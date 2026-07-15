@@ -22,14 +22,15 @@ export function githubLoginFromUser(
 }
 
 /**
- * Parses a member-entered comma-separated tech/skills string into a clean list:
- * trimmed, empties dropped, de-duped case-insensitively (first spelling wins).
- * Used by the member self-edit form (C3).
+ * Parses a member-entered tech/skills string (ONE ITEM PER LINE) into a clean
+ * list: trimmed, empties dropped, de-duped case-insensitively (first spelling
+ * wins). Newline-separated — NOT comma — so an item may itself contain commas
+ * (e.g. "Cloudflare (CDN, DNS, Tunnel)"). Used by the member self-edit form (C3).
  */
 export function parseTechList(input: string): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const raw of input.split(',')) {
+  for (const raw of input.split(/\r?\n/)) {
     const t = raw.trim();
     const key = t.toLowerCase();
     if (t && !seen.has(key)) {
