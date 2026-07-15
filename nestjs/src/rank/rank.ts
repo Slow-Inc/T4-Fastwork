@@ -1,7 +1,11 @@
 import type { ChatMessage } from '../llm/llm.service';
 
 /** The listing types the ranker orders for display. */
-export type RankKind = 'projects' | 'certificates' | 'blog';
+export type RankKind =
+  | 'projects'
+  | 'certificates'
+  | 'blog'
+  | 'team_projects';
 
 /** One item to rank: a stable id + a title + optional scalar signals. */
 export interface RankCandidate {

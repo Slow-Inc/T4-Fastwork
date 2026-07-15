@@ -62,6 +62,8 @@ export class PgRankStore implements RankStore {
         return sql`select id::text as id, title, issuer, issued_year from certificates`;
       case 'blog':
         return sql`select slug as id, title, views, published_at from blog_posts where published_at is not null`;
+      case 'team_projects':
+        return sql`select id::text as id, name as title, year, contributors from team_projects`;
     }
   }
 
@@ -85,6 +87,13 @@ export class PgRankStore implements RankStore {
           views: Number(r.views ?? 0),
           publishedAt: asString(r.published_at),
         };
+      case 'team_projects':
+        return {
+          year: Number(r.year ?? 0),
+          contributors: Array.isArray(r.contributors)
+            ? r.contributors.length
+            : 0,
+        };
     }
   }
 }
@@ -93,10 +102,12 @@ const TABLE: Record<RankKind, string> = {
   projects: 'projects',
   certificates: 'certificates',
   blog: 'blog_posts',
+  team_projects: 'team_projects',
 };
 
 const KEY: Record<RankKind, string> = {
   projects: 'slug',
   certificates: 'id',
   blog: 'slug',
+  team_projects: 'id',
 };

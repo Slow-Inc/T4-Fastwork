@@ -73,8 +73,10 @@ export async function getTeamProjects(): Promise<TeamOrgProject[]> {
     const { data, error } = await supabase
       .from('team_projects')
       .select('name,description,url,tech,year,contributors')
-      .order('sort_order', { ascending: true })
-      .order('ai_rank', { ascending: true, nullsFirst: false });
+      // No admin pin for collaborative work — the AI display-rank (B5) leads;
+      // unranked rows fall back to their seed order (sort_order).
+      .order('ai_rank', { ascending: true, nullsFirst: false })
+      .order('sort_order', { ascending: true });
     if (error || !data || data.length === 0) return staticTeamProjects;
     return (data as unknown as DbTeamProjectRow[]).map(mapDbTeamProject);
   } catch {

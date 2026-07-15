@@ -11,7 +11,12 @@ export const RANK_STORE = Symbol('RANK_STORE');
 export const RANK_CLIENT = Symbol('RANK_CLIENT');
 
 /** Every listing kind the ranker maintains. */
-export const RANK_KINDS: RankKind[] = ['projects', 'certificates', 'blog'];
+export const RANK_KINDS: RankKind[] = [
+  'projects',
+  'certificates',
+  'blog',
+  'team_projects',
+];
 
 /**
  * Computes + persists the AI display-rank for a listing kind. Orchestration only —
