@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { SiteNav } from '@/components/site/site-nav';
 import { SiteFooter } from '@/components/site/site-footer';
-import { getCurrentMember } from '@/lib/member-session';
+import { getCurrentMember, getCurrentMemberProjects } from '@/lib/member-session';
 import { MemberProfileForm } from './member-profile-form';
+import { MemberProjectSelector } from './member-project-selector';
 
 export const metadata: Metadata = {
   title: 'พื้นที่สมาชิก — T4 Labs',
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 export default async function MemberPage() {
   const member = await getCurrentMember();
   if (!member) redirect('/member/login');
+  const projects = await getCurrentMemberProjects();
 
   return (
     <>
@@ -38,10 +40,16 @@ export default async function MemberPage() {
                 readmeVisible: member.readmeVisible,
               }}
             />
-            <p className="t-meta" style={{ marginTop: 12 }}>
-              เร็ว ๆ นี้: เลือกผลงานจาก GitHub · README override (C3 ต่อ)
-            </p>
           </div>
+          {projects.length > 0 && (
+            <div style={{ marginTop: 32, maxWidth: '52ch' }}>
+              <div className="t-idx">เลือกผลงานที่จะแสดง</div>
+              <p className="t-meta" style={{ marginBottom: 12 }}>
+                ติ๊กผลงานที่ต้องการแสดงบนโปรไฟล์สาธารณะ — ที่ไม่ติ๊กจะถูกซ่อน
+              </p>
+              <MemberProjectSelector initial={projects} />
+            </div>
+          )}
         </section>
         <SiteFooter />
       </div>
