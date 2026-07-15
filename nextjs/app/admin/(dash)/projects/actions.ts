@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/server';
+import { assertAdmin } from '@/lib/admin-access';
 
 export interface ProjectFormState {
   error?: string;
@@ -21,6 +22,7 @@ export async function createProject(
   _prev: ProjectFormState,
   formData: FormData,
 ): Promise<ProjectFormState> {
+  await assertAdmin();
   const title = formData.get('title')?.toString().trim() ?? '';
   const slug = (formData.get('slug')?.toString().trim() || slugify(title)) ?? '';
   if (!title || !slug) return { error: 'ต้องมีชื่อและ slug' };
@@ -52,6 +54,7 @@ export async function updateProject(
   _prev: ProjectFormState,
   formData: FormData,
 ): Promise<ProjectFormState> {
+  await assertAdmin();
   const id = Number(formData.get('id'));
   const title = formData.get('title')?.toString().trim() ?? '';
   if (!id || !title) return { error: 'ข้อมูลไม่ครบ' };
@@ -80,6 +83,7 @@ export async function updateProject(
 }
 
 export async function deleteProject(formData: FormData) {
+  await assertAdmin();
   const id = formData.get('id')?.toString();
   if (!id) return;
   const supabase = await createClient();

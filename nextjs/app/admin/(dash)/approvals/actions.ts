@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/server';
+import { assertAdmin } from '@/lib/admin-access';
 
 /**
  * Approve / un-publish a member-authored certificate (Epic C / C4). The status change
@@ -11,6 +12,7 @@ import { createClient } from '@/lib/server';
  * blocks non-admins; this is the DB-level second line.
  */
 export async function setMemberCertStatus(formData: FormData) {
+  await assertAdmin();
   const id = Number(formData.get('id'));
   const status = String(formData.get('status') ?? '');
   const slug = formData.get('slug')?.toString();
@@ -32,6 +34,7 @@ export async function setMemberCertStatus(formData: FormData) {
  * (members can't set it — their policies require published_at is null).
  */
 export async function setBlogStatus(formData: FormData) {
+  await assertAdmin();
   const id = Number(formData.get('id'));
   const publish = formData.get('publish') === '1';
   if (!id) return;

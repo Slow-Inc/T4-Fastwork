@@ -36,3 +36,16 @@ export async function getAdminSession(): Promise<AdminSession> {
   }
   return { display: user.email ?? null, isAdmin: false };
 }
+
+/**
+ * Guard for admin **Server Actions** (Epic C). The /admin layout only gates page
+ * rendering; a Server Action is a separately-callable POST endpoint, so a signed-in
+ * non-admin (members can GitHub-login) could invoke it directly. The RLS-backed tables
+ * (members/blog_posts/member_*) reject that, but projects/services/faqs/certificates/
+ * taxonomy have no RLS — so every admin mutation must re-assert admin itself. Throws
+ * when not an admin.
+ */
+export async function assertAdmin(): Promise<void> {
+  const { isAdmin } = await getAdminSession();
+  if (!isAdmin) throw new Error('unauthorized: admin only');
+}

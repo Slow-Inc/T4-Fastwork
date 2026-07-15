@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/server';
+import { assertAdmin } from '@/lib/admin-access';
 
 export interface CertState {
   error?: string;
@@ -15,6 +16,7 @@ function revalidatePublic() {
 }
 
 export async function createCertificate(_prev: CertState, formData: FormData): Promise<CertState> {
+  await assertAdmin();
   const title = formData.get('title')?.toString().trim() ?? '';
   const issuer = formData.get('issuer')?.toString().trim() ?? '';
   if (!title || !issuer) return { error: 'ต้องมีชื่อหลักสูตรและผู้ออก' };
@@ -39,6 +41,7 @@ export async function createCertificate(_prev: CertState, formData: FormData): P
 }
 
 export async function updateCertificate(_prev: CertState, formData: FormData): Promise<CertState> {
+  await assertAdmin();
   const id = Number(formData.get('id'));
   const title = formData.get('title')?.toString().trim() ?? '';
   const issuer = formData.get('issuer')?.toString().trim() ?? '';
@@ -68,6 +71,7 @@ export async function updateCertificate(_prev: CertState, formData: FormData): P
 }
 
 export async function deleteCertificate(formData: FormData) {
+  await assertAdmin();
   const id = formData.get('id')?.toString();
   if (!id) return;
   const supabase = await createClient();

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/server';
+import { assertAdmin } from '@/lib/admin-access';
 
 export interface PostFormState {
   error?: string;
@@ -18,6 +19,7 @@ function slugify(input: string): string {
 }
 
 export async function createPost(_prev: PostFormState, formData: FormData): Promise<PostFormState> {
+  await assertAdmin();
   const title = formData.get('title')?.toString().trim() ?? '';
   const slug = (formData.get('slug')?.toString().trim() || slugify(title)) ?? '';
   if (!title || !slug) return { error: 'ต้องมีชื่อและ slug' };
@@ -46,6 +48,7 @@ export async function createPost(_prev: PostFormState, formData: FormData): Prom
 }
 
 export async function updatePost(_prev: PostFormState, formData: FormData): Promise<PostFormState> {
+  await assertAdmin();
   const id = Number(formData.get('id'));
   const title = formData.get('title')?.toString().trim() ?? '';
   const slug = (formData.get('slug')?.toString().trim() || slugify(title)) ?? '';
@@ -86,6 +89,7 @@ export async function updatePost(_prev: PostFormState, formData: FormData): Prom
 }
 
 export async function deletePost(formData: FormData) {
+  await assertAdmin();
   const id = formData.get('id')?.toString();
   if (!id) return;
   const supabase = await createClient();
