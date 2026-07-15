@@ -10,7 +10,9 @@ import { TeamSection } from "@/components/site/team-section";
 import { FeaturedCarousel } from "@/components/site/featured-carousel";
 import { Certificates } from "@/components/site/certificates";
 import { projectTechnologies, filterProjects } from "@/content/catalog";
+import { metricsFromStats } from "@/content/site";
 import { getProjectRankMap } from "@/lib/projects-repo";
+import { getSiteStats } from "@/lib/site-stats";
 import { orderByRank } from "@/lib/project-rank";
 import { TeamTechSection } from "@/components/site/team-tech-section";
 import { CtaSection } from "@/components/site/cta-section";
@@ -21,12 +23,17 @@ import { CountUpObserver } from "@/components/site/count-up-observer";
 
 export default async function Home() {
   // AI display-rank (B5) orders the featured + selected work; content stays static.
-  const rank = await getProjectRankMap();
+  // Live headline stats (years/projects/certs) drive the hero band + proof line.
+  const [rank, stats] = await Promise.all([getProjectRankMap(), getSiteStats()]);
   return (
     <>
       <SiteNav />
       <div className="wrap">
-        <Hero />
+        <Hero
+          metrics={metricsFromStats(stats)}
+          years={stats.years}
+          projects={stats.projects}
+        />
         <TeamTechSection />
         <FeaturedCarousel projects={orderByRank(filterProjects({ featured: true }), rank)} />
         <SolutionSelector />

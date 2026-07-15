@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { MetricBand } from './metric-band';
 import { TrackedLink } from './tracked-link';
 import { useT } from '@/i18n/locale-context';
+import type { Metric } from '@/content/site';
 
 interface HeroCopy {
   availability: string;
@@ -11,10 +12,12 @@ interface HeroCopy {
   proof: string;
   bookCall: string;
   talkAi: string;
+  /** Live metric band values (falls back to the static set when absent). */
+  metrics?: Metric[];
 }
 
 /** Presentational hero (takes copy) — pure, unit-testable. */
-export function HeroView({ availability, lead, proof, bookCall, talkAi }: HeroCopy) {
+export function HeroView({ availability, lead, proof, bookCall, talkAi, metrics }: HeroCopy) {
   return (
     <header>
       <div className="h-top rv">
@@ -46,15 +49,25 @@ export function HeroView({ availability, lead, proof, bookCall, talkAi }: HeroCo
         </div>
       </div>
 
-      <MetricBand />
+      <MetricBand metrics={metrics} />
     </header>
   );
 }
 
-/** Homepage hero (Requirement §4.1.2), bilingual (§7.1). */
-export function Hero() {
+/** Homepage hero (Requirement §4.1.2), bilingual (§7.1). Live stats (years/projects)
+ * come from the server so the proof line + metric band track real data. */
+export function Hero({
+  metrics,
+  years = 7,
+  projects = 21,
+}: {
+  metrics?: Metric[];
+  years?: number;
+  projects?: number;
+}) {
   const copy: HeroCopy = {
     availability: useT('เปิดรับงาน Q3 · 2026', 'Open for Q3 · 2026'),
+    metrics,
     lead: useT(
       <>
         พาร์ตเนอร์ด้านวิศวกรรมซอฟต์แวร์สำหรับ Founder และองค์กร —{' '}
@@ -68,8 +81,8 @@ export function Hero() {
       </>,
     ),
     proof: useT(
-      '— ประสบการณ์ 5 ปี · ทำมาแล้ว 21+ โปรเจกต์',
-      '— 5 years of experience · 21+ projects built',
+      `— ประสบการณ์ ${years} ปี · ทำมาแล้ว ${projects}+ โปรเจกต์`,
+      `— ${years} years of experience · ${projects}+ projects built`,
     ),
     bookCall: useT('นัดคุยโปรเจกต์', 'Book a call'),
     talkAi: useT('คุยกับ AI', 'Talk to our AI'),

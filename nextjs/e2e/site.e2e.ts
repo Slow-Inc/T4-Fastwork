@@ -183,7 +183,7 @@ test("a member profile shows real repos and opens certificates in a lightbox", a
   expect(errors, "console errors on /team/xenodev").toEqual([]);
 });
 
-test("experience + project-count claims are accurate everywhere (5 years, 21+ projects)", async ({
+test("experience + project-count claims are accurate everywhere (7 years, 21+ projects)", async ({
   page,
 }) => {
   for (const path of ["/", "/about"]) {

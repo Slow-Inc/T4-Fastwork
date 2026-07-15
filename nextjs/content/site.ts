@@ -4,12 +4,32 @@ export interface Metric {
   value: string;
   label: string;
 }
-export const metrics: Metric[] = [
-  { value: '5+', label: 'Years experience' },
-  { value: '21+', label: 'Projects built' },
-  { value: '7', label: 'AI & security certs' },
-  { value: 'TH·EN', label: 'Bilingual delivery' },
-];
+/** The year T4's dev journey began (ม.3 / FiveM Lua scripting, 2019) — the anchor for
+ * the "years experience" metric, computed live so it increments each year instead of
+ * being a frozen number. Change this one fact if the real start year differs. */
+export const EXPERIENCE_SINCE_YEAR = 2019;
+
+export function experienceYears(sinceYear: number, currentYear: number): number {
+  return Math.max(0, currentYear - sinceYear);
+}
+
+/** Build the hero metric band from live counts (projects/certs from the DB, years from
+ * EXPERIENCE_SINCE_YEAR) — so the headline stats track real data, not a hardcode. */
+export function metricsFromStats(stats: {
+  years: number;
+  projects: number;
+  certs: number;
+}): Metric[] {
+  return [
+    { value: `${stats.years}+`, label: 'Years experience' },
+    { value: `${stats.projects}+`, label: 'Projects built' },
+    { value: `${stats.certs}`, label: 'Certificates' },
+    { value: 'TH·EN', label: 'Bilingual delivery' },
+  ];
+}
+
+/** Static fallback (used when the DB is unreachable) — mirrors the live values. */
+export const metrics: Metric[] = metricsFromStats({ years: 7, projects: 21, certs: 9 });
 
 // The real request path through a T4 Labs system (Requirement §4.1.7 / §14.11).
 export interface ProcessNode {
