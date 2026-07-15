@@ -1,7 +1,7 @@
 import type { TeamMember, TeamCertificate } from '@/content/site';
 import type { LiveRepo, LiveUser } from '@/lib/github';
 import { TechChips } from './tech-chips';
-import { MarkdownContent } from '@/lib/markdown';
+import { ReadmeMarkdown } from './readme-markdown';
 import { staggerDelay } from '@/lib/stagger';
 
 /**
@@ -90,7 +90,7 @@ export function TeamMemberView({
                   ? 'GitHub profile'
                   : 'โปรไฟล์ GitHub'}
             </div>
-            <MarkdownContent source={readme} />
+            <ReadmeMarkdown source={readme} />
           </section>
         );
       })()}
