@@ -24,3 +24,9 @@ create policy "public read published member certificates"
 create policy "public read team projects"
   on public.team_projects for select
   using (true);
+
+-- PostgREST FK embeds from member_projects/member_certificates -> members (the public
+-- /team read joins on members.id), so anon needs SELECT on that one column. id is a
+-- serial PK (not sensitive); the security-review columns (auth_user_id, github_user_id,
+-- *_owner) stay withheld.
+grant select (id) on public.members to anon, authenticated;

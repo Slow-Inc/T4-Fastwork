@@ -6,22 +6,24 @@ import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { TeamMemberContent } from '@/components/pages/team-member-content';
 import { LiveSnapshot } from '@/components/site/live-snapshot';
-import { team } from '@/content/site';
+import { getMemberBySlug, getTeamMembers } from '@/lib/members-repo';
 import { getMemberLiveRepos, getMemberLiveUser, githubLogin } from '@/lib/github';
 import { keysForMember } from '@/lib/live-snapshot';
 import { pageAlternates } from '@/lib/seo';
 
 type Params = Promise<{ slug: string }>;
 
-export function generateStaticParams() {
-  return team.map((m) => ({ slug: m.slug }));
+export async function generateStaticParams() {
+  const members = await getTeamMembers();
+  return members.map((m) => ({ slug: m.slug }));
 }
 
-export const dynamicParams = false;
+// Members can be added to the DB after build (Epic C); render new slugs on-demand.
+export const dynamicParams = true;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
-  const m = team.find((x) => x.slug === slug);
+  const m = await getMemberBySlug(slug);
   if (!m) return { title: 'ไม่พบสมาชิกทีม — T4 Labs' };
   return {
     title: `${m.handle} — ทีม T4 Labs`,
@@ -32,7 +34,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function TeamMemberPage({ params }: { params: Params }) {
   const { slug } = await params;
-  const m = team.find((x) => x.slug === slug);
+  const m = await getMemberBySlug(slug);
   if (!m) notFound();
 
   // Overlay live GitHub data when the backend is reachable; null → static fallback.

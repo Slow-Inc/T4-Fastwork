@@ -3,7 +3,7 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { HeroView } from './hero';
 import { ProcessSchematicView } from './process-schematic';
 import { SdlcSectionView } from './sdlc-section';
-import { TeamSectionView } from './team-section';
+import { TeamSectionView } from './team-section-view';
 import { TeamMemberView } from './team-member-view';
 import { TechChips } from './tech-chips';
 import { processNodes, processSteps, sdlcPhases, team, teamProjects } from '@/content/site';
@@ -70,7 +70,9 @@ describe('SdlcSection', () => {
 
 describe('TeamSection (directory on /about)', () => {
   it('renders one directory row per member, each linking to their profile page', () => {
-    const { container } = render(<TeamSectionView en={false} />);
+    const { container } = render(
+      <TeamSectionView en={false} members={team} projects={teamProjects} />,
+    );
     const rows = container.querySelectorAll('.team-dir-item');
     expect(rows.length).toBe(team.length);
     for (const m of team) {
@@ -81,7 +83,9 @@ describe('TeamSection (directory on /about)', () => {
   });
 
   it('renders the shared team (org) projects with contributors', () => {
-    const { container } = render(<TeamSectionView en={false} />);
+    const { container } = render(
+      <TeamSectionView en={false} members={team} projects={teamProjects} />,
+    );
     const projs = container.querySelectorAll('.team-projects .team-proj');
     expect(projs.length).toBe(teamProjects.length);
     // MangaDock is a real Slow-Inc repo credited to xenodev + akkanop-x.
