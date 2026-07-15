@@ -88,6 +88,21 @@ PRD `…ai-display-ranking.md`) · Epic C member CMS **#46** (C1–C6 **#52–#5
 `…member-profile-cms.md`). Sequence **A → B → C**. Details below; ordered roughly by size.
 
 **Progress (branch `feat/chat-thinking-mode`, TDD, all green):**
+- ✅ **C-foundation** shipped (`3d07704`) — certs/projects/team-work migrated static→DB.
+  3 Drizzle tables (`member-content.ts`, migration 0006, applied): `member_projects`
+  (+`selected` for C3), `member_certificates` (+`status` draft|published for C4),
+  `team_projects` (collaborative, contributors[]); all carry `ai_rank`(+rationale) for
+  B5. RLS (supabase 0007, applied): anon SELECT scoped so drafts/unselected hidden.
+  Seed `seed-member-content.ts`: 17 projects / 10 certs / 4 team — counts match static
+  exactly. Pure mappers `member-content-map.ts` (7 TDD). Repos `member-content-repo.ts`
+  (getMemberProjects/Certificates(slug), getTeamProjects) DB-first+fallback.
+- ✅ **C5 #56** shipped (`9b791f2`) — `/team/[slug]` + home/about team-section read DB.
+  `member-map.ts` mapDbMember (3 TDD); members-repo getTeamMembers()/getMemberBySlug()
+  (attaches projects/certs). Page uses them, `dynamicParams=false→true`. team-section
+  split server-fetch/client-locale/presentational (team-section{,-client,-view}.tsx).
+  **DB path proven live** (sentinel member_projects row appeared on /team/xenodev then
+  removed). Fix: anon needed SELECT on `members.id` for PostgREST FK embeds (serial PK,
+  not sensitive; security-review columns stay withheld). 260 unit + 52 e2e green.
 - ✅ **A #44** shipped (`75da320`) — `teamTechnologies` union + hook-free `TeamTechCarousel` between Hero/Featured; 243 unit + 51 e2e, verified live. Config flag deferred (YAGNI until C admin).
 - ✅ **B1 #47** shipped (`8e6637b`) — rank core: `RANK_RUBRIC`/`buildRankMessages`/`parseRanking` (always a permutation of ids, never drops)/`rankCandidates` (injected client); 6 tests.
 - ✅ **B2 #48** shipped (`641c7a1`) — `ai_rank`(+rationale) on projects (Drizzle migration `0003_safe_risque`) + certs/blog (`supabase/migrations/0003_ai_rank.sql`, idempotent) + `RankStore` seam + `ranksToRows`. **Migrations now APPLIED to prod** (t4-fastwork `ngpsbetwbhbemcoequoy`): projects via `db:migrate`, certs/blog via Supabase MCP; all 3 tables verified.
