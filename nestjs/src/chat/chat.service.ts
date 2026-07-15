@@ -47,7 +47,8 @@ export class ChatService {
     let activeProject: ProjectContextRecord | undefined;
     if (input.projectSlug) {
       try {
-        activeProject = (await this.projectContext.getBySlug(input.projectSlug)) ?? undefined;
+        activeProject =
+          (await this.projectContext.getBySlug(input.projectSlug)) ?? undefined;
       } catch {
         activeProject = undefined;
       }
@@ -55,7 +56,9 @@ export class ChatService {
 
     // Prior turns so the assistant can follow up on context (#15). Tolerant:
     // returns [] without a DB, so a chat turn never depends on it.
-    let history: Awaited<ReturnType<ConversationLogService['getRecentHistory']>> = [];
+    let history: Awaited<
+      ReturnType<ConversationLogService['getRecentHistory']>
+    > = [];
     if (input.sessionId) {
       history = await this.log.getRecentHistory(input.sessionId);
     }
@@ -63,14 +66,24 @@ export class ChatService {
     const parser = new StreamMarkerParser();
     let assistantText = '';
     const cards: CardRef[] = [];
+    // Leading-trim gate: the answer content arrives with leading "\n\n" after the
+    // model's reasoning (verified against the gateway) — strip whitespace until
+    // the first real character so no message renders with a blank first line.
+    let contentStarted = false;
     const absorb = function* (
       this: ChatService,
       events: ReturnType<StreamMarkerParser['push']>,
     ): Generator<ChatEvent> {
       for (const ev of events) {
         if (ev.type === 'text') {
-          assistantText += ev.value;
-          yield { type: 'token', text: ev.value };
+          let value = ev.value;
+          if (!contentStarted) {
+            value = value.replace(/^\s+/, '');
+            if (value === '') continue; // whitespace-only prefix — drop it
+            contentStarted = true;
+          }
+          assistantText += value;
+          yield { type: 'token', text: value };
         } else {
           cards.push(ev.card);
           yield { type: 'card', card: ev.card };
@@ -78,15 +91,35 @@ export class ChatService {
       }
     }.bind(this);
 
+    let reasoningStart: number | undefined;
+    let reasoningMs: number | undefined;
+
     try {
       const stream = this.llm.streamChat(
         buildChatMessages(
-          buildSystemPrompt({ language: input.language, retrieved, activeProject }),
+          buildSystemPrompt({
+            language: input.language,
+            retrieved,
+            activeProject,
+          }),
           history,
           input.message,
+          10,
+          input.images ?? [],
         ),
       );
-      for await (const delta of stream) yield* absorb(parser.push(delta));
+      for await (const delta of stream) {
+        if (delta.kind === 'reasoning') {
+          if (reasoningStart === undefined) reasoningStart = performance.now();
+          yield { type: 'reasoning', text: delta.value };
+        } else {
+          // First answer token ends the thinking phase — stamp its duration.
+          if (reasoningStart !== undefined && reasoningMs === undefined) {
+            reasoningMs = Math.round(performance.now() - reasoningStart);
+          }
+          yield* absorb(parser.push(delta.value));
+        }
+      }
       yield* absorb(parser.flush());
 
       const latencyMs = Math.round(performance.now() - start);
@@ -99,7 +132,7 @@ export class ChatService {
         model: MODEL,
         latencyMs,
       });
-      yield { type: 'done', latencyMs };
+      yield { type: 'done', latencyMs, reasoningMs };
     } catch (e) {
       yield {
         type: 'error',

@@ -11,7 +11,7 @@ import { AboutBlocks, AboutCta } from '@/components/pages/about-content';
 export const metadata: Metadata = {
   title: 'เกี่ยวกับเรา — T4 Labs',
   description:
-    'T4 Labs — ทีม Full-Stack + AI ที่รับสร้าง SaaS, Web Application และ AI Product ประสบการณ์ 5 ปี ทำมาแล้ว 21+ โปรเจกต์',
+    'T4 Labs — ทีม Full-Stack + AI ที่รับสร้าง SaaS, Web Application และ AI Product ประสบการณ์ 7 ปี ทำมาแล้ว 21+ โปรเจกต์',
   alternates: pageAlternates('/about'),
 };
 

@@ -131,21 +131,29 @@ describe('postHeal — secret-guarded fire-and-forget POST', () => {
   });
 
   it('skips (never calls fetch) when no secret is configured', async () => {
-    let called = false;
-    const fetchImpl = (() => {
-      called = true;
-      return Promise.resolve({ ok: true } as Response);
-    }) as unknown as typeof fetch;
+    // Hermetic: postHeal falls back to process.env.GITHUB_REFRESH_SECRET, which
+    // is set in local .env.local — unset it so the "no secret" path is exercised.
+    const savedEnv = process.env.GITHUB_REFRESH_SECRET;
+    delete process.env.GITHUB_REFRESH_SECRET;
+    try {
+      let called = false;
+      const fetchImpl = (() => {
+        called = true;
+        return Promise.resolve({ ok: true } as Response);
+      }) as unknown as typeof fetch;
 
-    const r = await postHeal('repos:xenodeve', {
-      baseUrl: 'https://api.example.com',
-      secret: undefined,
-      fetchImpl,
-    });
+      const r = await postHeal('repos:xenodeve', {
+        baseUrl: 'https://api.example.com',
+        secret: undefined,
+        fetchImpl,
+      });
 
-    expect(called).toBe(false);
-    expect(r.ok).toBe(false);
-    expect(r.skipped).toBe('no-secret');
+      expect(called).toBe(false);
+      expect(r.ok).toBe(false);
+      expect(r.skipped).toBe('no-secret');
+    } finally {
+      if (savedEnv !== undefined) process.env.GITHUB_REFRESH_SECRET = savedEnv;
+    }
   });
 
   it('swallows network errors (heal is best-effort, never breaks the page)', async () => {

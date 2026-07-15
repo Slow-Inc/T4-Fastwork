@@ -1,42 +1,55 @@
-import { SiteNav } from '@/components/site/site-nav';
-import { Hero } from '@/components/site/hero';
-import { SolutionSelector } from '@/components/site/solution-selector';
-import { ProjectGallery } from '@/components/site/project-gallery';
-import { ServiceList } from '@/components/site/service-list';
-import { ProcessSchematic } from '@/components/site/process-schematic';
-import { SdlcSection } from '@/components/site/sdlc-section';
-import { TechStack } from '@/components/site/tech-stack';
-import { TechMarquee } from '@/components/site/tech-marquee';
-import { TeamSection } from '@/components/site/team-section';
-import { FeaturedCarousel } from '@/components/site/featured-carousel';
-import { Certificates } from '@/components/site/certificates';
-import { projectTechnologies, filterProjects } from '@/content/catalog';
-import { CtaSection } from '@/components/site/cta-section';
-import { SiteFooter } from '@/components/site/site-footer';
-import { ChatButton } from '@/components/site/chat-button';
-import { RevealObserver } from '@/components/site/reveal-observer';
+import { SiteNav } from "@/components/site/site-nav";
+import { Hero } from "@/components/site/hero";
+import { SolutionSelector } from "@/components/site/solution-selector";
+import { ProjectGallery } from "@/components/site/project-gallery";
+import { ServiceList } from "@/components/site/service-list";
+import { ProcessSchematic } from "@/components/site/process-schematic";
+import { SdlcSection } from "@/components/site/sdlc-section";
+import { TechStack } from "@/components/site/tech-stack";
+import { TeamSection } from "@/components/site/team-section";
+import { FeaturedCarousel } from "@/components/site/featured-carousel";
+import { Certificates } from "@/components/site/certificates";
+import { projectTechnologies, filterProjects } from "@/content/catalog";
+import { metricsFromStats } from "@/content/site";
+import { getProjectRankMap } from "@/lib/projects-repo";
+import { getSiteStats } from "@/lib/site-stats";
+import { orderByRank } from "@/lib/project-rank";
+import { TeamTechSection } from "@/components/site/team-tech-section";
+import { CtaSection } from "@/components/site/cta-section";
+import { SiteFooter } from "@/components/site/site-footer";
+import { ChatButton } from "@/components/site/chat-button";
+import { RevealObserver } from "@/components/site/reveal-observer";
+import { CountUpObserver } from "@/components/site/count-up-observer";
 
-export default function Home() {
+export default async function Home() {
+  // AI display-rank (B5) orders the featured + selected work; content stays static.
+  // Live headline stats (years/projects/certs) drive the hero band + proof line.
+  const [rank, stats] = await Promise.all([getProjectRankMap(), getSiteStats()]);
   return (
     <>
       <SiteNav />
       <div className="wrap">
-        <Hero />
-        <FeaturedCarousel projects={filterProjects({ featured: true })} />
+        <Hero
+          metrics={metricsFromStats(stats)}
+          years={stats.years}
+          projects={stats.projects}
+        />
+        <TeamTechSection />
+        <FeaturedCarousel projects={orderByRank(filterProjects({ featured: true }), rank)} />
         <SolutionSelector />
-        <ProjectGallery />
+        <ProjectGallery order={rank} />
         <ServiceList />
         <ProcessSchematic />
         <SdlcSection />
         <TeamSection />
         <TechStack techs={projectTechnologies} />
-        <TechMarquee techs={projectTechnologies} />
         <Certificates />
         <CtaSection />
         <SiteFooter />
       </div>
       <ChatButton />
       <RevealObserver />
+      <CountUpObserver />
     </>
   );
 }

@@ -34,6 +34,22 @@ describe('Certificates', () => {
     for (const c of certificates)
       expect(screen.getAllByText(c.title).length).toBeGreaterThan(0);
   });
+
+  it('shows the best 9 and tucks the rest behind a see-more disclosure', () => {
+    const many = Array.from({ length: 11 }, (_, i) => ({
+      issuer: `Iss${i}`,
+      title: `Cert ${i}`,
+    })) as unknown as typeof certificates;
+    const { container } = render(<CertificatesView certificates={many} />);
+    // First 9 are direct rows; the overflow (2) lives inside a <details>.
+    expect(container.querySelectorAll('.ctable > .crow').length).toBe(9);
+    const details = container.querySelector('details');
+    expect(details).not.toBeNull();
+    expect(details?.querySelectorAll('.crow').length).toBe(2);
+    // Every title is still in the DOM (SEO / findable).
+    for (let i = 0; i < 11; i++)
+      expect(screen.getByText(`Cert ${i}`)).toBeDefined();
+  });
 });
 
 describe('MetricBand', () => {

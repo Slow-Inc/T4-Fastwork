@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/server';
+import { assertAdmin } from '@/lib/admin-access';
 
 export interface FaqFormState {
   error?: string;
@@ -12,6 +13,7 @@ export async function createFaq(
   _prev: FaqFormState,
   formData: FormData,
 ): Promise<FaqFormState> {
+  await assertAdmin();
   const question = formData.get('question')?.toString().trim() ?? '';
   const answer = formData.get('answer')?.toString().trim() ?? '';
   if (!question || !answer) return { error: 'ต้องมีคำถามและคำตอบ' };
@@ -30,6 +32,7 @@ export async function createFaq(
 }
 
 export async function deleteFaq(formData: FormData) {
+  await assertAdmin();
   const id = formData.get('id')?.toString();
   if (!id) return;
   const supabase = await createClient();

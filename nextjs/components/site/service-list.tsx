@@ -1,10 +1,16 @@
-'use client';
+"use client";
 
-import { services, type Service } from '@/content/services';
-import { useLocale } from '@/i18n/locale-context';
+import { services, type Service } from "@/content/services";
+import { useLocale } from "@/i18n/locale-context";
 
 /** Presentational services list — pure, unit-testable. */
-export function ServiceListView({ items, en }: { items: Service[]; en: boolean }) {
+export function ServiceListView({
+  items,
+  en,
+}: {
+  items: Service[];
+  en: boolean;
+}) {
   return (
     <section id="services" className="section">
       <div className="srv-head rv">
@@ -27,5 +33,5 @@ export function ServiceListView({ items, en }: { items: Service[]; en: boolean }
 /** Homepage services (Requirement §4.5), bilingual (§7.1). */
 export function ServiceList() {
   const { locale } = useLocale();
-  return <ServiceListView items={services} en={locale === 'en'} />;
+  return <ServiceListView items={services} en={locale === "en"} />;
 }

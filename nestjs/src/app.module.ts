@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { HealthModule } from './health/health.module';
 import { ChatModule } from './chat/chat.module';
 import { GithubModule } from './github/github.module';
+import { RankModule } from './rank/rank.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { GithubModule } from './github/github.module';
     HealthModule,
     ChatModule,
     GithubModule,
+    RankModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

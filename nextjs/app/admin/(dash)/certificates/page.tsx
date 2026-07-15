@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { createClient } from '@/lib/server';
 import { deleteCertificate } from './actions';
 import { CertForm } from './cert-form';
@@ -66,7 +67,10 @@ export default async function AdminCertificates() {
                     )}
                   </td>
                   <td>{c.is_featured ? '★' : '—'}</td>
-                  <td>
+                  <td className="admin-row-actions">
+                    <Link className="admin-edit" href={`/admin/certificates/${c.id}/edit`}>
+                      แก้ไข
+                    </Link>
                     <form action={deleteCertificate}>
                       <input type="hidden" name="id" value={c.id} />
                       <button type="submit" className="admin-del">ลบ</button>

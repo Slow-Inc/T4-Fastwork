@@ -77,6 +77,13 @@ export const projects = pgTable('projects', {
   readmeSha: text('readme_sha'),
   generatedAt: timestamp('generated_at', { withTimezone: true }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
+
+  // --- AI display-ranking (spec 2026-07-15, Epic B) -------------------------
+  // Persisted rank (lower = higher priority), computed offline by RankService.
+  // A non-zero `sort_order` is the human pin that wins (D1); `ai_rank` orders
+  // only the rest. Nullable/additive → safe to apply on prod.
+  aiRank: integer('ai_rank'),
+  aiRankRationale: text('ai_rank_rationale'),
 });
 
 // Many-to-many: projects ↔ technologies / tags.

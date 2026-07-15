@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { pageAlternates } from '@/lib/seo';
 import { SiteNav } from '@/components/site/site-nav';
-import { Breadcrumb } from '@/components/site/breadcrumb';
 import { ChatWithProjectContext } from '@/components/chat/chat-with-project-context';
 
 export const metadata: Metadata = {
@@ -17,14 +16,9 @@ export default function ChatPage() {
       <SiteNav />
       <div className="wrap">
         <section className="section section-page chat-page">
-          <Breadcrumb items={[{ label: 'หน้าแรก', href: '/' }, { label: 'คุยกับ AI' }]} />
-          <div className="page-head rv">
-            <div className="t-idx">AI Assistant</div>
+          <div className="chat-head">
+            <span className="chat-head-idx">AI Assistant</span>
             <h1>คุยกับผู้ช่วย AI</h1>
-            <p className="page-lead">
-              เล่าโจทย์ของคุณ — ผู้ช่วย AI จะแนะนำเคสงานที่ใกล้เคียงจากผลงานจริง
-              และช่วยประเมินเบื้องต้น
-            </p>
           </div>
           <ChatWithProjectContext />
         </section>

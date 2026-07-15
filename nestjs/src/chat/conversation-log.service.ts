@@ -19,6 +19,19 @@ export interface LogTurnInput {
 
 type DB = ReturnType<typeof drizzle<typeof schema>>;
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * `conversations.session_id` is a `uuid` column, so a non-uuid sessionId makes
+ * Postgres throw "invalid input syntax for type uuid". Gate the DB access with
+ * this so a malformed sessionId (e.g. an e2e marker) returns [] / skips logging
+ * cleanly instead of a failed query. Real sessions use `randomUUID()`.
+ */
+export function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
 /**
  * Persists each chat turn (Requirement §5.2). Self-contained + tolerant: builds
  * its own lazy pooler client and no-ops when DATABASE_URL isn't a real
@@ -45,9 +58,12 @@ export class ConversationLogService {
    * Prior turns for a session, chronological (fixes #15 — chat memory). Returns
    * [] when there's no DB or no history, so a chat turn never depends on it.
    */
-  async getRecentHistory(sessionId: string, limit = 10): Promise<HistoryMessage[]> {
+  async getRecentHistory(
+    sessionId: string,
+    limit = 10,
+  ): Promise<HistoryMessage[]> {
     const db = this.getDb();
-    if (!db) return [];
+    if (!db || !isUuid(sessionId)) return [];
     try {
       const conv = await db.query.conversations.findFirst({
         where: eq(schema.conversations.sessionId, sessionId),
@@ -64,7 +80,10 @@ export class ConversationLogService {
         .limit(limit);
       return rows
         .reverse()
-        .map((r) => ({ role: r.role as 'user' | 'assistant', content: r.content }));
+        .map((r) => ({
+          role: r.role as 'user' | 'assistant',
+          content: r.content,
+        }));
     } catch (e) {
       this.logger.warn(`getRecentHistory failed: ${(e as Error).message}`);
       return [];
@@ -73,7 +92,8 @@ export class ConversationLogService {
 
   async logTurn(input: LogTurnInput): Promise<void> {
     const db = this.getDb();
-    if (!db) return; // logging disabled without a real DB
+    // No DB, or a non-uuid sessionId (e.g. an e2e marker) the uuid column rejects.
+    if (!db || !isUuid(input.sessionId)) return;
 
     try {
       const [conv] = await db

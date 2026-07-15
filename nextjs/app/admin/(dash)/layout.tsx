@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/lib/server';
-import { isAllowedAdmin } from '@/lib/admin-auth';
+import { getAdminSession } from '@/lib/admin-access';
 import { signOut } from '../actions';
 
 export const metadata = { title: 'Admin — T4 Labs' };
@@ -13,6 +12,8 @@ const NAV = [
   { href: '/admin/blog', label: 'บทความ' },
   { href: '/admin/faqs', label: 'FAQ' },
   { href: '/admin/certificates', label: 'ใบรับรอง' },
+  { href: '/admin/members', label: 'ทีม/สมาชิก' },
+  { href: '/admin/approvals', label: 'อนุมัติ' },
   { href: '/admin/taxonomy', label: 'หมวด/แท็ก' },
   { href: '/admin/leads', label: 'Leads' },
   { href: '/admin/conversations', label: 'แชท AI' },
@@ -23,14 +24,8 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user || !isAllowedAdmin(user.email, process.env.ADMIN_EMAILS)) {
-    redirect('/admin/login');
-  }
+  const { display, isAdmin } = await getAdminSession();
+  if (!isAdmin) redirect('/admin/login');
 
   return (
     <div className="admin">
@@ -47,7 +42,7 @@ export default async function AdminLayout({
           ))}
         </nav>
         <form action={signOut} className="admin-signout">
-          <p className="t-meta">{user.email}</p>
+          <p className="t-meta">{display}</p>
           <button type="submit" className="btn ghost">
             ออกจากระบบ
           </button>

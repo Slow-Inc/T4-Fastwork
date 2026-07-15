@@ -604,13 +604,16 @@ i18n EN เต็มระบบ, analytics/tracking ครบ, ปรับ per
 **Premium อยู่ที่ดีเทลเล็ก ๆ:** ระยะห่างที่พอดี, เส้น hairline คม, การจัดแนว optical, transition ลื่น 200–300ms, specular บนกระจกบาง ๆ, mono label ที่ align เป๊ะ, grain จาง ๆ, micro-interaction ที่ตอบสนองนุ่มนวล — สิ่งเหล่านี้รวมกันคือความ "แพง"
 
 ### 14.1 Design Concept
-**"Editorial Minimalism × Modern Swiss × Liquid Glass"**
-รากฐานคือความเรียบ-แม่นยำแบบ Swiss (กริดเข้ม, ไทโปกราฟีเป็นพระเอก, พื้นที่ว่างเยอะ) เล่าเรื่องแบบนิตยสาร (editorial hierarchy, ตัวเลข index, caption แบบ mono) แล้ววางองค์ประกอบ **Liquid Glass** (พื้นผิวกระจกโปร่งเบลอ มีมิติ) เป็นเลเยอร์ลอยด้านบน — ให้ความรู้สึกพรีเมียม ทันสมัย และ "ทำด้วยมือ"
+**"Editorial Minimalism × Modern Swiss × Liquid Glass × Visible Grid"**
+รากฐานคือความเรียบ-แม่นยำแบบ Swiss (กริดเข้ม, ไทโปกราฟีเป็นพระเอก, พื้นที่ว่างเยอะ) เล่าเรื่องแบบนิตยสาร (editorial hierarchy, ตัวเลข index, caption แบบ mono) โดย **เปิดโครงกริดให้มองเห็น (Visible Grid)** เป็นเส้น hairline บาง ๆ ที่ทำหน้าที่แทนของตกแต่ง แล้ววางองค์ประกอบ **Liquid Glass** (พื้นผิวกระจกโปร่งเบลอ มีมิติ) เป็นเลเยอร์ลอยด้านบน — ให้ความรู้สึกพรีเมียม ทันสมัย มีความ "engineered" และ "ทำด้วยมือ"
 
-หลักคิด 3 ข้อ:
+หลักคิด 4 ข้อ:
 - **Precision (Swiss):** ทุกอย่างอยู่บนกริด, จัดชิดซ้าย/baseline ตรง, ไม่มีอะไรลอยมั่ว
 - **Editorial voice:** ตัวหนังสือใหญ่ กล้า มี rhythm แบบนิตยสาร, ใช้ index number (01–06), caption/label เป็น mono
-- **Liquid Glass depth:** nav, การ์ด, chat widget, modal เป็นกระจกโปร่ง (frosted) มี specular highlight บาง ๆ ให้รู้สึกมีวัสดุจริง
+- **Visible Grid:** เปิดเส้นโครงกริดให้เห็น — rails แนวตั้ง hairline คร่อมคอลัมน์กลาง + เส้นนอน full-bleed คั่น section/turn + `+` ที่จุดตัด (registration mark) + (option) crosshatch field จาง ๆ; "ความหรู" มาจากโครงสร้างที่แม่นยำ ไม่ใช่ shadow/gradient. **ยกระดับด้วย hairline + negative space ไม่ใช่ drop-shadow**
+- **Liquid Glass depth:** ใช้เฉพาะ **เลเยอร์ลอย** — nav (sticky), floating chat widget/popup, composer bar ที่ pin ลอยเหนือบทสนทนา, modal — เป็นกระจกโปร่ง (frosted) มี specular highlight บาง ๆ; **พื้นผิวเนื้อหา (การ์ด/แถวข้อความ) ไม่ใช้ glass — ใช้ hairline + พื้นทึบ** (ดู §14.5)
+
+> **แนวทางลงรายละเอียด + งานวิจัย reference (6 เว็บ visible-grid Swiss จริง เช่น chanhdai/cal/entire/vercel/testsprite/basehub) + spec การประกอบทั้งหมด: `docs/design/expensive-minimalism.md`** — อ่านก่อนออกแบบ/แก้หน้าใด ๆ ที่ใช้ visible-grid (โดยเฉพาะหน้า chat)
 
 ### 14.2 Color System
 พื้นหลังเลือกได้จากโทน **Off-white / Warm Gray / Charcoal** + **Accent เพียงหนึ่งสี** (ตามที่กำหนด) — ห้ามเกินหนึ่ง accent เด็ดขาด (หลายสี = ดูมั่ว/AI slop)

@@ -18,7 +18,9 @@ export async function getCertificates(): Promise<Certificate[]> {
     const { data, error } = await supabase
       .from('certificates')
       .select('title, title_en, issuer, issuer_logo, issued_year, thumbnail, full_image, verify_url')
-      .order('sort_order', { ascending: true });
+      // Human pin (sort_order) wins (D1); AI display-rank orders the rest (nulls last).
+      .order('sort_order', { ascending: true })
+      .order('ai_rank', { ascending: true, nullsFirst: false });
     if (error || !data || data.length === 0) return fallback;
     const mapped = (data as DbCertificateRow[]).map(mapDbCertificate);
     // Guard: if the DB rows carry no image at all, the lightbox would render a

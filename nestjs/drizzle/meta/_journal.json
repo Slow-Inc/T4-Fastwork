@@ -22,6 +22,34 @@
       "when": 1783972513972,
       "tag": "0002_clumsy_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784101931094,
+      "tag": "0003_safe_risque",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784105289999,
+      "tag": "0004_lying_puppet_master",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784106938402,
+      "tag": "0005_luxuriant_white_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784113676114,
+      "tag": "0006_smart_green_goblin",
+      "breakpoints": true
     }
   ]
 }

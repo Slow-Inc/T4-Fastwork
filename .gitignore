@@ -12,3 +12,4 @@ dist/
 
 # Playwright MCP session artifacts (screenshots, snapshots, console logs)
 /.playwright-mcp/
+.firecrawl/

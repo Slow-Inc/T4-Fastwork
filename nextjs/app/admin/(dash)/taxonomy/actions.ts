@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/server';
+import { assertAdmin } from '@/lib/admin-access';
 
 /** Only these lookup tables may be edited here (guards against arbitrary table names). */
 const TABLES = ['categories', 'technologies', 'tags'] as const;
@@ -26,6 +27,7 @@ export interface TermState {
 }
 
 export async function createTerm(_prev: TermState, formData: FormData): Promise<TermState> {
+  await assertAdmin();
   const table = formData.get('table')?.toString() ?? '';
   const name = formData.get('name')?.toString().trim() ?? '';
   if (!isTable(table)) return { error: 'ตารางไม่ถูกต้อง' };
@@ -46,6 +48,7 @@ export async function createTerm(_prev: TermState, formData: FormData): Promise<
 }
 
 export async function deleteTerm(formData: FormData) {
+  await assertAdmin();
   const table = formData.get('table')?.toString() ?? '';
   const id = formData.get('id')?.toString();
   if (!isTable(table) || !id) return;

@@ -72,15 +72,28 @@ export function TeamMemberView({
         </div>
       </header>
 
-      {/* GitHub profile README (spec P7) — native rendering when present */}
-      {liveUser?.profileReadme && (
-        <section className="tm-block rv tm-readme">
-          <div className="t-idx">
-            {en ? 'GitHub profile' : 'โปรไฟล์ GitHub'}
-          </div>
-          <MarkdownContent source={liveUser.profileReadme} />
-        </section>
-      )}
+      {/* Profile README (spec P7) — the member's custom override (Epic C / C3) when set,
+          else the live GitHub profile README; hidden when the member toggled it off
+          (readmeVisible; undefined = visible). */}
+      {(() => {
+        if (member.readmeVisible === false) return null;
+        const readme = member.readmeOverride?.trim() || liveUser?.profileReadme;
+        if (!readme) return null;
+        return (
+          <section className="tm-block rv tm-readme">
+            <div className="t-idx">
+              {member.readmeOverride
+                ? en
+                  ? 'About'
+                  : 'เกี่ยวกับ'
+                : en
+                  ? 'GitHub profile'
+                  : 'โปรไฟล์ GitHub'}
+            </div>
+            <MarkdownContent source={readme} />
+          </section>
+        );
+      })()}
 
       {/* 02 — Skills */}
       <section className="tm-block rv">

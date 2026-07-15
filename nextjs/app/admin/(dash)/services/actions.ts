@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/server';
+import { assertAdmin } from '@/lib/admin-access';
 
 export interface ServiceFormState {
   error?: string;
@@ -12,6 +13,7 @@ export async function createService(
   _prev: ServiceFormState,
   formData: FormData,
 ): Promise<ServiceFormState> {
+  await assertAdmin();
   const title = formData.get('title')?.toString().trim() ?? '';
   if (!title) return { error: 'ต้องมีชื่อบริการ' };
 
@@ -30,6 +32,7 @@ export async function createService(
 }
 
 export async function deleteService(formData: FormData) {
+  await assertAdmin();
   const id = formData.get('id')?.toString();
   if (!id) return;
   const supabase = await createClient();
