@@ -111,6 +111,14 @@ PRD `…ai-display-ranking.md`) · Epic C member CMS **#46** (C1–C6 **#52–#5
   admin approvals queue UI. Gate: set ADMIN_EMAILS + run seed-app-admins.ts.
   **Deferred:** member blog authoring (blog_posts needs author_id + RLS, blast radius),
   admin edit actions for blog/certs.
+- ✅ **Unified admin auth** shipped (`ed54906`) — admin = a member flagged
+  `members.is_admin` (GitHub login, same as members); email/password + ADMIN_EMAILS kept
+  as break-glass fallback (user choice). `getAdminSession()` (member.is_admin OR email);
+  admin login has a GitHub button; members roster has an Admin toggle (RPC gated by
+  is_app_admin, which now also honours member.is_admin). xenodev bootstrapped as admin.
+  **VERIFIED END-TO-END live**: xenodev reached /admin (no redirect), toggled a teammate's
+  admin flag, and approved a draft cert through the real /admin/approvals button →
+  published on /team. Makes the whole admin CMS self-verifiable via the xenodev session.
 - 🔒 **Security fix** (`c49a32f`) — `isAllowedAdmin` now **fails closed** on an empty
   ADMIN_EMAILS (was: admit ALL authenticated — exploitable once members can GitHub-login,
   any member could reach /admin). User-approved. **ACTION REQUIRED: set ADMIN_EMAILS** in
