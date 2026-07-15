@@ -96,6 +96,25 @@ PRD `…ai-display-ranking.md`) · Epic C member CMS **#46** (C1–C6 **#52–#5
   Seed `seed-member-content.ts`: 17 projects / 10 certs / 4 team — counts match static
   exactly. Pure mappers `member-content-map.ts` (7 TDD). Repos `member-content-repo.ts`
   (getMemberProjects/Certificates(slug), getTeamProjects) DB-first+fallback.
+- ✅ **C3 #54 remainder** shipped — **project-selection** (`310093a`): member ticks which
+  repos show (member_projects.selected); RLS own-row + column-grant (selected/sort_order
+  only); verified live (xenodev deselect orangecat → dropped from /team → restored).
+  **README toggle** (`75c6158`): wired readme_visible to actually gate the public README
+  (was a no-op); TeamMember.readmeVisible; unit-tested show/hide. README-content override
+  deferred.
+- ✅ **C4 #55 core** shipped — **C4a cert authoring** (`cd345ed`): member adds own certs,
+  RLS forces status='draft', column-grant withholds status (can't self-publish — verified
+  by adversarial JWL sim); ImageUpload to `media`. Verified live: add→draft→hidden→
+  approve→visible→delete. **C4b admin approve** (`1f8d4ed`): app_admins + is_app_admin()
+  (SECURITY DEFINER, JWT email) + admin_set_member_certificate_status RPC (bypasses member
+  column-grant, admin-gated — verified by JWT sim: admin publishes, non-admin blocked);
+  admin approvals queue UI. Gate: set ADMIN_EMAILS + run seed-app-admins.ts.
+  **Deferred:** member blog authoring (blog_posts needs author_id + RLS, blast radius),
+  admin edit actions for blog/certs.
+- 🔒 **Security fix** (`c49a32f`) — `isAllowedAdmin` now **fails closed** on an empty
+  ADMIN_EMAILS (was: admit ALL authenticated — exploitable once members can GitHub-login,
+  any member could reach /admin). User-approved. **ACTION REQUIRED: set ADMIN_EMAILS** in
+  nextjs/.env.local + Vercel or /admin is inaccessible.
 - ✅ **C5 #56** shipped (`9b791f2`) — `/team/[slug]` + home/about team-section read DB.
   `member-map.ts` mapDbMember (3 TDD); members-repo getTeamMembers()/getMemberBySlug()
   (attaches projects/certs). Page uses them, `dynamicParams=false→true`. team-section
