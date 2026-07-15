@@ -72,8 +72,9 @@ export function TeamMemberView({
         </div>
       </header>
 
-      {/* GitHub profile README (spec P7) — native rendering when present */}
-      {liveUser?.profileReadme && (
+      {/* GitHub profile README (spec P7) — native rendering when present and the
+          member hasn't hidden it (Epic C / C3 readme toggle; undefined = visible). */}
+      {member.readmeVisible !== false && liveUser?.profileReadme && (
         <section className="tm-block rv tm-readme">
           <div className="t-idx">
             {en ? 'GitHub profile' : 'โปรไฟล์ GitHub'}

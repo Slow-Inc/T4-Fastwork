@@ -139,4 +139,20 @@ describe('TeamMemberView (profile page)', () => {
     expect(container.querySelector('.tm-projects')).toBeNull();
     expect(container.querySelector('.tm-certs')).toBeNull();
   });
+
+  const liveUser = { avatarUrl: null, profileReadme: '# Hi\n\nI build things.' };
+
+  it('shows the GitHub README when the member has readmeVisible on (or undefined)', () => {
+    const { container } = render(
+      <TeamMemberView member={xeno} en={false} liveUser={liveUser} />,
+    );
+    expect(container.querySelector('.tm-readme')).not.toBeNull();
+  });
+
+  it('hides the GitHub README when the member set readmeVisible = false (C3 toggle)', () => {
+    const { container } = render(
+      <TeamMemberView member={{ ...xeno, readmeVisible: false }} en={false} liveUser={liveUser} />,
+    );
+    expect(container.querySelector('.tm-readme')).toBeNull();
+  });
 });

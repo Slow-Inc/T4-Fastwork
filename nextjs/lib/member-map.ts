@@ -15,6 +15,7 @@ export interface DbMemberRow {
   skills: string[] | null;
   stack: string[] | null;
   education: { program: string; institution: string } | null;
+  readme_visible: boolean | null;
 }
 
 export function mapDbMember(row: DbMemberRow): TeamMember {
@@ -24,6 +25,7 @@ export function mapDbMember(row: DbMemberRow): TeamMember {
     role: row.role,
     roleEn: row.role_en,
     skills: row.skills ?? [],
+    readmeVisible: row.readme_visible ?? true,
   };
   if (row.github_url) member.githubUrl = row.github_url;
   if (row.stack) member.stack = row.stack;

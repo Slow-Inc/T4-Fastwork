@@ -16,6 +16,7 @@ describe('mapDbMember', () => {
           program: 'คณิตศาสตร์เชิงวิทยาการคอมพิวเตอร์',
           institution: 'KMUTNB',
         },
+        readme_visible: true,
       }),
     ).toEqual({
       handle: 'xenodev',
@@ -29,6 +30,7 @@ describe('mapDbMember', () => {
         program: 'คณิตศาสตร์เชิงวิทยาการคอมพิวเตอร์',
         institution: 'KMUTNB',
       },
+      readmeVisible: true,
     });
   });
 
@@ -43,6 +45,7 @@ describe('mapDbMember', () => {
         skills: ['Project Manager'],
         stack: null,
         education: null,
+        readme_visible: true,
       }),
     ).toEqual({
       handle: 'Slowgers',
@@ -50,10 +53,11 @@ describe('mapDbMember', () => {
       role: 'Project Manager',
       roleEn: 'Project Manager',
       skills: ['Project Manager'],
+      readmeVisible: true,
     });
   });
 
-  it('defaults null skills to []', () => {
+  it('maps a hidden README (readme_visible false) through', () => {
     const m = mapDbMember({
       handle: 'x',
       slug: 'x',
@@ -63,7 +67,9 @@ describe('mapDbMember', () => {
       skills: null,
       stack: null,
       education: null,
+      readme_visible: false,
     });
     expect(m.skills).toEqual([]);
+    expect(m.readmeVisible).toBe(false);
   });
 });

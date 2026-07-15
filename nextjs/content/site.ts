@@ -159,6 +159,9 @@ export interface TeamMember {
   certificates?: TeamCertificate[];
   /** Personal repos (real, audited via `gh repo view`). */
   projects?: TeamProject[];
+  /** Whether to show the GitHub profile README on the public profile (Epic C / C3);
+   * undefined (static members) is treated as visible. */
+  readmeVisible?: boolean;
 }
 
 export const team: TeamMember[] = [
