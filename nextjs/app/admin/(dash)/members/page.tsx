@@ -1,13 +1,16 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/server';
+import { MemberAdminToggle } from './member-admin-toggle';
 
 interface MemberRow {
+  id: number;
   handle: string;
   slug: string;
   role_en: string;
   github_login: string | null;
   skills: string[] | null;
   stack: string[] | null;
+  is_admin: boolean | null;
 }
 
 /**
@@ -20,7 +23,7 @@ export default async function AdminMembersPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from('members')
-    .select('handle, slug, role_en, github_login, skills, stack')
+    .select('id, handle, slug, role_en, github_login, skills, stack, is_admin')
     .order('sort_order', { ascending: true });
   const members = (data ?? []) as MemberRow[];
 
@@ -44,6 +47,7 @@ export default async function AdminMembersPage() {
                 <th>GitHub</th>
                 <th>Skills</th>
                 <th>Stack</th>
+                <th>สิทธิ์</th>
                 <th></th>
               </tr>
             </thead>
@@ -55,6 +59,9 @@ export default async function AdminMembersPage() {
                   <td className="t-meta">{m.github_login ?? '—'}</td>
                   <td className="t-meta">{m.skills?.length ?? 0}</td>
                   <td className="t-meta">{m.stack?.length ?? 0}</td>
+                  <td>
+                    <MemberAdminToggle memberId={m.id} initial={m.is_admin === true} />
+                  </td>
                   <td className="admin-row-actions">
                     <Link className="admin-edit" href={`/team/${m.slug}`}>
                       โปรไฟล์ ↗
