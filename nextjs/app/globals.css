@@ -562,42 +562,64 @@ h1 em {
   max-width: 16ch;
   margin-top: 14px;
 }
-.srv-row {
+/* Capability strip — a row of grid-divided columns; the hairline rails ARE the
+   layout (§14 visible grid). Recomposes 5 → 2 → 1 columns; descriptions stay on
+   every breakpoint (the old ledger dropped them on mobile). */
+.srv-strip {
   display: grid;
-  grid-template-columns: 64px 1fr minmax(0, 32ch);
-  gap: 24px;
-  align-items: center;
-  padding: 28px 0;
+  grid-template-columns: repeat(5, 1fr);
   border-top: 1px solid var(--line);
-  transition: padding-left 0.25s;
-}
-.srv-row:last-child {
   border-bottom: 1px solid var(--line);
 }
-.srv-row:hover {
-  padding-left: 10px;
+.srv-col {
+  padding: 24px 20px 26px;
+  border-left: 1px solid var(--line);
 }
-.srv-row:hover .sn {
-  color: var(--accent);
+.srv-col:first-child {
+  border-left: 0;
 }
-.sn {
+.srv-col-no {
+  display: block;
+}
+.srv-col-title {
   font-family: var(--disp);
   font-weight: 600;
-  font-size: clamp(24px, 3.2vw, 42px);
-  letter-spacing: -0.02em;
-  transition: color 0.2s;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  margin: 12px 0 8px;
 }
-.sd {
-  text-align: right;
-  font-size: 14px;
+.srv-col-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
   color: var(--muted);
 }
-@media (max-width: 720px) {
-  .srv-row {
-    grid-template-columns: 40px 1fr;
+@media (max-width: 900px) {
+  .srv-strip {
+    grid-template-columns: 1fr 1fr;
   }
-  .sd {
-    display: none;
+  .srv-col {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .srv-col:nth-child(1),
+  .srv-col:nth-child(2) {
+    border-top: 0;
+  }
+  .srv-col:nth-child(odd) {
+    border-right: 1px solid var(--line);
+  }
+}
+@media (max-width: 520px) {
+  .srv-strip {
+    grid-template-columns: 1fr;
+  }
+  .srv-col {
+    border-right: 0;
+    border-top: 1px solid var(--line);
+  }
+  .srv-col:first-child {
+    border-top: 0;
   }
 }
 
