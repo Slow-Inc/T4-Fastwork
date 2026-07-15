@@ -12,6 +12,7 @@ import {
   type RosterMember,
 } from '@/lib/contributors';
 import { MarkdownContent } from '@/lib/markdown';
+import { WebsitePreview } from '@/components/site/website-preview';
 import { useLocale } from '@/i18n/locale-context';
 
 export function ProjectDetailContent({
@@ -108,6 +109,9 @@ export function ProjectDetailContent({
             <a href={p.liveUrl} target="_blank" rel="noopener noreferrer" className="btn">
               {t('ดูเว็บจริง ↗', 'Visit site ↗')}
             </a>
+          )}
+          {p.liveUrl && (
+            <WebsitePreview url={p.liveUrl} title={p.title} en={en} />
           )}
           {p.github && (
             <a
