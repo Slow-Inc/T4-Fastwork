@@ -2,6 +2,7 @@ import 'server-only';
 import { createClient } from '@/lib/server';
 
 export interface CurrentMember {
+  id: number;
   slug: string;
   handle: string;
   role: string;
@@ -25,11 +26,12 @@ export async function getCurrentMember(): Promise<CurrentMember | null> {
 
   const { data, error } = await supabase
     .from('members')
-    .select('slug, handle, role, role_en, skills, stack, readme_visible')
+    .select('id, slug, handle, role, role_en, skills, stack, readme_visible')
     .eq('auth_user_id', user.id)
     .maybeSingle();
   if (error || !data) return null;
   return {
+    id: data.id,
     slug: data.slug,
     handle: data.handle,
     role: data.role,
@@ -38,6 +40,50 @@ export async function getCurrentMember(): Promise<CurrentMember | null> {
     stack: data.stack ?? [],
     readmeVisible: data.readme_visible ?? true,
   };
+}
+
+export interface EditableCertificate {
+  id: number;
+  issuer: string;
+  title: string;
+  assetWebp: string | null;
+  assetPdf: string | null;
+  status: string;
+}
+
+/**
+ * The current member's certificates (Epic C / C4), incl. their own drafts — via the
+ * cookie client so the own-row RLS policy applies (the public read shows only
+ * `published`). For the additive-authoring UI. Empty when not a member.
+ */
+export async function getCurrentMemberCertificates(): Promise<
+  EditableCertificate[]
+> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data: m } = await supabase
+    .from('members')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .maybeSingle();
+  if (!m) return [];
+  const { data, error } = await supabase
+    .from('member_certificates')
+    .select('id, issuer, title, asset_webp, asset_pdf, status')
+    .eq('member_id', m.id)
+    .order('sort_order', { ascending: true });
+  if (error || !data) return [];
+  return data.map((r) => ({
+    id: r.id as number,
+    issuer: r.issuer as string,
+    title: r.title as string,
+    assetWebp: (r.asset_webp as string | null) ?? null,
+    assetPdf: (r.asset_pdf as string | null) ?? null,
+    status: (r.status as string | null) ?? 'draft',
+  }));
 }
 
 export interface EditableProject {
