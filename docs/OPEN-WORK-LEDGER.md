@@ -87,6 +87,12 @@ these are the confirmed **gaps** the vision (`showcase-vision-2026-07`) still ne
 PRD `…ai-display-ranking.md`) · Epic C member CMS **#46** (C1–C6 **#52–#57**, PRD
 `…member-profile-cms.md`). Sequence **A → B → C**. Details below; ordered roughly by size.
 
+**Progress (branch `feat/chat-thinking-mode`, TDD, all green):**
+- ✅ **A #44** shipped (`75da320`) — `teamTechnologies` union + hook-free `TeamTechCarousel` between Hero/Featured; 243 unit + 51 e2e, verified live. Config flag deferred (YAGNI until C admin).
+- ✅ **B1 #47** shipped (`8e6637b`) — rank core: `RANK_RUBRIC`/`buildRankMessages`/`parseRanking` (always a permutation of ids, never drops)/`rankCandidates` (injected client); 6 tests.
+- ✅ **B2 #48** shipped (`641c7a1`) — `ai_rank`(+rationale) on projects (Drizzle migration `0003_safe_risque`) + certs/blog (`supabase/migrations/0003_ai_rank.sql`, idempotent) + `RankStore` seam + `ranksToRows`. **Migrations NOT applied (human step).**
+- ⏭️ **Next: B3 #49** — concrete Drizzle/Supabase `RankStore` impls + bind `LlmClient`→`LlmService` + cron/admin trigger. Needs DB connectivity to verify end-to-end; migrations must be applied first.
+
 - **AI display-ranking** (NEW — zero exists anywhere; proven by exhaustive survey).
   Rank/order listings by impact-to-customer + credibility via `LlmService.complete()`
   (reuse the `ScopeSummaryService` pattern): certificates (**best 9 + "see more"**;
