@@ -810,6 +810,23 @@ h1 em {
   color: var(--muted);
 }
 
+/* Member self-edit form (#54) */
+.member-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 14px;
+}
+.member-form .field input[type='text'],
+.member-form .field > input:not([type]) {
+  width: 100%;
+}
+.field-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
 /* ---- CTA ---- */
 .cta {
   padding: 120px 0 100px;

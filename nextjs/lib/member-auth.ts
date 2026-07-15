@@ -20,3 +20,22 @@ export function githubLoginFromUser(
     ? raw.trim().toLowerCase()
     : null;
 }
+
+/**
+ * Parses a member-entered comma-separated tech/skills string into a clean list:
+ * trimmed, empties dropped, de-duped case-insensitively (first spelling wins).
+ * Used by the member self-edit form (C3).
+ */
+export function parseTechList(input: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of input.split(',')) {
+    const t = raw.trim();
+    const key = t.toLowerCase();
+    if (t && !seen.has(key)) {
+      seen.add(key);
+      out.push(t);
+    }
+  }
+  return out;
+}

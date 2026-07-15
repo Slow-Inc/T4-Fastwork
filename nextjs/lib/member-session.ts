@@ -6,6 +6,9 @@ export interface CurrentMember {
   handle: string;
   role: string;
   roleEn: string;
+  skills: string[];
+  stack: string[];
+  readmeVisible: boolean;
 }
 
 /**
@@ -22,7 +25,7 @@ export async function getCurrentMember(): Promise<CurrentMember | null> {
 
   const { data, error } = await supabase
     .from('members')
-    .select('slug, handle, role, role_en')
+    .select('slug, handle, role, role_en, skills, stack, readme_visible')
     .eq('auth_user_id', user.id)
     .maybeSingle();
   if (error || !data) return null;
@@ -31,6 +34,9 @@ export async function getCurrentMember(): Promise<CurrentMember | null> {
     handle: data.handle,
     role: data.role,
     roleEn: data.role_en,
+    skills: data.skills ?? [],
+    stack: data.stack ?? [],
+    readmeVisible: data.readme_visible ?? true,
   };
 }
 
