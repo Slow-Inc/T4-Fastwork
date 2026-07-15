@@ -144,6 +144,26 @@ PRD `…ai-display-ranking.md`) · Epic C member CMS **#46** (C1–C6 **#52–#5
   member draft certs → approve/unpublish via the RPC) + read-only **Team/Members roster**
   (`/admin/members`). Admin UI not Playwright-verifiable (no admin creds); routes compile +
   fail-closed guard redirects (307). Member-edit is self-service; admin oversees + approves.
+- ✅ **AFK run 2 — remaining deferred items ALL shipped** (all verified end-to-end via the
+  now-unified admin/member Playwright session; TDD; nextjs 272 unit + 52 e2e green):
+  - **C4d** admin **edit** actions for blog + certs (`[id]/edit` routes mirroring projects;
+    blog edit preserves original published_at). Verified via xenodev admin UI.
+  - **C4c** member **blog authoring** — blog_posts += author_id + RLS (member drafts,
+    published_at-null-gated so can't self-publish; anon reads published — closes a draft
+    leak; admin is_app_admin). `lib/slugify.ts` (5 TDD). Admin approvals gained a blog
+    section. Verified: member draft → hidden → admin publish → on /blog; pure-member
+    self-publish BLOCKED by RLS.
+  - **C3 README-content override** — members.readme_override; member writes custom
+    markdown → renders on /team over the GitHub README. Verified live.
+  - **Website iframe-preview popup** — `WebsitePreview` sandboxed-iframe overlay + fallback
+    on project detail (deferred #27 item). Verified live (framing-blocked sites degrade to
+    the fallback).
+  - **B5 full** (`c4b9021`) — home **Featured + Selected-work + /projects** now AI-rank
+    ordered. Seeded 8 catalog projects as DB rank-holders (`supabase/0014`); `orderByRank`
+    (4 TDD) drives the order while CONTENT stays the static catalog (zero parity risk).
+    Verified: parity at null rank, then all 3 surfaces reorder to a test ai_rank. **Deferred
+    (larger, parity-sensitive):** moving project CONTENT into DB (M2M tech/tags, tone +
+    description_en cols, category reconcile).
 - 🟡 **B5 #51 PARTIAL** (`8f3b1d5`) — ranking now reaches **team_projects** (home/about
   collaborative work): rank job extended (`RankKind`+='team_projects', store adapter),
   `getTeamProjects` orders by ai_rank-first (no admin pin). **Verified live** (set ai_rank →
