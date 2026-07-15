@@ -75,6 +75,40 @@ Design: `docs/superpowers/specs/2026-07-14-github-project-showcase-design.md`. *
 
 _(#31 share-conversation popup↔/chat: DONE — `SHARED_CHAT_KEY`, closed. #30 stats-fix: DONE, closed.)_
 
+## Backlog — AI-curated member CMS vision (2026-07-15, no issues yet) 🔴
+
+From a product-vision session + a 5-agent system survey (2026-07-15) — full
+snapshot with file:line anchors: `docs/reports/2026-07-15-system-state-survey.md`.
+Foundation already built (see epic #27 above + memory `showcase-system-already-built`);
+these are the confirmed **gaps** the vision (`showcase-vision-2026-07`) still needs.
+Needs a PRD → issues pass before building. Ordered roughly by size.
+
+- **AI display-ranking** (NEW — zero exists anywhere; proven by exhaustive survey).
+  Rank/order listings by impact-to-customer + credibility via `LlmService.complete()`
+  (reuse the `ScopeSummaryService` pattern): certificates (**best 9 + "see more"**;
+  today `certificates-view.tsx` renders ALL, no limit), home Featured, home
+  Selected-work (`project-gallery.tsx`), team collaborative work
+  (`team-section.tsx` `.team-projects`), `/projects` (`projects-repo.ts` has no
+  `.order()`), blog by **views + content** (`blog_posts.views` displayed, not
+  sorted). Data hooks present: `projects.sort_order` (exists, unused), `is_featured`,
+  `blog_posts.views`, GitHub stars. Decide: rank at ingest/cron (write a rank col)
+  vs on-read + cache; guard cost + determinism.
+- **Member self-service profile CMS** (NEW — biggest piece; needs DB). Today team
+  profiles are static `content/site.ts` (`team: TeamMember[]`), no `members` table,
+  admin is single-tier (`ADMIN_EMAILS` allowlist, no roles, no per-member scoping).
+  Needs: a members/profiles table + per-member Supabase Auth + member-scoped edit UI
+  for the **override** fields (profile, which GitHub repos to show, README toggle,
+  skills, tech stack) and **additive** fields (certificates, blog articles). Blog
+  admin currently has no edit action and no member authoring.
+- **Team tech-stack carousel** on home (NEW — "Phase A" quick win). Icon marquee of
+  the **union of members' `stack`** (reuse `TechChips`/`tech-logos`), placed between
+  Hero and Featured. Interim: derive from static `member.stack`; swap source to the
+  members DB later (data shape stable). Note: a prior standalone tech marquee at
+  section 05 was removed 2026-07-15 (commit `c639344`) as a duplicate of the filter
+  chips — this new one is icon-based + team-sourced + a different purpose.
+- **Website iframe-preview popup** — already tracked as "P6 iframe preview popup
+  deferred" (showcase section above); confirmed still absent (0 `iframe` in nextjs).
+
 ## Tech debt (pre-existing, surfaced this session) 🔴
 
 - **#25 R3 "double" UI-swap has no end-to-end automated test** — the pure seams (`live-snapshot.ts`, `heal.ts`, `resolveHealTarget`) + the `<LiveSnapshot>` mount are unit/e2e covered, but nothing simulates a real Supabase Realtime broadcast → `updateTag` → UI swap. Verified by reasoning + manual only (scrutinize, #25). To close: a component test injecting a fake Realtime client that emits a change and asserts `refreshLiveTags` + `router.refresh` fire (friction: mocking `next/navigation` + the `'use server'` `next/cache` import under bun/happy-dom), or an integration e2e that bumps a snapshot `updated_at` via SQL and asserts the open page updates. No issue yet.
