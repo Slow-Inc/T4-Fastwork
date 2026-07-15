@@ -1815,6 +1815,23 @@ footer {
   background: color-mix(in srgb, var(--ink) 5%, transparent);
   font-weight: 600;
 }
+/* README headings — tame the site's display-scale headings to a document scale
+   (a Setext `====` H1 like "My name is …" must not become a hero title). */
+.md-readme h1 {
+  font-size: 1.55rem;
+  margin: 0.8em 0 0.4em;
+}
+.md-readme h2 {
+  font-size: 1.25rem;
+}
+.md-readme h3 {
+  font-size: 1.08rem;
+}
+.md-readme h4,
+.md-readme h5,
+.md-readme h6 {
+  font-size: 1rem;
+}
 /* GitHub README badge rows: shields.io <img> badges sit inline with breathing
    room; honour the deprecated align attr used for centered profile layouts. */
 .md-readme img {
