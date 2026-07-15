@@ -75,6 +75,20 @@ Design: `docs/superpowers/specs/2026-07-14-github-project-showcase-design.md`. *
 
 _(#31 share-conversation popup↔/chat: DONE — `SHARED_CHAT_KEY`, closed. #30 stats-fix: DONE, closed.)_
 
+## ✅ MERGED — AI-curated member CMS vision (2026-07-15) — PR #34 → `master` (`c8a131f`)
+
+**Epics A/B/C + chat app-shell (#37–#43) MERGED to `master` 2026-07-15 via PR #34.**
+Issues **#44, #46–#50, #52–#57 CLOSED** (delivered + verified + merged). Still **OPEN:
+#45 (Epic B) + #51 (B5)** — the only remainder is the larger, parity-sensitive
+**project-content → DB** migration (M2M tech/tags, tone + description_en cols, category
+reconcile); AI ranking already works with content static. Pre-merge `/scrutinize` +
+`/security-review` found + fixed 3 real issues (admin-action authz, no-RLS direct writes,
+blog view/rank gaming) — see commits `149623d`, `f9aeda5` + migrations 0015–0017.
+**Human follow-up:** flag other teammates `is_admin` at `/admin/members` (only `xenodev`
+bootstrapped); optional `ADMIN_EMAILS` + `seed-app-admins.ts` for the email fallback.
+
+The detail below is the historical build log (all shipped + merged).
+
 ## Backlog — AI-curated member CMS vision (2026-07-15) — filed as #44–#57
 
 From a product-vision session + a 5-agent system survey (2026-07-15) — full
