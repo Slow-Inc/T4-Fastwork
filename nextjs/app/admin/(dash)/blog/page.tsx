@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { createClient } from '@/lib/server';
 import { deletePost } from './actions';
 import { PostForm } from './post-form';
@@ -35,7 +36,10 @@ export default async function AdminBlog() {
                   <td>{p.title}</td>
                   <td className="t-meta">{p.slug}</td>
                   <td>{p.published_at ? 'เผยแพร่' : 'ฉบับร่าง'}</td>
-                  <td>
+                  <td className="admin-row-actions">
+                    <Link className="admin-edit" href={`/admin/blog/${p.id}/edit`}>
+                      แก้ไข
+                    </Link>
                     <form action={deletePost}>
                       <input type="hidden" name="id" value={p.id} />
                       <button type="submit" className="admin-del">ลบ</button>
