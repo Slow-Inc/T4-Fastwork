@@ -2,6 +2,7 @@ import 'server-only';
 import { publicDb } from '@/lib/public-db';
 import { projects as staticProjects, type Project } from '@/content/catalog';
 import { mapDbProject, mergeProjects, type DbProjectRow } from './project-map';
+import { orderByRank } from './project-rank';
 
 /**
  * Projects data access (Requirement §10 / §12). The rich curated catalog is the
@@ -12,10 +13,33 @@ import { mapDbProject, mergeProjects, type DbProjectRow } from './project-map';
 
 const SELECT =
   'slug,title,title_en,description,content,live_url,snapshot_image,is_featured,published_at,' +
+  'ai_rank,' +
   'gh_owner,gh_repo,owner_type,owner_login,' +
   'category:categories(name),' +
   'project_technologies(technologies(name)),' +
   'project_tags(tags(name))';
+
+/** slug → ai_rank for the published projects — drives the display order of the
+ * (static-content) Featured / Selected-work / list without moving content to the DB (B5). */
+function rankFromRows(rows: { slug: string; ai_rank: number | null }[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const r of rows) if (r.ai_rank != null) m.set(r.slug, r.ai_rank);
+  return m;
+}
+
+export async function getProjectRankMap(): Promise<Map<string, number>> {
+  try {
+    const supabase = publicDb();
+    const { data, error } = await supabase
+      .from('projects')
+      .select('slug, ai_rank')
+      .not('published_at', 'is', null);
+    if (error || !data) return new Map();
+    return rankFromRows(data as { slug: string; ai_rank: number | null }[]);
+  } catch {
+    return new Map();
+  }
+}
 
 export async function getAllProjects(): Promise<Project[]> {
   try {
@@ -24,13 +48,12 @@ export async function getAllProjects(): Promise<Project[]> {
       .from('projects')
       .select(SELECT)
       .not('published_at', 'is', null)
-      // AI display-rank orders the DB set (nulls last). NOTE: the public list
-      // merges the static catalog first (mergeProjects), so ranking only reorders
-      // DB-sourced projects until the catalog moves to the DB.
       .order('ai_rank', { ascending: true, nullsFirst: false });
     if (error || !data) return staticProjects;
-    const dbProjects = (data as unknown as DbProjectRow[]).map(mapDbProject);
-    return mergeProjects(staticProjects, dbProjects);
+    const rows = data as unknown as (DbProjectRow & { ai_rank: number | null })[];
+    const dbProjects = rows.map(mapDbProject);
+    // Content stays the static catalog (parity); the AI rank only reorders it (B5).
+    return orderByRank(mergeProjects(staticProjects, dbProjects), rankFromRows(rows));
   } catch {
     return staticProjects;
   }
