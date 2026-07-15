@@ -3,6 +3,7 @@ import {
   parseRanking,
   buildRankMessages,
   rankCandidates,
+  ranksToRows,
 } from '../src/rank/rank.ts';
 
 describe('parseRanking', () => {
@@ -65,5 +66,16 @@ describe('rankCandidates', () => {
     };
     expect(await rankCandidates(client, 'projects', [])).toEqual([]);
     expect(called).toBe(false);
+  });
+});
+
+describe('ranksToRows', () => {
+  it('maps position to ai_rank (0-based) and carries the rationale', () => {
+    expect(
+      ranksToRows([{ id: 'b', rationale: 'strong' }, { id: 'a' }]),
+    ).toEqual([
+      { id: 'b', aiRank: 0, aiRankRationale: 'strong' },
+      { id: 'a', aiRank: 1 },
+    ]);
   });
 });

@@ -57,6 +57,36 @@ export async function rankCandidates(
   );
 }
 
+/** A persistable rank row: `ai_rank` (0-based, lower = higher priority). */
+export interface RankRow {
+  id: string;
+  aiRank: number;
+  aiRankRationale?: string;
+}
+
+/**
+ * Maps a ranked list to persistable rows — position → `ai_rank`. Human pins
+ * (a non-zero `sort_order`) win at the READ path (D1), not here; this only
+ * records the AI's relative order.
+ */
+export function ranksToRows(ranked: RankedItem[]): RankRow[] {
+  return ranked.map((r, i) =>
+    r.rationale
+      ? { id: r.id, aiRank: i, aiRankRationale: r.rationale }
+      : { id: r.id, aiRank: i },
+  );
+}
+
+/**
+ * Persistence seam for ranking (impls: Drizzle for `projects`, Supabase for
+ * `certificates`/`blog_posts`). Kept an interface so the ranking core stays pure;
+ * the concrete stores + cron wiring land in B3.
+ */
+export interface RankStore {
+  getCandidates(kind: RankKind): Promise<RankCandidate[]>;
+  applyRanks(kind: RankKind, rows: RankRow[]): Promise<void>;
+}
+
 /**
  * Parses the LLM's ranking response into an ordered list. Tolerant of markdown
  * fences and malformed output. **Always returns a permutation of `knownIds`** —
