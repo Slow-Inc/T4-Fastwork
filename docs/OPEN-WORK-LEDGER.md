@@ -19,12 +19,22 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
   Supabase. **16 disconnects** found — **all 16 verified** against the code (audit was 100% accurate). So "kill static"
   must be a **site-wide sweep**, not just projects/blog.
 
-**Tracked (filed 2026-07-17): epic #62 + children #63–#71 (P0–P8).** All `ready-for-human` (P1–P8
-design-pending; P0 seam-parked).
-- **#63 P0** (do first, security) — publish-state fix: `projects-repo.ts:51` filters only `published_at`,
-  not `status` → draft/hidden can leak (audit #6). **AFK-parked on a seam decision**: fix is a one-liner
-  but no unit-test seam for the query filter + no isolated test DB (E2E hits hosted Supabase = prod
-  mutation). Needs human: disposable test DB for E2E, or accept a query-builder mock.
+**Tracked (filed 2026-07-17): epic #62 + children #63–#71 (P0–P8).** Branch `feat/github-ai-case-studies`.
+
+**Overnight AFK 2026-07-17 (done on branch, pushed, NOT merged):**
+- **#63 P0 — DONE** (`52fd7c5`): `.eq('status','published')` on the 3 public project reads. Verified:
+  read-only prod proof (would_be_hidden=0), tsc clean, unit 5/5, **e2e 52/52**. Red-first unit was not
+  feasible (no test DB) → verified via e2e + SQL semantics; a negative integration test is a follow-up.
+- **MangaDock (audit #0) — DONE** (`9821b9a`): `mergeProjects` overlays the DB `snapshotImage` onto the
+  static card (ADR 0003 pattern; TDD 7/7); `live_url` corrected `mangadock.com`(parked)→`hayateotsu.space`
+  (the repo's `homepageUrl`) in static catalog + prod DB. Screenshot capture teed up (Action cron, once
+  its Actions secrets are set). **New audit finding #17**: sync never captures repo `homepageUrl`/`openGraphImageUrl`.
+- **Decision brief** (`71a31d7`): `docs/reports/2026-07-17-adr0009-open-questions-brief.md` — 4 decisions
+  that unblock #64–#71.
+
+Remaining (needs the developer): merge the branch (P0 + MangaDock) after review; answer the 4 open
+questions to move #64–#71 → `ready-for-agent`; set the screenshot Action secrets so MangaDock captures.
+- **#63 P0** — see above (done on branch, pending merge).
 - **#64–#71 P1–P8** — schema · map-reduce generator · trigger+GitHub App · provenance revisions/
   overrides · safety gate · **static→DB sweep (all surfaces)** · RAG+native render · per-project FR-09
   chat. All parked-for-design (open questions: 1 URL vs 3, deep-dive marker, member-repo eligibility,
