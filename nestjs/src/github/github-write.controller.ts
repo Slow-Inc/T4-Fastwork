@@ -19,12 +19,16 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { constantTimeEqual } from './webhook-verify';
-import { GithubRefreshService } from './github-refresh.service';
+import {
+  GithubRefreshService,
+  type RefreshSummary,
+} from './github-refresh.service';
 import { GithubWebhookService } from './github-webhook.service';
 import { GithubHealService } from './github-heal.service';
 import { parseReadme } from './github-detail.service';
 import { resolveHealTarget } from './github.config';
 import { DrizzleSnapshotStore } from './drizzle-snapshot.store';
+import { RagIngestService } from '../ingestion/rag-ingest.service';
 
 @Controller('github')
 export class GithubWriteController {
@@ -33,6 +37,7 @@ export class GithubWriteController {
     private readonly webhook: GithubWebhookService,
     private readonly heal: GithubHealService,
     private readonly store: DrizzleSnapshotStore,
+    private readonly rag: RagIngestService,
   ) {}
 
   @Post('refresh')
@@ -46,6 +51,14 @@ export class GithubWriteController {
     const outcome = await this.store.runExclusive('github-refresh', () =>
       this.refresh.refreshAll(),
     );
+    // #60 — when a refresh changed GitHub-sourced content, re-embed so chat/RAG
+    // reflects it. Fire-and-forget (the re-embed is heavy + single-flight); the
+    // refresh response returns promptly. Delta-gated on the refresh reporting a
+    // change (coarse: any change → re-ingest; per-published-project gating is a
+    // follow-up).
+    if (outcome.ran && (outcome.result as RefreshSummary)?.changed?.length) {
+      void this.rag.reingest().catch(() => {});
+    }
     return outcome.ran
       ? outcome.result
       : { skipped: 'a refresh is already running' };

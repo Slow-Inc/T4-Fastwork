@@ -24,6 +24,7 @@ import { GithubWebhookService } from './github-webhook.service';
 import { GithubReadService } from './github-read.service';
 import { GithubController } from './github.controller';
 import { GithubWriteController } from './github-write.controller';
+import { RagIngestService } from '../ingestion/rag-ingest.service';
 
 @Module({
   imports: [DatabaseModule],
@@ -86,6 +87,8 @@ import { GithubWriteController } from './github-write.controller';
       useFactory: (store: DrizzleSnapshotStore) => new GithubReadService(store),
       inject: [DrizzleSnapshotStore],
     },
+    // #60 — re-ingest RAG when a refresh changes GitHub-sourced content.
+    RagIngestService,
   ],
   exports: [GithubReadService],
 })
