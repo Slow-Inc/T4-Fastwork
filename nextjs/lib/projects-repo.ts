@@ -33,6 +33,10 @@ export async function getProjectRankMap(): Promise<Map<string, number>> {
     const { data, error } = await supabase
       .from('projects')
       .select('slug, ai_rank')
+      // Public reads must be gated by BOTH the `status` publication flag and a
+      // publish date — `published_at` alone let a draft/hidden row (e.g. a GitHub
+      // auto-draft) leak once it had a date (#63).
+      .eq('status', 'published')
       .not('published_at', 'is', null);
     if (error || !data) return new Map();
     return rankFromRows(data as { slug: string; ai_rank: number | null }[]);
@@ -47,6 +51,7 @@ export async function getAllProjects(): Promise<Project[]> {
     const { data, error } = await supabase
       .from('projects')
       .select(SELECT)
+      .eq('status', 'published')
       .not('published_at', 'is', null)
       .order('ai_rank', { ascending: true, nullsFirst: false });
     if (error || !data) return staticProjects;
@@ -68,6 +73,7 @@ export async function getProjectBySlug(slug: string): Promise<Project | undefine
       .from('projects')
       .select(SELECT)
       .eq('slug', slug)
+      .eq('status', 'published')
       .not('published_at', 'is', null)
       .maybeSingle();
     if (error || !data) return undefined;
