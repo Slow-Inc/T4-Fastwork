@@ -2,7 +2,7 @@ import { describe, it, expect } from 'bun:test';
 import {
   reconcileAdmins,
   parseAdminEmails,
-} from '../src/database/seed-app-admins';
+} from '../src/database/app-admins-reconcile';
 
 describe('reconcileAdmins', () => {
   it('inserts newly-desired and deletes stale (a de-provisioned admin is removed)', () => {

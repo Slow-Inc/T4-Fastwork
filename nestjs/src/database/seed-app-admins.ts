@@ -14,31 +14,7 @@
  *     bun src/database/seed-app-admins.ts
  */
 import postgres from 'postgres';
-
-/** Parse a comma-separated ADMIN_EMAILS value into a normalized (trim + lowercase),
- * blank-free list. */
-export function parseAdminEmails(raw: string | undefined): string[] {
-  return (raw ?? '')
-    .split(',')
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-/** Diff the current app_admins set against the desired ADMIN_EMAILS set. Both sides
- * are normalized. Returns the emails to insert (newly desired) and to delete (stale —
- * present now but no longer desired). Pure. */
-export function reconcileAdmins(
-  current: string[],
-  desired: string[],
-): { toInsert: string[]; toDelete: string[] } {
-  const norm = (e: string) => e.trim().toLowerCase();
-  const cur = new Set(current.map(norm).filter(Boolean));
-  const des = new Set(desired.map(norm).filter(Boolean));
-  return {
-    toInsert: [...des].filter((e) => !cur.has(e)),
-    toDelete: [...cur].filter((e) => !des.has(e)),
-  };
-}
+import { parseAdminEmails, reconcileAdmins } from './app-admins-reconcile';
 
 async function main() {
   const emails = parseAdminEmails(process.env.ADMIN_EMAILS);
@@ -73,10 +49,7 @@ async function main() {
   }
 }
 
-// Only run when executed directly (not when imported by a test).
-if (import.meta.main) {
-  main().catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
-}
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
