@@ -42,18 +42,19 @@ plausible (some corroborated by the ledger), **not yet individually re-verified*
 | 4 | **Member ranking** | `member-content-repo.ts` orders by `ai_rank` | `rank.ts:4` `RankKind` omits `member_projects`/`member_certificates` → never ranked | 🟠 DEGRADED | ✅ verified |
 | 5 | **Blog static→DB switch** | `blog-repo.ts:42` DB-first, static only if empty → static posts vanish once 1 DB row exists | CMS/member write `blog_posts` | 🟠 DEGRADED | ✅ verified |
 | 6 | **Project publish state** | render filters `published_at` (`projects-repo.ts:51`) | worker/RLS use `status` → draft/hidden can leak; seed w/o `published_at` invisible | 🟠 DEGRADED | ✅ verified (= ADR 0009 P0) |
-| 7 | **GitHub curate/generate** | `projects-repo.ts:44-56` (no `source='github'` rows) | `github-curate.ts:114`, `pg-generate.store.ts` — no store/provider/caller wired | 🔴 SILENT | 🟡 reported (ledger ✓) |
-| 8 | **RAG freshness from GitHub** | `ingest-core.ts:31-98` reads projects/services/faqs only | `github-write.controller.ts:51-60` re-ingest triggers, but snapshots never ingested | 🔴 SILENT | 🟡 reported (ledger ✓) |
-| 9 | **Chat inline cards for DB content** | `inline-card.tsx`, `marker-parser.ts:10-17` resolve against static arrays; `[FAQ:id]` not parsed | `ingest-core.ts`, `system-prompt.ts` | 🔴 SILENT | 🟡 reported |
-| 10 | **Related-work recommendations** | `recommend/[type]/page.tsx:8-39` filters static catalog | CMS `projects` | 🔴 SILENT | 🟡 reported |
-| 11 | **Certificate "Featured"** | `certificates-repo.ts:14-28` never selects `is_featured` | CMS writes `is_featured` | 🔴 SILENT | 🟡 reported |
-| 12 | **Certificate static→DB switch** | `certificates-repo.ts` replaces static fallback wholesale | CMS `member_certificates` | 🟠 DEGRADED | 🟡 reported |
-| 13 | **Member repo selection** | `member-content-repo.ts` limited to seeded rows | GitHub refresh stores lists in `github_snapshots`; nothing reconciles → `member_projects` | 🟠 DEGRADED | 🟡 reported (ledger ✓) |
-| 14 | **Automatic AI-rank refresh** | `projects-repo.ts`/`blog-repo.ts` read `ai_rank` | only `/github/refresh` is scheduled; `/rank/refresh` never cron'd → ranks stale | 🟠 DEGRADED | 🟡 reported |
-| 15 | **CMS content in sitemap** | `app/sitemap.ts:2-44` enumerates static exports | CMS `projects`/`blog_posts` → CMS URLs absent from SEO | 🟠 DEGRADED | 🟡 reported |
-| 16 | **Bilingual CMS blog** | render supports `titleEn`/`excerptEn`/`contentEn` | `blog_posts` write/mapper provide Thai only → EN falls back to Thai | 🟠 DEGRADED | 🟡 reported |
+| 7 | **GitHub curate/generate** | `projects-repo.ts:44-56` (no `source='github'` rows) | `github-curate.ts:114`, `pg-generate.store.ts` — `CurateService` absent from `github.module.ts:32` providers, no caller | 🔴 SILENT | ✅ verified |
+| 8 | **RAG freshness from GitHub** | `ingest-core.ts:31-98` selects projects/services/faqs only — **never** `github_snapshots` | `github-write.controller.ts:51-60` re-ingest triggers, but snapshots never ingested | 🔴 SILENT | ✅ verified |
+| 9 | **Chat FAQ inline cards** | `marker-parser.ts:16` `FULL_MARKER` matches only `PROJECT`/`SERVICE` — `[FAQ:id]` is never parsed | `ingest-core.ts` embeds FAQs but no card marker resolves them | 🔴 SILENT | ✅ verified |
+| 10 | **Related-work recommendations** | `recommend/[type]/page.tsx:9` `import { filterProjects, projects } from '@/content/catalog'` (static) | CMS `projects` | 🔴 SILENT | ✅ verified |
+| 11 | **Certificate "Featured"** | `certificates-repo.ts:20` SELECT omits `is_featured` (orders by `sort_order`/`ai_rank` only) | CMS writes `is_featured` | 🔴 SILENT | ✅ verified |
+| 12 | **Certificate static→DB switch** | `certificates-repo.ts:24,28` returns DB rows wholesale once one image-backed row exists (no merge) | CMS `certificates` | 🟠 DEGRADED | ✅ verified |
+| 13 | **Member repo selection** | only `seed-member-content.ts:290` inserts `member_projects`; nothing reconciles from `github_snapshots` | GitHub refresh stores lists in `github_snapshots` | 🟠 DEGRADED | ✅ verified |
+| 14 | **Automatic AI-rank refresh** | `projects-repo.ts`/`blog-repo.ts` read `ai_rank` | `.github/workflows/**` schedules only `/github/refresh`; **no** `/rank/refresh` → ranks stale | 🟠 DEGRADED | ✅ verified |
+| 15 | **CMS content in sitemap** | `app/sitemap.ts:2-3` imports static `content/catalog` + `content/blog` | CMS `projects`/`blog_posts` → CMS URLs absent from SEO | 🟠 DEGRADED | ✅ verified |
+| 16 | **Bilingual CMS blog** | render supports `titleEn`/`excerptEn`/`contentEn`; `blog-repo.ts` `DbPostRow` has no `*_en` fields | `blog_posts` write/mapper provide Thai only → EN falls back to Thai | 🟠 DEGRADED | ✅ verified |
 
-**Tally**: 7 verified (0–6), 9 reported (7–16). SILENT-BROKEN ≈ 8, DEGRADED ≈ 8.
+**Tally**: **16/16 verified** against the code this session (0–16). SILENT-BROKEN ≈ 8, DEGRADED ≈ 8. The
+codex audit was 100% accurate — every reported finding held up on direct inspection.
 
 ## Fix strategy
 
@@ -66,7 +67,9 @@ certificates**, plus the RAG ingest source and the chat marker resolver. Sequenc
 
 ## Method note (delegation)
 
-Analytical audit delegated to **codex** (the reliable agent for a hard, self-contained review); the
-free/faster agents were not used because verification-by-me is the bottleneck, not enumeration. 16
-findings returned in ~12 min; 7 verified directly this session, the rest flagged reported-not-verified
-per the `clink-subagents` "verify everything they return" rule.
+Analytical audit delegated to **codex** (`gpt-5.6-sol`/high — the reliable agent for a hard,
+self-contained review); the free/faster agents were not used because verification-by-me is the
+bottleneck, not enumeration. 16 findings returned in ~12 min; **all 16 then verified directly against
+the code** (per the `clink-subagents` "verify everything they return" rule) — the audit was 100%
+accurate, no false positives. Live Supabase contents and deployment secrets were not inspected beyond
+the one `mangadock` row query that confirmed finding #0.

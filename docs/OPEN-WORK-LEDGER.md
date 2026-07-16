@@ -16,7 +16,7 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
   additive.
 - **Audit** → `docs/reports/2026-07-17-static-db-disconnect-audit.md` — the MangaDock screenshot bug is
   **systemic**: the public site renders static `content/*.ts` while every write pipeline writes
-  Supabase. **16 disconnects** found (7 verified, 9 codex-reported-not-yet-verified). So "kill static"
+  Supabase. **16 disconnects** found — **all 16 verified** against the code (audit was 100% accurate). So "kill static"
   must be a **site-wide sweep**, not just projects/blog.
 
 🔴 **Untracked open work (needs `/to-issues`):**
