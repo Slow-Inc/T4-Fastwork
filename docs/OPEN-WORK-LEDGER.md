@@ -3,6 +3,28 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## ✅ Session 2026-07-16/17 — clear-backlog program
+
+Branch `chore/clear-backlog-afk` (PR #59). What shipped this session:
+- **Close-outs:** #16–24 (freshness epic), #33/#35/#37/#38–43 (chat epic) CLOSED with
+  subagent-verified evidence; #20 superseded by #25. Tracker down to #58 (this PR).
+- **Security (Phase 1):** migration `0018_rls_chat_rag_tables.sql` — RLS + grant-trim on
+  `conversations`/`messages`/`document_embeddings` (were reachable via public PostgREST).
+  Applied to prod + committed; JWT-sim + advisors + codex adversarial review all green.
+  Sensitive specifics + 3 codex follow-up findings live in the private security note.
+- **Bug #36 FIXED** (`3256504`): loop-owned persistence (`lib/chat-stream.ts` pure reducer
+  + `persistDirect`) so a mid-stream reply survives a popup↔/chat switch; 290 unit + 52 e2e
+  green; closed with a post-mortem.
+- **Epic B (#45/#51) CLOSED:** all 5 surfaces verified rendering in `ai_rank` order (audit,
+  file:line). The optional project-CONTENT→DB migration is a future epic (zero functional gap).
+- **Phase 4 deferred → tracked:** filed #60 (RAG-from-live-GitHub) + #61 (P3 content-gen);
+  both need a live LLM + design → interactive.
+- **Research:** subagent difficulty-ladder (R0–R3) + delegation log → xeno-skills.
+
+🔴 **Follow-ups (interactive, not blockers):** commit-parity for `github_snapshots` RLS
+(policy live on prod, not in a migration); the 3 codex security findings; #60/#61 impl;
+optional pg_default_acl hardening. Details in the private security note.
+
 ## Active — Open WebUI-style app-shell for /chat (epic #37)
 
 PRD: `docs/superpowers/specs/2026-07-15-owui-app-shell-chat.md`. Design inputs: `docs/design/openwebui-layout-study.md` + `docs/design/expensive-minimalism.md` + `nextjs/DESIGN.md`. Branch `feat/chat-thinking-mode`. **✅ All phases P0–P5 shipped** (commits `dc0fc3e`, `9af0f0f`, `06189eb`, `5b97857`, `6337f69`, + P4). Issues #38–#43 still OPEN pending confirm-to-close (not self-merged). Remaining: PR + close issues on the user's go.
