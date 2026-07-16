@@ -102,3 +102,25 @@ export function subscribeSnapshots(
 
   return () => client.removeChannel(channel);
 }
+
+/**
+ * The refresh sequence a Realtime hit triggers, extracted from `<LiveSnapshot>`
+ * so it is unit-testable without rendering the hook component (hook-based client
+ * components can't render under the monorepo's bun/happy-dom setup). Bust the
+ * matching fetch cache tags, then re-render. The tag-bust is best-effort — a
+ * failure must NOT skip the refresh, which still re-renders from cache.
+ */
+export async function runLiveRefresh(
+  watched: string[],
+  deps: {
+    refreshTags: (keys: string[]) => Promise<void>;
+    refresh: () => void;
+  },
+): Promise<void> {
+  try {
+    await deps.refreshTags(watched);
+  } catch {
+    // best-effort; refresh() below still re-renders.
+  }
+  deps.refresh();
+}

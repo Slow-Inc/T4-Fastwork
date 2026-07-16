@@ -3,6 +3,7 @@ import {
   keysForMember,
   keysForRepo,
   matchesWatched,
+  runLiveRefresh,
   subscribeSnapshots,
   tagForKey,
   type RealtimeClientLike,
@@ -119,5 +120,43 @@ describe('subscribeSnapshots — wires a Realtime channel and fires onHit for wa
     emit(undefined); // malformed
 
     expect(hits).toEqual(['repos:xenodeve']);
+  });
+});
+
+describe('runLiveRefresh — the Realtime-hit refresh sequence (#25 R3 double)', () => {
+  it('busts the matching cache tags, then re-renders — in that order', async () => {
+    const order: string[] = [];
+    const watched = ['repos:xenodeve', 'user:xenodeve'];
+    const refreshedWith: string[][] = [];
+
+    await runLiveRefresh(watched, {
+      refreshTags: async (keys) => {
+        refreshedWith.push(keys);
+        order.push('refreshTags');
+      },
+      refresh: () => order.push('refresh'),
+    });
+
+    // updateTag must happen before the router refresh (read-your-own-writes),
+    // and it receives exactly the watched keys the subscriber reported.
+    expect(order).toEqual(['refreshTags', 'refresh']);
+    expect(refreshedWith).toEqual([watched]);
+  });
+
+  it('still re-renders when the tag-bust fails (best-effort)', async () => {
+    let refreshed = false;
+
+    await runLiveRefresh(['repos:xenodeve'], {
+      refreshTags: async () => {
+        throw new Error('server action unavailable');
+      },
+      refresh: () => {
+        refreshed = true;
+      },
+    });
+
+    // A failed refreshLiveTags must not skip router.refresh() — the page still
+    // re-renders from cache rather than silently going stale.
+    expect(refreshed).toBe(true);
   });
 });

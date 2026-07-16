@@ -15,7 +15,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/client';
-import { subscribeSnapshots } from '@/lib/live-snapshot';
+import { subscribeSnapshots, runLiveRefresh } from '@/lib/live-snapshot';
 import { refreshLiveTags } from '@/lib/live-actions';
 
 export function LiveSnapshot({ keys }: { keys: string[] }) {
@@ -40,15 +40,15 @@ export function LiveSnapshot({ keys }: { keys: string[] }) {
     const off = subscribeSnapshots(client, watched, () => {
       // Debounce: one heal cycle can upsert several watched keys at once.
       if (timer) clearTimeout(timer);
-      timer = setTimeout(async () => {
-        try {
-          // Server Action: expires the matching gh:* fetch cache tag; its
-          // automatic route revalidation re-reads fresh data (the "double").
-          await refreshLiveTags(watched);
-        } catch {
-          // Best-effort; router.refresh() below still re-renders.
-        }
-        router.refresh();
+      timer = setTimeout(() => {
+        // Server Action refreshLiveTags expires the matching gh:* fetch cache tag
+        // (its automatic route revalidation re-reads fresh data — the "double"),
+        // then router.refresh() re-renders. Sequence extracted to runLiveRefresh
+        // so it's unit-testable without rendering this hook component.
+        void runLiveRefresh(watched, {
+          refreshTags: refreshLiveTags,
+          refresh: () => router.refresh(),
+        });
       }, 400);
     });
 
