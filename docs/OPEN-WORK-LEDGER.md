@@ -17,13 +17,16 @@ Branch `chore/clear-backlog-afk` (PR #59). What shipped this session:
   green; closed with a post-mortem.
 - **Epic B (#45/#51) CLOSED:** all 5 surfaces verified rendering in `ai_rank` order (audit,
   file:line). The optional project-CONTENT→DB migration is a future epic (zero functional gap).
+- **Security follow-ups fixed:** `app_admins` reconcile/prune of de-provisioned admins
+  (`a1296be`, closes the codex HIGH stale-admin + MED split-brain); `github_snapshots` RLS
+  policy backfilled into a migration (`12c5f7d`, migration 0019). pg_default_acl deny-by-default
+  is a LOW posture decision left for the team (private note).
 - **Phase 4 deferred → tracked:** filed #60 (RAG-from-live-GitHub) + #61 (P3 content-gen);
-  both need a live LLM + design → interactive.
+  both need a live LLM + design → interactive (full grill→PRD→TDD pipeline).
 - **Research:** subagent difficulty-ladder (R0–R3) + delegation log → xeno-skills.
 
-🔴 **Follow-ups (interactive, not blockers):** commit-parity for `github_snapshots` RLS
-(policy live on prod, not in a migration); the 3 codex security findings; #60/#61 impl;
-optional pg_default_acl hardening. Details in the private security note.
+🔴 **Remaining (interactive only):** #60/#61 implementation (live-LLM verification + admin-write
+security review); optional pg_default_acl posture change; optional project-CONTENT→DB migration.
 
 ## Active — Open WebUI-style app-shell for /chat (epic #37)
 
