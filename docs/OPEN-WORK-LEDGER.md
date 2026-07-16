@@ -233,9 +233,17 @@ PRD `…ai-display-ranking.md`) · Epic C member CMS **#46** (C1–C6 **#52–#5
 
 - **nestjs lint ~692 errors on HEAD** — typescript-eslint type-resolution fails across `test/**`. Repo-wide; needs an eslint/tsconfig fix. New source files are clean. No issue yet.
 - **`github.service.spec.ts` "omits Authorization when no token" fails locally** — Bun auto-loads `nestjs/.env` (real `GITHUB_TOKEN`); passes in CI + with token unset. Env-dependent test; consider making it hermetic. No issue yet.
-- **Supabase advisors: `rls_disabled_in_public` ERROR on ~13 public tables** (faqs, services, projects, categories, tags, technologies, blog_posts, certificates, conversations, messages, project_tags, project_technologies, document_embeddings) + `sensitive_columns_exposed` on `conversations.session_id` — **pre-existing**, surfaced during #25 R2 advisor check (NOT introduced by R2; `github_snapshots` itself is clean). The backend reads these via the Postgres superuser pooler (bypasses RLS), so enabling RLS needs explicit anon policies to avoid breaking public frontend reads. Out of #25 scope; needs its own security pass. No issue yet.
+- **RLS security pass — RE-SCOPED (verified on prod 2026-07-16).** Earlier notes listed a broad set of public tables as `rls_disabled_in_public`; a direct check on prod confirms the **content tables now have RLS enabled + policies** — the member-CMS security work (PR #34, migrations 0015–0017) already covered them. A **small remaining set of chat/RAG tables** still needs a scoped RLS pass; the backend reaches them via the superuser pooler (bypasses RLS), so the pass must add scoped policies without breaking chat. The exact tables/columns + prod project ref are kept in the **private security note (personal memory)**, not this public ledger. This is **Phase 1** of the clear-backlog program — its own security pass (grill vs ADR 0007 → `/security-review`). No issue yet.
 
-## Carried over from ADR 0003 (epic #16, still open per prior handoff)
+## ✅ CLOSED — ADR 0003 live-team-portfolio epic (#16) + all sub-issues (2026-07-16)
 
-- Freshness automation: refresh cron (could be a committed GitHub Action) + org webhook on `Slow-Inc` + Cloudflare cache rule for `/github/*`. Token org-403 was **fixed this session** (fresh ≤366-day PAT set on Vercel + redeployed; refresh syncs org + 5 members).
-- Issues #16–#24 still open despite PR #26 merged — close with evidence when the epic wraps.
+Freshness epic **#16 + #17–#24 CLOSED** as completed-with-evidence after a subagent
+code-audit against `master` (Explore Task subagents, per-deliverable `file:line`) +
+a prod DB RLS check. #18's `github_snapshots` RLS confirmed **live on prod** (rls_enabled,
+1 policy — but applied directly, **not in a committed migration**: a migration-drift item to
+backfill). **#20 closed as superseded by #25** — its route/single-flight/ETag repo-list sync
+ship + live (cron HTTP 201), but the WARM-tier `pushed_at`-delta poll was never built and is
+covered by #25's event-driven cron+heal+webhook+Realtime architecture (YAGNI). The chat
+app-shell epic **#37 + #38–43** and **#33/#35** also closed (all verified vs `master`).
+- **Follow-up (🔴 no issue):** backfill the `github_snapshots` RLS policy into a committed
+  migration so a rebuilt DB reproduces it (prod is fine; the repo migration set is incomplete).
