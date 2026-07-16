@@ -53,8 +53,24 @@ plausible (some corroborated by the ledger), **not yet individually re-verified*
 | 15 | **CMS content in sitemap** | `app/sitemap.ts:2-3` imports static `content/catalog` + `content/blog` | CMS `projects`/`blog_posts` → CMS URLs absent from SEO | 🟠 DEGRADED | ✅ verified |
 | 16 | **Bilingual CMS blog** | render supports `titleEn`/`excerptEn`/`contentEn`; `blog-repo.ts` `DbPostRow` has no `*_en` fields | `blog_posts` write/mapper provide Thai only → EN falls back to Thai | 🟠 DEGRADED | ✅ verified |
 
-**Tally**: **16/16 verified** against the code this session (0–16). SILENT-BROKEN ≈ 8, DEGRADED ≈ 8. The
-codex audit was 100% accurate — every reported finding held up on direct inspection.
+| 17 | **Repo homepage/OG image not synced** | `projects.live_url` (+ card `snapshotImage`) | GitHub sync (`nestjs/src/github/**`) captures **neither** the repo `homepageUrl` **nor** `openGraphImageUrl` — no reference exists | 🔴 SILENT | ✅ verified |
+
+**Tally**: **17/17 verified** against the code this session (0–17). SILENT-BROKEN ≈ 9, DEGRADED ≈ 8. The
+codex audit was 100% accurate; finding #17 was surfaced afterward while fixing the MangaDock live URL.
+
+### Finding #17 detail (MangaDock live URL)
+
+The repo `Slow-Inc/MangaDock` has its **Website field set** — `homepageUrl = https://hayateotsu.space/`
+(and a GitHub `openGraphImageUrl`). But the GitHub sync never reads `homepageUrl`/`openGraphImageUrl`
+(grep of `nestjs/src/github/**` returns nothing), so `projects.live_url` was a stale/wrong value
+(`https://mangadock.com`, a now-**parked/for-sale domain** — `mangadock.com` 302-redirects to
+`domains.atom.com`) and no cover image is ever sourced from GitHub. **Fix direction** (ADR 0009 P2/P6):
+the generator/curate step must map repo `homepageUrl → live_url` and may use `openGraphImageUrl` as an
+interim cover fallback (a real screenshot of `live_url` remains the preferred cover). **Interim fixes
+applied 2026-07-17:** corrected `live_url` (static catalog + prod DB) to `https://hayateotsu.space`;
+`mergeProjects` now overlays the DB `snapshotImage` onto the static card (see #0); the screenshot
+capture of `hayateotsu.space` runs via the existing worker once its Actions secrets are set (or on the
+6h cron, now that `live_url` is populated).
 
 ## Fix strategy
 

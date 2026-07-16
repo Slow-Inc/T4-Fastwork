@@ -81,8 +81,10 @@ Cron reconciles missed deliveries.
 **P2 — Map-reduce generator**
 - Extend `GenerateContext`/`buildGeneratePrompt` from a single README to the extract set; implement
   Stage0 curate, Stage1 map (blob_sha-cached extracts), Stage2 reduce ×audience; audience personas.
+  **Also capture repo metadata the sync currently drops (audit #17): map `homepageUrl → live_url` and
+  `openGraphImageUrl` as an interim cover fallback** (a real screenshot of `live_url` stays preferred).
   *AC:* unit tests for curate/map/reduce; a large-repo fixture generates 3 variants within 128K;
-  unchanged files reuse cached extracts (no LLM call).
+  unchanged files reuse cached extracts (no LLM call); a repo with a Website set populates `live_url`.
 
 **P3 — Trigger + worker + GitHub App**
 - GitHub App (org + member installs); push webhook → 202 → queued worker; per-file SHA manifest gate
