@@ -21,12 +21,16 @@ Branch `chore/clear-backlog-afk` (PR #59). What shipped this session:
   (`a1296be`, closes the codex HIGH stale-admin + MED split-brain); `github_snapshots` RLS
   policy backfilled into a migration (`12c5f7d`, migration 0019). pg_default_acl deny-by-default
   is a LOW posture decision left for the team (private note).
-- **Phase 4 deferred → tracked:** filed #60 (RAG-from-live-GitHub) + #61 (P3 content-gen);
-  both need a live LLM + design → interactive (full grill→PRD→TDD pipeline).
+- **Phase 4 SHIPPED + CLOSED:** **#61** P3 content-gen (LlmClient adapter + `PgGenerateStore`
+  + secret-guarded `POST /github/generate` dry-run, `66b3bb1`) + **#60** RAG-freshness
+  (`runIngest` extraction + `RagIngestService` single-flight + refresh-trigger, `3401f5d`).
+  Verified: 170 nestjs tests + build + app bootstrap + live endpoint smoke (201 / 401).
 - **Research:** subagent difficulty-ladder (R0–R3) + delegation log → xeno-skills.
 
-🔴 **Remaining (interactive only):** #60/#61 implementation (live-LLM verification + admin-write
-security review); optional pg_default_acl posture change; optional project-CONTENT→DB migration.
+**Tracker now: only #58 (this PR).** 🔴 **Optional follow-ups (not blockers):** #61 category-FK/M2M
+persistence + context-auto-assembly + approve RPC/UI + cron; #60 per-project incremental re-ingest;
+pg_default_acl deny-by-default posture; project-CONTENT→DB migration. All documented in
+`docs/reports/2026-07-17-p3-content-gen-rag-freshness-plan.md` + the private security note.
 
 ## Active — Open WebUI-style app-shell for /chat (epic #37)
 
