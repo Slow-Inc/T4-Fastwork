@@ -30,12 +30,19 @@ function trackErrors(page: Page): string[] {
   page.on("console", (m) => {
     if (m.type() !== "error") return;
     const text = m.text();
-    // Ignore upstream sub-resource outages: profile READMEs embed third-party
-    // badge/stats images (shields.io, skillicons, github-readme-stats…) that
-    // rate-limit or 5xx intermittently. This smoke check targets hydration /
-    // runtime JS errors, not third-party image availability — a local 4xx still
-    // fails (a genuinely broken/removed asset of ours).
-    if (/Failed to load resource.*status of (5\d\d|429)/i.test(text)) return;
+    // Third-party sub-resource outages (profile READMEs embed external badge/stats
+    // images — shields.io, skillicons, github-readme-stats… — that rate-limit or
+    // 5xx intermittently) are not our bug. Ignore a resource-load failure only when
+    // its URL is cross-origin; a same-origin (first-party) failure still fails, so
+    // this smoke check keeps catching our own broken assets/routes.
+    if (/Failed to load resource/i.test(text)) {
+      const url = m.location()?.url ?? "";
+      try {
+        if (url && new URL(url).origin !== new URL(page.url()).origin) return;
+      } catch {
+        // Unknown origin → treat as first-party and let it fail (conservative).
+      }
+    }
     errors.push(text);
   });
   page.on("pageerror", (e) => errors.push(e.message));
@@ -184,7 +191,7 @@ test("a member profile shows real repos and opens certificates in a lightbox", a
   // the opened cert offers a Storage-hosted PDF download.
   await expect(modal.getByRole("link", { name: "PDF" })).toHaveAttribute(
     "href",
-    /\/storage\/v1\/object\/public\/media\/member-certs\/.+\.pdf$/i,
+    /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\/media\/member-certs\/.+\.pdf$/i,
   );
 
   // Escape closes it.

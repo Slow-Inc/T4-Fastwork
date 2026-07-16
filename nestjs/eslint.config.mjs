@@ -44,7 +44,8 @@ export default tseslint.config(
   {
     // Test files import from `bun:test`, whose module types don't resolve under
     // the eslint projectService -> a cascade of false-positive unsafe-* reports.
-    // Silence them for tests (Bun's runner type-checks these at run time).
+    // Silence them for tests: the reports are an eslint type-resolution gap, not
+    // real unsafety (Bun runs these test files directly).
     files: ['test/**/*.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-assignment': 'off',
