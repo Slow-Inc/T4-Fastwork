@@ -3,6 +3,34 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## 🚧 NEXT (design done, build pending) — GitHub-sourced AI case studies + site-wide static→DB sweep
+
+**One program, three inputs consolidated 2026-07-17:**
+- **Decision** → [ADR 0009](adr/0009-github-sourced-ai-authored-case-studies.md) — kill the static
+  catalog; projects+blog become GitHub-sourced native AI case studies (3 audience variants:
+  business/semitech/developer), map-reduce generation over MD (blob-sha extract cache, sized for the
+  `qwen3.6-35b-a3b` 128K gateway), webhook+cron+per-file-SHA trigger + GitHub App, revisions+overrides
+  provenance, per-project chat via the existing **FR-09 deterministic** grounding (Requirement.MD §5.5).
+- **PRD** → `docs/superpowers/specs/2026-07-17-github-ai-case-studies.md` — phases **P0–P8** (each → an
+  issue). **Design must stay faithful to Requirement.MD** (§4.2/§4.3/§5.1/§5.5/§6); the redesign is
+  additive.
+- **Audit** → `docs/reports/2026-07-17-static-db-disconnect-audit.md` — the MangaDock screenshot bug is
+  **systemic**: the public site renders static `content/*.ts` while every write pipeline writes
+  Supabase. **16 disconnects** found (7 verified, 9 codex-reported-not-yet-verified). So "kill static"
+  must be a **site-wide sweep**, not just projects/blog.
+
+🔴 **Untracked open work (needs `/to-issues`):**
+- **P0 (do first)** — publish-state fix: `projects-repo.ts:51` filters only `published_at`, not
+  `status` → draft/hidden can leak public (audit #6). Security prereq before any auto-gen.
+- **P1–P8** — schema foundation · map-reduce generator · trigger+worker+GitHub App · provenance
+  revisions/overrides · safety gate · **static→DB sweep (all surfaces)** · RAG+native render · P8
+  per-project FR-09 chat.
+- **Static→DB sweep surfaces** (audit): projects, blog, **faqs, services, certificates, recommend,
+  sitemap, member projects/certificates**, RAG ingest source, chat marker resolver. Verify audit
+  findings #7–16 as each surface is touched.
+- **Immediate quick-win option:** overlay DB `snapshot_image` onto static cards + fix mangadock DB
+  `live_url` (→ `mangadock.com`) so the screenshot shows before the full cutover.
+
 ## ✅ Session 2026-07-16/17 — clear-backlog program
 
 Branch `chore/clear-backlog-afk` (PR #59). What shipped this session:
