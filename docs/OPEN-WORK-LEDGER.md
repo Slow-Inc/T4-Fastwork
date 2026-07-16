@@ -19,17 +19,20 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
   Supabase. **16 disconnects** found — **all 16 verified** against the code (audit was 100% accurate). So "kill static"
   must be a **site-wide sweep**, not just projects/blog.
 
-🔴 **Untracked open work (needs `/to-issues`):**
-- **P0 (do first)** — publish-state fix: `projects-repo.ts:51` filters only `published_at`, not
-  `status` → draft/hidden can leak public (audit #6). Security prereq before any auto-gen.
-- **P1–P8** — schema foundation · map-reduce generator · trigger+worker+GitHub App · provenance
-  revisions/overrides · safety gate · **static→DB sweep (all surfaces)** · RAG+native render · P8
-  per-project FR-09 chat.
-- **Static→DB sweep surfaces** (audit): projects, blog, **faqs, services, certificates, recommend,
-  sitemap, member projects/certificates**, RAG ingest source, chat marker resolver. Verify audit
-  findings #7–16 as each surface is touched.
-- **Immediate quick-win option:** overlay DB `snapshot_image` onto static cards + fix mangadock DB
-  `live_url` (→ `mangadock.com`) so the screenshot shows before the full cutover.
+**Tracked (filed 2026-07-17): epic #62 + children #63–#71 (P0–P8).** All `ready-for-human` (P1–P8
+design-pending; P0 seam-parked).
+- **#63 P0** (do first, security) — publish-state fix: `projects-repo.ts:51` filters only `published_at`,
+  not `status` → draft/hidden can leak (audit #6). **AFK-parked on a seam decision**: fix is a one-liner
+  but no unit-test seam for the query filter + no isolated test DB (E2E hits hosted Supabase = prod
+  mutation). Needs human: disposable test DB for E2E, or accept a query-builder mock.
+- **#64–#71 P1–P8** — schema · map-reduce generator · trigger+GitHub App · provenance revisions/
+  overrides · safety gate · **static→DB sweep (all surfaces)** · RAG+native render · per-project FR-09
+  chat. All parked-for-design (open questions: 1 URL vs 3, deep-dive marker, member-repo eligibility,
+  schema shape).
+- **Static→DB sweep surfaces** (#69, audit): projects, blog, faqs, services, certificates, recommend,
+  sitemap, member projects/certificates, RAG ingest source, chat marker resolver.
+- **Immediate quick-win option** (not yet an issue): overlay DB `snapshot_image` onto static cards +
+  fix mangadock DB `live_url` (→ `mangadock.com`) so the screenshot shows before the full cutover.
 
 ## ✅ Session 2026-07-16/17 — clear-backlog program
 
