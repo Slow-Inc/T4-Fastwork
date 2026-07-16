@@ -49,7 +49,7 @@ export const projects: Project[] = [
     category: 'AI/Automation',
     tags: ['RAG', 'OCR', 'Realtime'],
     technologies: ['Next.js', 'Nest.js', 'Supabase', 'pgvector'],
-    liveUrl: 'https://mangadock.com',
+    liveUrl: 'https://hayateotsu.space',
     isFeatured: true,
     tone: 'teal',
     year: '2025',
