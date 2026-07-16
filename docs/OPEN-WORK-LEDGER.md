@@ -20,9 +20,22 @@ Prereqs shipped: Visible-Grid Swiss redesign (`f45f7e8`, verified live). Style t
 
 **Follow-up shipped (post-epic, no issue): full assistant Markdown** — `components/chat/chat-markdown.tsx` (react-markdown + remark-gfm + remark-breaks + rehype-highlight): headings, bold/italic/strike, GFM tables, task/nested lists, blockquotes (tint, not side-stripe), safe new-tab links (dark-rust `#a8330f` for AA), inline code, and fenced code blocks with a language chip + copy button + highlight.js theme tuned to our palette. Assistant turns only (user stays a plain pill). 50 e2e green + real-model visual check. `/impeccable` audit fixed link contrast.
 
-## Active — bug: interrupted AI turn (#36) 🔵
+## Active — bug: interrupted AI turn (#36) 🔵 — PARKED (architecture decision) 2026-07-16
 
-Switching popup ↔ /chat mid-stream loses the in-progress reply → blank `ผู้ช่วย AI` turn. Root cause traced (shared `SHARED_CHAT_KEY` sessionStorage + per-instance SSE + no `AbortController`); architectural, pre-existing since #31 — NOT a redesign regression. Detail: scratchpad `issue-chat-switch-bug.md`. Separate from #37; fix independently.
+Switching popup ↔ /chat mid-stream loses the in-progress reply → blank `ผู้ช่วย AI` turn. Architectural, pre-existing since #31 — NOT a redesign regression. Separate from #37; fix independently.
+
+**Fail path traced (2026-07-16, debug-mantra), file:line:**
+- `send()` (`components/chat/chat-client.tsx:186`) pushes `{role:"assistant", parts:[]}` then calls `streamAssistant`.
+- `streamAssistant` (`chat-client.tsx:249`) runs an async `reader.read()` loop that writes tokens into **instance-local React state** via `mutateLastAssistant` (`:171`).
+- Persistence is a **React effect** on `messages` change (`:368`) → store (`onPersist`) + `SHARED_CHAT_KEY` sessionStorage (`chat-app-shell.tsx:116`).
+- On surface switch the streaming instance unmounts → `setMessages` becomes a no-op → the persist **effect stops firing** → tokens streamed after unmount never reach the store. The other instance seeds once from the last snapshot (`chat-app-shell.tsx:170` / `chat-client.tsx:352`), which still holds the **empty** assistant turn → permanent blank turn. (The async loop itself keeps running post-unmount, but its writes are dropped.)
+
+**Why PARKED (AFK):** the faithful fix ("reply survives the switch") is a **seam/architecture decision** — where the streaming loop lives and how it persists independent of React mount:
+1. **Loop-owned persistence** — `streamAssistant` keeps a local accumulator and writes each update straight to the store + `SHARED_CHAT_KEY` (not via the effect), so the completed reply lands even after unmount. Eventual-consistent: the other surface shows it on next mount, not live. *(smallest; recommended first)*
+2. **Module-singleton stream** — hoist the SSE loop out of the component into a per-conversation singleton; instances subscribe. True live cross-surface sync. *(largest)*
+3. **AbortController + persist-on-unmount** — abort on unmount and flush the partial. Cleanest teardown but the reply is cut short, not continued.
+
+Recommend (1) as MVP; validate with an e2e that starts a turn, switches popup↔/chat mid-stream, and asserts the reply survives + finishes. Do this as a focused interactive step (seam choice), not blind AFK. Do **not** ship a "strip the empty turn" half-fix — it hides the blank artifact while the reply is still lost.
 
 ## Active — Serverless-native live freshness (#25)
 
