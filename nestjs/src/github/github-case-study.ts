@@ -174,3 +174,92 @@ export function selectDocsToMap(
   }
   return { toMap, reused };
 }
+
+// --- Stage2: reduce (one case study per audience) -------------------------
+
+/** Repo-level context threaded into every reduce call (all audiences share it). */
+export interface ReduceMeta {
+  description: string | null;
+  languages: Record<string, number>;
+  topics: string[];
+  liveUrl?: string | null;
+}
+
+/** How to pitch each variant (decision Q1 / ADR 0009 D1). The persona string is
+ * embedded verbatim in the system prompt, so it doubles as the audience marker
+ * the tests assert on. */
+export const AUDIENCE_PERSONAS: Record<Audience, string> = {
+  business:
+    'Audience: a non-technical business decision-maker (SME owner or company hiring for a project). ' +
+    'Lead with the problem solved, outcomes, and value; avoid jargon and implementation detail.',
+  semitech:
+    'Audience: a semi-technical reader who knows a little code (a product manager or founder-engineer). ' +
+    'Balance the outcome with a clear, high-level explanation of how it works; light on deep internals.',
+  developer:
+    'Audience: a fellow software engineer. ' +
+    'Go technical: architecture, stack choices, and the interesting engineering decisions and trade-offs.',
+};
+
+/** Compact one extract into a few labelled lines for the reduce input (keeps the
+ * whole extract set small enough that ~50 files stay well under 128K). */
+function renderExtract(e: FileExtract): string {
+  const parts = [`- ${e.path}`];
+  if (e.themes.length) parts.push(`  themes: ${e.themes.join(', ')}`);
+  if (e.architecture) parts.push(`  architecture: ${e.architecture}`);
+  if (e.tech.length) parts.push(`  tech: ${e.tech.join(', ')}`);
+  if (e.userOutcomes) parts.push(`  outcomes: ${e.userOutcomes}`);
+  if (e.codeDepth) parts.push(`  codeDepth: ${e.codeDepth}`);
+  return parts.join('\n');
+}
+
+/** Build the reduce prompt for one audience: all extracts + repo metadata +
+ * the audience persona → one case study as strict JSON. */
+export function buildReducePrompt(
+  extracts: FileExtract[],
+  audience: Audience,
+  meta: ReduceMeta,
+): ChatMessage[] {
+  const langs = Object.keys(meta.languages).join(', ') || '(none reported)';
+  const topics = meta.topics.join(', ') || '(none)';
+  const system =
+    'You write a project case study for a software agency portfolio, in Thai ' +
+    '(with an English title). ' +
+    AUDIENCE_PERSONAS[audience] +
+    ' Return ONLY a single JSON object, no markdown fence, no commentary. ' +
+    'Schema: {"title":string(TH),"titleEn":string(EN),"description":string(TH, <=160 chars),' +
+    '"content":string(TH, 3-5 short paragraphs separated by \\n\\n),' +
+    '"tags":string[],"technologies":string[]}. ' +
+    'Ground every claim in the extracts below; do NOT invent technologies.';
+  const user =
+    `Repo description: ${meta.description ?? '(none)'}\n` +
+    `Languages: ${langs}\n` +
+    `Topics: ${topics}\n` +
+    `Live URL: ${meta.liveUrl ?? '(none)'}\n\n` +
+    `Document extracts:\n${extracts.map(renderExtract).join('\n')}`;
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: user },
+  ];
+}
+
+/** Parse a reduce reply into a CaseStudy, stamping the audience (which the model
+ * does not echo). Like the single-README parser, throws when any narrative field
+ * the DB row needs is missing — a partial reply is skipped, never written blank. */
+export function parseCaseStudy(raw: string, audience: Audience): CaseStudy {
+  const o = parseJsonObject(raw);
+  const cs: CaseStudy = {
+    audience,
+    title: asStr(o.title),
+    titleEn: asStr(o.titleEn),
+    description: asStr(o.description),
+    content: asStr(o.content),
+    tags: asStrArr(o.tags),
+    technologies: asStrArr(o.technologies),
+  };
+  if (!cs.title || !cs.titleEn || !cs.description || !cs.content) {
+    throw new Error(
+      'case-study: JSON missing required text (title/titleEn/description/content)',
+    );
+  }
+  return cs;
+}

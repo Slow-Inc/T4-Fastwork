@@ -4,6 +4,10 @@ import {
   buildMapPrompt,
   parseFileExtract,
   selectDocsToMap,
+  buildReducePrompt,
+  parseCaseStudy,
+  AUDIENCE_PERSONAS,
+  AUDIENCES,
   type ProjectDocument,
   type FileExtract,
 } from '../src/github/github-case-study';
@@ -159,5 +163,78 @@ describe('selectDocsToMap (blob_sha cache)', () => {
     const { toMap, reused } = selectDocsToMap(docs, cached);
     expect(toMap).toHaveLength(0);
     expect(reused.map((e) => e.path)).toEqual(['a.md']); // deleted.md not reused
+  });
+});
+
+describe('buildReducePrompt (Stage2)', () => {
+  const extracts: FileExtract[] = [
+    {
+      path: 'docs/cache.md',
+      blobSha: 's1',
+      themes: ['caching'],
+      architecture: 'LRU over Redis',
+      tech: ['Redis'],
+      userOutcomes: 'Faster loads',
+      codeDepth: 'deep',
+    },
+  ];
+  const meta = {
+    description: 'AI manga reader',
+    languages: { TypeScript: 1000 },
+    topics: ['ai', 'ocr'],
+    liveUrl: 'https://hayateotsu.space',
+  };
+
+  it('has a distinct persona per audience', () => {
+    expect(AUDIENCES).toEqual(['business', 'semitech', 'developer']);
+    const personas = AUDIENCES.map((a) => AUDIENCE_PERSONAS[a]);
+    expect(new Set(personas).size).toBe(3); // all distinct
+    personas.forEach((p) => expect(p.length).toBeGreaterThan(0));
+  });
+
+  it('feeds all extracts + repo meta + the audience persona into the prompt', () => {
+    const msgs = buildReducePrompt(extracts, 'business', meta);
+    expect(msgs[0].role).toBe('system');
+    expect(msgs[0].content as string).toContain(AUDIENCE_PERSONAS.business);
+    const user = msgs[1].content as string;
+    expect(user).toContain('LRU over Redis'); // extract architecture
+    expect(user).toContain('AI manga reader'); // repo description
+    expect(user).toContain('hayateotsu.space'); // live url is context
+  });
+
+  it('varies the system persona between audiences', () => {
+    const dev = buildReducePrompt(extracts, 'developer', meta)[0]
+      .content as string;
+    const biz = buildReducePrompt(extracts, 'business', meta)[0]
+      .content as string;
+    expect(dev).not.toBe(biz);
+    expect(dev).toContain(AUDIENCE_PERSONAS.developer);
+  });
+});
+
+describe('parseCaseStudy (Stage2)', () => {
+  const good = JSON.stringify({
+    title: 'มังงะด็อค',
+    titleEn: 'MangaDock',
+    description: 'แพลตฟอร์มแปลมังงะด้วย AI',
+    content: 'ย่อหน้าแรก\n\nย่อหน้าสอง',
+    tags: ['RAG'],
+    technologies: ['Next.js'],
+  });
+
+  it('parses a case study and stamps the audience', () => {
+    const cs = parseCaseStudy(good, 'developer');
+    expect(cs.audience).toBe('developer');
+    expect(cs.titleEn).toBe('MangaDock');
+    expect(cs.technologies).toEqual(['Next.js']);
+  });
+
+  it('throws when a required narrative field is missing (never write a blank)', () => {
+    expect(() =>
+      parseCaseStudy(
+        JSON.stringify({ title: 'T', titleEn: 'Te', description: 'D' }), // no content
+        'business',
+      ),
+    ).toThrow();
   });
 });
