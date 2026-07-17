@@ -9,6 +9,17 @@ PRD `docs/superpowers/specs/2026-07-17-github-ai-case-studies.md` · epic #62.
 
 ---
 
+## ✅ RESOLVED 2026-07-17 (developer decided — all per the recommendation)
+- **Q1** → **one canonical URL + a client audience switcher** (`developer` canonical for crawlers).
+- **Q2** → **a `docs/showcase/` folder** (any `.md` there = an opt-in deep-dive).
+- **Q3** → **opt-in**: reuse `member_projects.selected` + a repo topic `t4-showcase`.
+- **Q4** → **a single `owner ('auto'|'human')` column on `blog_posts` for the MVP**; immutable
+  `blog_post_revisions` + field-level `blog_post_overrides` deferred to **P4** (#67).
+
+These unblock #64–#71 (P1–P8) → `ready-for-agent`.
+
+---
+
 ## Q1 — Audience variants: one URL + switcher, or three URLs? (→ #70, #71, #65)
 
 Each project renders 3 case-study variants (`business` / `semitech` / `developer`). Routing choice:
