@@ -286,3 +286,65 @@ export function mapRepoMetadata(repo: {
     home && !/^https?:\/\//i.test(home) ? `https://${home}` : home;
   return { liveUrl, coverImageFallback: clean(repo.openGraphImageUrl) };
 }
+
+// --- Orchestrator ----------------------------------------------------------
+
+/** The two LLM calls the map-reduce needs, injected so the pipeline is testable
+ * without a network round-trip, plus any previously-cached extracts. */
+export interface MapReduceDeps {
+  /** Map one document → its structured extract (LLM call + parse). May throw on
+   * an unparseable reply; that file is then skipped, not fatal. */
+  mapFile: (doc: ProjectDocument) => Promise<FileExtract>;
+  /** Reduce all extracts → one case study for the given audience (LLM + parse). */
+  reduce: (extracts: FileExtract[], audience: Audience) => Promise<CaseStudy>;
+  /** Extracts persisted from a prior run, keyed by blob_sha for reuse. */
+  cachedExtracts?: FileExtract[];
+}
+
+export interface MapReduceResult {
+  caseStudies: CaseStudy[];
+  extracts: FileExtract[];
+  mapped: number;
+  reused: number;
+}
+
+/**
+ * Run the full map-reduce for one project: curate → map only changed-SHA files
+ * (reusing cached extracts) → reduce once per audience. Map calls run in
+ * parallel and a file whose map fails is skipped (never blocks the case study).
+ * A repo with no substantive Markdown yields no case studies (nothing to write).
+ */
+export async function runMapReduce(
+  docs: ProjectDocument[],
+  meta: ReduceMeta,
+  deps: MapReduceDeps,
+): Promise<MapReduceResult> {
+  const curated = curateDocuments(docs);
+  const { toMap, reused } = selectDocsToMap(curated, deps.cachedExtracts ?? []);
+
+  const bySha = new Map<string, FileExtract>();
+  for (const e of reused) bySha.set(e.blobSha, e);
+
+  const settled = await Promise.allSettled(toMap.map((d) => deps.mapFile(d)));
+  let mapped = 0;
+  settled.forEach((r, i) => {
+    if (r.status === 'fulfilled') {
+      bySha.set(toMap[i].blobSha, r.value);
+      mapped++;
+    }
+    // a rejected map (unparseable reply) is skipped — one bad file must not
+    // sink the whole case study.
+  });
+
+  // Keep the extracts in curated (repo) order for a deterministic reduce input.
+  const extracts = curated
+    .map((d) => bySha.get(d.blobSha))
+    .filter((e): e is FileExtract => e !== undefined);
+
+  const caseStudies =
+    extracts.length === 0
+      ? []
+      : await Promise.all(AUDIENCES.map((a) => deps.reduce(extracts, a)));
+
+  return { caseStudies, extracts, mapped, reused: reused.length };
+}
