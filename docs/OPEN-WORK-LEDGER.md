@@ -14,17 +14,21 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
   dynamic-imports robots/sitemap to exercise the fallback (red→green). **310 unit + 52 e2e +
   eslint + tsc green.** Left intentionally: nestjs CORS legacy origin, `admin-auth.test.ts` email
   fixtures (email domain parked). No security boundary touched.
-- **`#92` — rank/sync revalidation leg PARKED (AFK, 3 independent reasons):** screenshot leg is
-  done; the endpoint + `lib/revalidate` seam exist. Remaining = wire `/rank/refresh` + `/github/refresh`
-  to POST it. Parked because the trigger points are **security-boundary files**
-  (`github-write.controller.ts` = *"SECURITY BOUNDARY"*; secret-guarded `/rank/refresh`) → adding a
-  secret-auth outbound call needs the reviewer AFK removes; the AC needs **prod-confirm** (no isolated
-  env); and it **overlaps #62 P6** (rank reorder inert on the still-static `/projects` until #69).
-  Full triage + exact next step on the issue (`#92` comment, bilingual). **Needs: dev to pick the seam
-  + confirm nestjs runtime env + sequence vs #69.**
-- **`www.t4labs.dev` — OFFERED, not executed:** outward-facing DNS/Vercel ops, no tracked issue →
-  not an unattended-AFK action. Ready on the dev's go (`vercel domains add www.t4labs.dev` + www CNAME).
-- Tree green on `master`. Everything else open is `ready-for-human` (#66–#71 P3–P8, #75, #81).
+- **`#92` — rank/sync revalidation leg SHIPPED (`#99`, `38445d0`; dev present, approved):** new
+  non-boundary `nestjs/src/revalidate/` (`postProjectRevalidation` pure + 4 tests; `RevalidateService`
+  fail-soft, reuses `FRONTEND_ORIGIN`[0] + shared `GITHUB_REFRESH_SECRET`). Wired fire-and-forget into
+  `/rank/refresh` (after `refreshAll`) + `/github/refresh` (on a changed sync, beside #60 re-ingest) —
+  secret check + `Unauthorized` still precede the call. 217 nestjs tests + build + eslint + DI boot
+  (`DI_OK`) + `/security-review` (auth-gated, secret app-to-app, no SSRF/DoS, fail-soft). **#92 stays
+  open** only for **prod-confirm** (a live rank/sync write reflecting on t4labs.dev). #62 P6 caveat: rank
+  reorder surfaces once `/projects` reads DB (#69); the sync leg benefits now.
+- **`www.t4labs.dev` — DONE:** added to Vercel project (`verified:true`); CF `A www → 76.76.21.21`
+  grey → cert issued → proxied (orange), SSL Full. Live `https://www.t4labs.dev` → 200. Serves the site
+  (not a 301→apex); canonical → apex via `NEXT_PUBLIC_SITE_URL`, so no duplicate-content. See
+  [[domain-migration-t4labs-dev]].
+- **Standing feedback captured:** *check env from `.env.example`/`.env` yourself, don't ask* →
+  [[check-env-example-dont-ask]].
+- Tree green on `master`. Everything else open is `ready-for-human` (#66–#71 P3–P8, #75, #81) + #92 (prod-confirm).
 
 ## ✅ 2026-07-17 (evening, interactive) — MangaDock screenshot pipeline works end-to-end
 
