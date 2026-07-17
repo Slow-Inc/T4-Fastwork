@@ -3,7 +3,7 @@ import { projects } from '@/content/catalog';
 import { blogPosts } from '@/content/blog';
 import { solutionSlugs } from '@/content/solution-detail';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://t4labs.co';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://t4labs.dev';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPaths = [
