@@ -49,15 +49,32 @@ export class PgGenerateStore implements GenerateStore {
   }
 
   async applyPatch(slug: string, patch: ContentPatch): Promise<void> {
+    // readme_sha + generated_at are generation bookkeeping (not human-ownable) —
+    // always recorded so the delta-gate/cache knows this readme was processed.
     const sets = [
       sql`readme_sha = ${patch.readmeSha ?? null}`,
       sql`generated_at = ${(patch.generatedAt ?? new Date()).toISOString()}`,
     ];
-    if (patch.title !== undefined) sets.push(sql`title = ${patch.title}`);
-    if (patch.titleEn !== undefined) sets.push(sql`title_en = ${patch.titleEn}`);
+    // #75: guard each copy field with its *_owner = 'auto' predicate, atomically
+    // in the UPDATE. A human edit that flipped the owner to 'human' during
+    // generation must survive — the CASE preserves the existing value rather than
+    // clobbering it with the now-stale generated patch (no read-then-write race).
+    if (patch.title !== undefined)
+      sets.push(
+        sql`title = case when title_owner = 'auto' then ${patch.title} else title end`,
+      );
+    if (patch.titleEn !== undefined)
+      sets.push(
+        sql`title_en = case when title_en_owner = 'auto' then ${patch.titleEn} else title_en end`,
+      );
     if (patch.description !== undefined)
-      sets.push(sql`description = ${patch.description}`);
-    if (patch.content !== undefined) sets.push(sql`content = ${patch.content}`);
+      sets.push(
+        sql`description = case when description_owner = 'auto' then ${patch.description} else description end`,
+      );
+    if (patch.content !== undefined)
+      sets.push(
+        sql`content = case when content_owner = 'auto' then ${patch.content} else content end`,
+      );
     await this.db.execute(
       sql`update projects set ${sql.join(sets, sql`, `)}
           where slug = ${slug} and source = 'github'`,
