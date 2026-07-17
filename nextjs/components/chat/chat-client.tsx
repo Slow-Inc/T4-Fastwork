@@ -87,6 +87,7 @@ export function ChatClient({
   persistKey,
   initialMessages,
   initialSessionId,
+  conversationId,
   onPersist,
   emptyState,
 }: {
@@ -101,7 +102,16 @@ export function ChatClient({
    * so seeding from state here can't cause a hydration mismatch. */
   initialMessages?: Message[];
   initialSessionId?: string;
-  onPersist?: (data: { messages: Message[]; sessionId?: string }) => void;
+  /** Store-backed mode: the id of the conversation this instance renders. A reply
+   * still streaming after the user switches conversations persists back to THIS id
+   * (its origin), not the one now on screen (#73). Stable per instance (the shell
+   * keys ChatClient by conversation id). */
+  conversationId?: string;
+  onPersist?: (data: {
+    messages: Message[];
+    sessionId?: string;
+    conversationId?: string;
+  }) => void;
   /** Open WebUI-style first-run screen (the /chat app-shell, #40): before any user
    * turn, show a centered identity + suggestion list instead of a greeting bubble
    * and quick-reply chips. The popup keeps the compact greeting (emptyState off). */
@@ -171,6 +181,7 @@ export function ChatClient({
       onPersistRef.current({
         messages: persistable,
         sessionId: sessionId.current,
+        conversationId,
       });
       return;
     }

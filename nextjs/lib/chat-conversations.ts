@@ -142,6 +142,35 @@ export function touchConversation(
   };
 }
 
+/**
+ * Apply a persisted-chat payload to the store, targeting the conversation the
+ * stream ORIGINATED in (`conversationId`) rather than whatever is active now — a
+ * background stream (a reply still arriving after the user switched conversations)
+ * must not overwrite the conversation now on screen (#73). Falls back to `activeId`
+ * when no id is given (popup / single-conversation mode), and no-ops if the origin
+ * conversation was deleted mid-stream (never resurrects it). Also names a still-
+ * default conversation from its first user turn, like the old inline persist did.
+ */
+export function applyPersist(
+  state: ConversationState,
+  payload: { messages: unknown[]; sessionId?: string; conversationId?: string },
+  now: number = Date.now(),
+): ConversationState {
+  const targetId = payload.conversationId ?? state.activeId;
+  if (!targetId) return state;
+  const target = state.conversations.find((c) => c.id === targetId);
+  if (!target) return state;
+  const patch: TouchPatch = {
+    messages: payload.messages,
+    sessionId: payload.sessionId,
+  };
+  if (target.title === DEFAULT_TITLE) {
+    const derived = deriveTitle(payload.messages);
+    if (derived !== DEFAULT_TITLE) patch.title = derived;
+  }
+  return touchConversation(state, targetId, patch, now);
+}
+
 export function deleteConversation(
   state: ConversationState,
   id: string,
