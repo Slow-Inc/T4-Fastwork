@@ -1,0 +1,381 @@
+/**
+ * Map-reduce case-study generation over a project's Markdown corpus (ADR 0009 D2,
+ * P2 #65). The single-README `buildGeneratePrompt` (github-generate-client.ts)
+ * does not scale to a large MD set — concatenating every file blows the 128K
+ * `qwen3.6-35b-a3b` gateway context. Instead:
+ *
+ *   Stage0 curate  — drop boilerplate, keep the substantive `.md` set.
+ *   Stage1 map     — one LLM call per file → a compact structured extract,
+ *                    cached by `blob_sha` so an unchanged file is never re-mapped.
+ *   Stage2 reduce  — feed all (compact) extracts + an audience persona → write
+ *                    the case study, once per `business` / `semitech` / `developer`.
+ *
+ * Everything here is pure (prompt builders, parsers, the curate/cache filters,
+ * the metadata mapper) or takes the LLM callers as injected deps (`runMapReduce`)
+ * — so the map-reduce logic is unit-tested without a network call.
+ */
+import type { ChatMessage } from '../llm/llm.service';
+
+/** A Markdown document from a repo — a `project_documents` row projection. */
+export interface ProjectDocument {
+  path: string;
+  blobSha: string;
+  markdown: string;
+}
+
+/** Stage1 output: a compact structured extract of one file (see ADR 0009 D2). */
+export interface FileExtract {
+  path: string;
+  blobSha: string;
+  themes: string[];
+  architecture: string;
+  tech: string[];
+  userOutcomes: string;
+  codeDepth: string;
+}
+
+/** The three case-study variants (ADR 0009 D1, decision Q1). */
+export type Audience = 'business' | 'semitech' | 'developer';
+export const AUDIENCES: readonly Audience[] = [
+  'business',
+  'semitech',
+  'developer',
+];
+
+/** Stage2 output: one audience-tuned case study. */
+export interface CaseStudy {
+  audience: Audience;
+  title: string;
+  titleEn: string;
+  description: string;
+  content: string;
+  tags: string[];
+  technologies: string[];
+}
+
+// --- Stage0: curate -------------------------------------------------------
+
+/** Filenames that are project boilerplate, not showcase source material. */
+const BOILERPLATE_BASENAMES = new Set([
+  'changelog.md',
+  'license.md',
+  'code_of_conduct.md',
+  'contributing.md',
+  'security.md',
+  'support.md',
+]);
+
+/**
+ * Keep the substantive Markdown of a repo; drop non-`.md` files, boilerplate
+ * (CHANGELOG/LICENSE/CODE_OF_CONDUCT/CONTRIBUTING/…), `.github/` templates, and
+ * anything vendored under `node_modules/`.
+ */
+export function curateDocuments(docs: ProjectDocument[]): ProjectDocument[] {
+  return docs.filter((d) => {
+    const p = d.path.toLowerCase();
+    if (!p.endsWith('.md')) return false;
+    if (p.startsWith('.github/') || p.includes('/.github/')) return false;
+    if (p.startsWith('node_modules/') || p.includes('/node_modules/'))
+      return false;
+    const base = p.split('/').pop() ?? p;
+    if (BOILERPLATE_BASENAMES.has(base)) return false;
+    return true;
+  });
+}
+
+// --- JSON coercion helpers (shared by the Stage1/Stage2 parsers) ----------
+
+const asStr = (v: unknown): string => (typeof v === 'string' ? v : '');
+const asStrArr = (v: unknown): string[] =>
+  Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+
+/** Extract the outermost balanced {...} from output that may carry a fence or
+ * prose around it, and parse it. Throws on no-object / invalid JSON. */
+function parseJsonObject(raw: string): Record<string, unknown> {
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error('case-study: no JSON object found in model reply');
+  }
+  try {
+    return JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
+  } catch {
+    throw new Error('case-study: model did not return valid JSON');
+  }
+}
+
+// --- Stage1: map (one compact extract per file) ---------------------------
+
+/** A single file always fits the 128K window, but cap it so one map call never
+ * approaches the budget on a pathological file. ~4 chars/token → 48K chars ≈ 12K
+ * tokens, leaving ample headroom for the prompt + reasoning. */
+const MAP_MARKDOWN_CAP = 48000;
+
+/** Build the per-file map prompt: ask the model for a compact structured
+ * extract of one document, grounded only in that file. */
+export function buildMapPrompt(doc: ProjectDocument): ChatMessage[] {
+  const system =
+    'You distill one project document into a compact structured extract for later ' +
+    'synthesis. Return ONLY a single JSON object, no markdown fence, no commentary. ' +
+    'Schema: {"themes":string[],"architecture":string,"tech":string[],' +
+    '"userOutcomes":string,"codeDepth":string}. ' +
+    'Base every field strictly on the document; do not invent facts. ' +
+    'Keep each string short (<= 2 sentences) — this is an index, not prose.';
+  const user =
+    `File path: ${doc.path}\n` +
+    `Content:\n${doc.markdown.slice(0, MAP_MARKDOWN_CAP)}`;
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: user },
+  ];
+}
+
+/** Parse a map reply into a FileExtract, stamping the document's path + blobSha
+ * (which the model never sees). Lenient on the content fields — a thin extract
+ * is still usable input to the reduce — but throws on unparseable output so the
+ * caller can skip that file rather than feed the reduce garbage. */
+export function parseFileExtract(
+  raw: string,
+  doc: { path: string; blobSha: string },
+): FileExtract {
+  const o = parseJsonObject(raw);
+  return {
+    path: doc.path,
+    blobSha: doc.blobSha,
+    themes: asStrArr(o.themes),
+    architecture: asStr(o.architecture),
+    tech: asStrArr(o.tech),
+    userOutcomes: asStr(o.userOutcomes),
+    codeDepth: asStr(o.codeDepth),
+  };
+}
+
+// --- blob_sha extract cache ------------------------------------------------
+
+/**
+ * Split the curated documents into the ones that must be (re-)mapped and the
+ * cached extracts that can be reused unchanged. A document is identified by its
+ * `path` (matching the `project_documents` primary key), and reused iff the
+ * cached extract for that same path has the same `blob_sha` — so only a content
+ * change triggers an LLM map call, and a cached extract for a file no longer
+ * present is dropped (never fed to the reduce). Keying by path (not by the
+ * content hash alone) keeps two files with identical content distinct. This is
+ * what makes regeneration cheap + idempotent (ADR 0009 D2).
+ */
+export function selectDocsToMap(
+  docs: ProjectDocument[],
+  cached: FileExtract[],
+): { toMap: ProjectDocument[]; reused: FileExtract[] } {
+  const byPath = new Map(cached.map((e) => [e.path, e]));
+  const toMap: ProjectDocument[] = [];
+  const reused: FileExtract[] = [];
+  for (const d of docs) {
+    const hit = byPath.get(d.path);
+    if (hit && hit.blobSha === d.blobSha) reused.push(hit);
+    else toMap.push(d);
+  }
+  return { toMap, reused };
+}
+
+// --- Stage2: reduce (one case study per audience) -------------------------
+
+/** Repo-level context threaded into every reduce call (all audiences share it). */
+export interface ReduceMeta {
+  description: string | null;
+  languages: Record<string, number>;
+  topics: string[];
+  liveUrl?: string | null;
+}
+
+/** How to pitch each variant (decision Q1 / ADR 0009 D1). The persona string is
+ * embedded verbatim in the system prompt, so it doubles as the audience marker
+ * the tests assert on. */
+export const AUDIENCE_PERSONAS: Record<Audience, string> = {
+  business:
+    'Audience: a non-technical business decision-maker (SME owner or company hiring for a project). ' +
+    'Lead with the problem solved, outcomes, and value; avoid jargon and implementation detail.',
+  semitech:
+    'Audience: a semi-technical reader who knows a little code (a product manager or founder-engineer). ' +
+    'Balance the outcome with a clear, high-level explanation of how it works; light on deep internals.',
+  developer:
+    'Audience: a fellow software engineer. ' +
+    'Go technical: architecture, stack choices, and the interesting engineering decisions and trade-offs.',
+};
+
+/** Compact one extract into a few labelled lines for the reduce input (keeps the
+ * whole extract set small enough that ~50 files stay well under 128K). */
+function renderExtract(e: FileExtract): string {
+  const parts = [`- ${e.path}`];
+  if (e.themes.length) parts.push(`  themes: ${e.themes.join(', ')}`);
+  if (e.architecture) parts.push(`  architecture: ${e.architecture}`);
+  if (e.tech.length) parts.push(`  tech: ${e.tech.join(', ')}`);
+  if (e.userOutcomes) parts.push(`  outcomes: ${e.userOutcomes}`);
+  if (e.codeDepth) parts.push(`  codeDepth: ${e.codeDepth}`);
+  return parts.join('\n');
+}
+
+/** Build the reduce prompt for one audience: all extracts + repo metadata +
+ * the audience persona → one case study as strict JSON. */
+export function buildReducePrompt(
+  extracts: FileExtract[],
+  audience: Audience,
+  meta: ReduceMeta,
+): ChatMessage[] {
+  const langs = Object.keys(meta.languages).join(', ') || '(none reported)';
+  const topics = meta.topics.join(', ') || '(none)';
+  const system =
+    'You write a project case study for a software agency portfolio, in Thai ' +
+    '(with an English title). ' +
+    AUDIENCE_PERSONAS[audience] +
+    ' Return ONLY a single JSON object, no markdown fence, no commentary. ' +
+    'Schema: {"title":string(TH),"titleEn":string(EN),"description":string(TH, <=160 chars),' +
+    '"content":string(TH, 3-5 short paragraphs separated by \\n\\n),' +
+    '"tags":string[],"technologies":string[]}. ' +
+    'Ground every claim in the extracts below; do NOT invent technologies.';
+  const user =
+    `Repo description: ${meta.description ?? '(none)'}\n` +
+    `Languages: ${langs}\n` +
+    `Topics: ${topics}\n` +
+    `Live URL: ${meta.liveUrl ?? '(none)'}\n\n` +
+    `Document extracts:\n${extracts.map(renderExtract).join('\n')}`;
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: user },
+  ];
+}
+
+/** Parse a reduce reply into a CaseStudy, stamping the audience (which the model
+ * does not echo). Like the single-README parser, throws when any narrative field
+ * the DB row needs is missing — a partial reply is skipped, never written blank. */
+export function parseCaseStudy(raw: string, audience: Audience): CaseStudy {
+  const o = parseJsonObject(raw);
+  const cs: CaseStudy = {
+    audience,
+    title: asStr(o.title),
+    titleEn: asStr(o.titleEn),
+    description: asStr(o.description),
+    content: asStr(o.content),
+    tags: asStrArr(o.tags),
+    technologies: asStrArr(o.technologies),
+  };
+  if (
+    !cs.title.trim() ||
+    !cs.titleEn.trim() ||
+    !cs.description.trim() ||
+    !cs.content.trim()
+  ) {
+    throw new Error(
+      'case-study: JSON missing required text (title/titleEn/description/content)',
+    );
+  }
+  return cs;
+}
+
+// --- Repo metadata the sync currently drops (audit #17) -------------------
+
+/**
+ * Map the repo-level fields GitHub already returns but the sync throws away
+ * (audit finding #17): the repo Website → `live_url` (the "Visit site" link and
+ * the screenshot target), and the social preview → an interim cover fallback (a
+ * real screenshot of `live_url` stays preferred). Empty/whitespace → null; a
+ * scheme-less homepage is normalized to `https://` so the link is absolute.
+ */
+export function mapRepoMetadata(repo: {
+  homepageUrl?: string | null;
+  openGraphImageUrl?: string | null;
+}): { liveUrl: string | null; coverImageFallback: string | null } {
+  const clean = (v: string | null | undefined): string | null => {
+    const t = (v ?? '').trim();
+    return t.length > 0 ? t : null;
+  };
+  const home = clean(repo.homepageUrl);
+  const liveUrl =
+    home && !/^https?:\/\//i.test(home) ? `https://${home}` : home;
+  return { liveUrl, coverImageFallback: clean(repo.openGraphImageUrl) };
+}
+
+// --- Orchestrator ----------------------------------------------------------
+
+/** The two LLM calls the map-reduce needs, injected so the pipeline is testable
+ * without a network round-trip, plus any previously-cached extracts. */
+export interface MapReduceDeps {
+  /** Map one document → its structured extract (LLM call + parse). May throw on
+   * an unparseable reply; that file is then skipped, not fatal. */
+  mapFile: (doc: ProjectDocument) => Promise<FileExtract>;
+  /** Reduce all extracts → one case study for the given audience (LLM + parse).
+   * Receives the repo `meta` so the caller need not close over it. */
+  reduce: (
+    extracts: FileExtract[],
+    audience: Audience,
+    meta: ReduceMeta,
+  ) => Promise<CaseStudy>;
+  /** Extracts persisted from a prior run (by path), for reuse when unchanged. */
+  cachedExtracts?: FileExtract[];
+}
+
+export interface MapReduceResult {
+  caseStudies: CaseStudy[];
+  extracts: FileExtract[];
+  mapped: number;
+  reused: number;
+}
+
+/**
+ * Run the full map-reduce for one project: curate → map only changed-SHA files
+ * (reusing cached extracts) → reduce once per audience. Map calls run in
+ * parallel and a file whose map fails is skipped (never blocks the case study).
+ * A repo with no substantive Markdown yields no case studies (nothing to write).
+ */
+export async function runMapReduce(
+  docs: ProjectDocument[],
+  meta: ReduceMeta,
+  deps: MapReduceDeps,
+): Promise<MapReduceResult> {
+  const curated = curateDocuments(docs);
+  const { toMap, reused } = selectDocsToMap(curated, deps.cachedExtracts ?? []);
+
+  // Reconstruct extracts by path (a document's identity) — not by blob_sha,
+  // which two identical-content files would share.
+  const byPath = new Map<string, FileExtract>();
+  for (const e of reused) byPath.set(e.path, e);
+
+  const settled = await Promise.allSettled(toMap.map((d) => deps.mapFile(d)));
+  let mapped = 0;
+  settled.forEach((r, i) => {
+    if (r.status === 'fulfilled') {
+      byPath.set(toMap[i].path, r.value);
+      mapped++;
+    }
+    // a rejected map (unparseable reply) is skipped — one bad file must not
+    // sink the whole case study.
+  });
+
+  // Keep the extracts in curated (repo) order for a deterministic reduce input.
+  const extracts = curated
+    .map((d) => byPath.get(d.path))
+    .filter((e): e is FileExtract => e !== undefined);
+
+  // Only reduce over extracts that actually carry signal — a repo whose files
+  // all yield empty extracts produces no case study (same guarantee as an
+  // empty repo), never a hollow one written from path names alone.
+  const substantive = extracts.filter(hasSubstance);
+  const caseStudies =
+    substantive.length === 0
+      ? []
+      : await Promise.all(
+          AUDIENCES.map((a) => deps.reduce(substantive, a, meta)),
+        );
+
+  return { caseStudies, extracts, mapped, reused: reused.length };
+}
+
+/** True when an extract carries any signal worth reducing (not a `{}`-reply). */
+function hasSubstance(e: FileExtract): boolean {
+  return Boolean(
+    e.themes.length ||
+    e.architecture ||
+    e.tech.length ||
+    e.userOutcomes ||
+    e.codeDepth,
+  );
+}
