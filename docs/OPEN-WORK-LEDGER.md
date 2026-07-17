@@ -3,6 +3,28 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## ✅ 2026-07-18 (AFK run 2, overnight) — #75 part 2 shipped; #66/#81 triaged+parked
+
+- **`#75` part 2 SHIPPED (`#100`, `b2f0ff0`):** `pg-generate.store.applyPatch` now guards each copy
+  field atomically — `title = case when title_owner='auto' then $n else title end` (+ title_en/
+  description/content) — so a concurrent human edit isn't clobbered by a stale generated patch.
+  `readme_sha`/`generated_at` stay unconditional (bookkeeping). New `github-generate-store.spec.ts`
+  renders the SQL via drizzle `PgDialect` + asserts the guards (219 tests + build + eslint green).
+  Part 3 was already shipped (#79); **part 1 parked** — `apply:true` re-running the LLM → "persist an
+  immutable revision/hash" is a data-model/API decision in the secret-guarded controller, overlaps
+  **#67 P4**. `#75` stays open for part 1 only (body checkboxes updated).
+- **`#66` P3 — org push webhook already live** (`id=652601508` → `/github/webhook`, HMAC-verified), so
+  push→refresh works today. The **GitHub App is premature** until the P3 worker (App-auth fetch + SHA
+  manifest) exists — creating it now adds nothing + risks double-delivery. Full create+install steps
+  saved to the `#66` comment (incl. deleting the org hook to avoid dup). **Dev action, later.**
+- **`#81` P2 persistence — PARKED (multi-trigger):** part 1 (LLM adapter) done (#85). Remaining needs a
+  **new `generation_jobs` schema/migration** (none exists) + the **idempotency/manifest-hash design
+  (D2/D3) that overlaps design-pending #66** + a **prod-write verify** of the AC. Carve-able later:
+  part 4 (wire `mapRepoMetadata`→`live_url`, audit #17; needs a small fetch-layer change for
+  openGraphImageUrl). Full triage on the `#81` comment.
+- Tree green on `master`. AFK outcome: 1 shipped (#100), 3 triaged+parked with actionable next steps
+  (#66/#75-part1/#81). No unattended guess past a boundary/schema/design.
+
 ## ✅ 2026-07-18 (AFK run) — domain-cutover SEO fix shipped; #92 rank/sync leg parked
 
 - **`#97`/`#98` SHIPPED + merged (`db3b6d5`):** `chore(seo)` — the `NEXT_PUBLIC_SITE_URL`
