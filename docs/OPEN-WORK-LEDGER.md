@@ -3,6 +3,23 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## ✅ 2026-07-17 (late) — shipped to master + retro-review recovery
+
+- **Merged to master:** `#72` (P0 status-leak fix + MangaDock overlay/live_url + the whole
+  clear-backlog batch — feat was branched off `chore/clear-backlog-afk`, so the squash carried it all),
+  `#76` (#7 — overlay the DB snapshot on the detail page too), `#77` (**#73** — chat cross-conversation
+  persistence corruption, fixed via a pure `applyPersist` seam + TDD). All e2e 52/52.
+- **Process miss caught + corrected:** `#72` was merged with `/scrutinize` scoped to only my 4 files
+  and no `/code-review`. A **retroactive `/code-review`** (codex) on the real 49-file diff then found
+  **7 issues** — filed **#73** (fixed), **#74** (RAG ingest non-atomic), **#75** (content-gen correctness
+  ×3); #4 = audit #8. Lesson in [[pre-merge-review-discipline]]: gate on the ACTUAL merge diff; don't PR
+  a feature branched off an unmerged branch. #76/#77 both went via PR (not self-merged).
+- **MangaDock:** repo `homepageUrl=https://hayateotsu.space/` (the real dev-phase site; `mangadock.com`
+  is a parked domain) → corrected `live_url` (static + DB); screenshot capture teed up (Action cron once
+  its secrets are set). New audit **finding #17**: sync never captures repo `homepageUrl`/`openGraphImageUrl`.
+- **Open PRs:** `#59` (clear-backlog) now redundant — its content is on master via #72 (diff = ∅) → close
+  as merged-via-#72. Backlog: **#74** (ready-for-agent), **#75** (ready-for-human).
+
 ## 🚧 NEXT (design done, build pending) — GitHub-sourced AI case studies + site-wide static→DB sweep
 
 **One program, three inputs consolidated 2026-07-17:**
