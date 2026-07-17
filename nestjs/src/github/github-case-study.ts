@@ -82,3 +82,70 @@ export function curateDocuments(docs: ProjectDocument[]): ProjectDocument[] {
     return true;
   });
 }
+
+// --- JSON coercion helpers (shared by the Stage1/Stage2 parsers) ----------
+
+const asStr = (v: unknown): string => (typeof v === 'string' ? v : '');
+const asStrArr = (v: unknown): string[] =>
+  Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+
+/** Extract the outermost balanced {...} from output that may carry a fence or
+ * prose around it, and parse it. Throws on no-object / invalid JSON. */
+function parseJsonObject(raw: string): Record<string, unknown> {
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error('case-study: no JSON object found in model reply');
+  }
+  try {
+    return JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
+  } catch {
+    throw new Error('case-study: model did not return valid JSON');
+  }
+}
+
+// --- Stage1: map (one compact extract per file) ---------------------------
+
+/** A single file always fits the 128K window, but cap it so one map call never
+ * approaches the budget on a pathological file. ~4 chars/token → 48K chars ≈ 12K
+ * tokens, leaving ample headroom for the prompt + reasoning. */
+const MAP_MARKDOWN_CAP = 48000;
+
+/** Build the per-file map prompt: ask the model for a compact structured
+ * extract of one document, grounded only in that file. */
+export function buildMapPrompt(doc: ProjectDocument): ChatMessage[] {
+  const system =
+    'You distill one project document into a compact structured extract for later ' +
+    'synthesis. Return ONLY a single JSON object, no markdown fence, no commentary. ' +
+    'Schema: {"themes":string[],"architecture":string,"tech":string[],' +
+    '"userOutcomes":string,"codeDepth":string}. ' +
+    'Base every field strictly on the document; do not invent facts. ' +
+    'Keep each string short (<= 2 sentences) — this is an index, not prose.';
+  const user =
+    `File path: ${doc.path}\n` +
+    `Content:\n${doc.markdown.slice(0, MAP_MARKDOWN_CAP)}`;
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: user },
+  ];
+}
+
+/** Parse a map reply into a FileExtract, stamping the document's path + blobSha
+ * (which the model never sees). Lenient on the content fields — a thin extract
+ * is still usable input to the reduce — but throws on unparseable output so the
+ * caller can skip that file rather than feed the reduce garbage. */
+export function parseFileExtract(
+  raw: string,
+  doc: { path: string; blobSha: string },
+): FileExtract {
+  const o = parseJsonObject(raw);
+  return {
+    path: doc.path,
+    blobSha: doc.blobSha,
+    themes: asStrArr(o.themes),
+    architecture: asStr(o.architecture),
+    tech: asStrArr(o.tech),
+    userOutcomes: asStr(o.userOutcomes),
+    codeDepth: asStr(o.codeDepth),
+  };
+}
