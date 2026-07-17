@@ -244,6 +244,20 @@ describe('parseCaseStudy (Stage2)', () => {
       ),
     ).toThrow();
   });
+
+  it('rejects a whitespace-only required field (would persist a blank title)', () => {
+    expect(() =>
+      parseCaseStudy(
+        JSON.stringify({
+          title: '   ',
+          titleEn: 'T',
+          description: 'D',
+          content: 'C',
+        }),
+        'business',
+      ),
+    ).toThrow();
+  });
 });
 
 describe('mapRepoMetadata (audit #17)', () => {
@@ -390,6 +404,61 @@ describe('runMapReduce (orchestrator)', () => {
     });
     expect(res.caseStudies).toHaveLength(0);
     expect(res.mapped).toBe(0);
+  });
+
+  // --- review-hardening (adversarial code review) ---
+
+  it('handles two files with identical content (same blob_sha) at different paths', async () => {
+    const docs = [doc('a.md', 'same', 'X'), doc('b.md', 'same', 'X')];
+    const mapped: string[] = [];
+    const res = await runMapReduce(docs, meta, {
+      mapFile: async (d) => {
+        mapped.push(d.path);
+        return extractOf(d);
+      },
+      reduce: async (_e, a) => csOf(a),
+    });
+    // identity is the path — both files map, neither collapses into the other
+    expect(mapped.sort()).toEqual(['a.md', 'b.md']);
+    expect(res.extracts.map((e) => e.path)).toEqual(['a.md', 'b.md']);
+    expect(res.mapped).toBe(2);
+  });
+
+  it('reuses a cached extract only for the same path, not another file with identical content', () => {
+    const docs = [doc('a.md', 'same'), doc('b.md', 'same')];
+    const cached = [extractOf(doc('a.md', 'same'))];
+    const { toMap, reused } = selectDocsToMap(docs, cached);
+    expect(reused.map((e) => e.path)).toEqual(['a.md']);
+    expect(toMap.map((d) => d.path)).toEqual(['b.md']); // same sha, different path → not reused
+  });
+
+  it('forwards repo meta to the reduce dep', async () => {
+    let seen: unknown;
+    await runMapReduce([doc('README.md', 's')], meta, {
+      mapFile: async (d) => extractOf(d),
+      reduce: (_e, a, m) => {
+        seen = m;
+        return Promise.resolve(csOf(a));
+      },
+    });
+    expect(seen).toBe(meta);
+  });
+
+  it('produces no case studies when every file maps to an empty extract', async () => {
+    const res = await runMapReduce([doc('README.md', 's')], meta, {
+      mapFile: async (d) => ({
+        path: d.path,
+        blobSha: d.blobSha,
+        themes: [],
+        architecture: '',
+        tech: [],
+        userOutcomes: '',
+        codeDepth: '',
+      }),
+      reduce: async (_e, a) => csOf(a),
+    });
+    expect(res.caseStudies).toHaveLength(0);
+    expect(res.extracts).toHaveLength(1); // still cached, just not reduced
   });
 
   it('a large repo (60 files) reduces within the 128K gateway budget', async () => {

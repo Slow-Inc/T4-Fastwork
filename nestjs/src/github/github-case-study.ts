@@ -154,22 +154,24 @@ export function parseFileExtract(
 
 /**
  * Split the curated documents into the ones that must be (re-)mapped and the
- * cached extracts that can be reused unchanged. A file is reused iff a cached
- * extract exists for its exact `blob_sha` (content hash) — so only content
- * changes trigger an LLM map call, and a cached extract for a file no longer
- * present is dropped (never fed to the reduce). This is what makes regeneration
- * cheap + idempotent (ADR 0009 D2).
+ * cached extracts that can be reused unchanged. A document is identified by its
+ * `path` (matching the `project_documents` primary key), and reused iff the
+ * cached extract for that same path has the same `blob_sha` — so only a content
+ * change triggers an LLM map call, and a cached extract for a file no longer
+ * present is dropped (never fed to the reduce). Keying by path (not by the
+ * content hash alone) keeps two files with identical content distinct. This is
+ * what makes regeneration cheap + idempotent (ADR 0009 D2).
  */
 export function selectDocsToMap(
   docs: ProjectDocument[],
   cached: FileExtract[],
 ): { toMap: ProjectDocument[]; reused: FileExtract[] } {
-  const bySha = new Map(cached.map((e) => [e.blobSha, e]));
+  const byPath = new Map(cached.map((e) => [e.path, e]));
   const toMap: ProjectDocument[] = [];
   const reused: FileExtract[] = [];
   for (const d of docs) {
-    const hit = bySha.get(d.blobSha);
-    if (hit) reused.push(hit);
+    const hit = byPath.get(d.path);
+    if (hit && hit.blobSha === d.blobSha) reused.push(hit);
     else toMap.push(d);
   }
   return { toMap, reused };
@@ -256,7 +258,12 @@ export function parseCaseStudy(raw: string, audience: Audience): CaseStudy {
     tags: asStrArr(o.tags),
     technologies: asStrArr(o.technologies),
   };
-  if (!cs.title || !cs.titleEn || !cs.description || !cs.content) {
+  if (
+    !cs.title.trim() ||
+    !cs.titleEn.trim() ||
+    !cs.description.trim() ||
+    !cs.content.trim()
+  ) {
     throw new Error(
       'case-study: JSON missing required text (title/titleEn/description/content)',
     );
@@ -295,9 +302,14 @@ export interface MapReduceDeps {
   /** Map one document → its structured extract (LLM call + parse). May throw on
    * an unparseable reply; that file is then skipped, not fatal. */
   mapFile: (doc: ProjectDocument) => Promise<FileExtract>;
-  /** Reduce all extracts → one case study for the given audience (LLM + parse). */
-  reduce: (extracts: FileExtract[], audience: Audience) => Promise<CaseStudy>;
-  /** Extracts persisted from a prior run, keyed by blob_sha for reuse. */
+  /** Reduce all extracts → one case study for the given audience (LLM + parse).
+   * Receives the repo `meta` so the caller need not close over it. */
+  reduce: (
+    extracts: FileExtract[],
+    audience: Audience,
+    meta: ReduceMeta,
+  ) => Promise<CaseStudy>;
+  /** Extracts persisted from a prior run (by path), for reuse when unchanged. */
   cachedExtracts?: FileExtract[];
 }
 
@@ -322,14 +334,16 @@ export async function runMapReduce(
   const curated = curateDocuments(docs);
   const { toMap, reused } = selectDocsToMap(curated, deps.cachedExtracts ?? []);
 
-  const bySha = new Map<string, FileExtract>();
-  for (const e of reused) bySha.set(e.blobSha, e);
+  // Reconstruct extracts by path (a document's identity) — not by blob_sha,
+  // which two identical-content files would share.
+  const byPath = new Map<string, FileExtract>();
+  for (const e of reused) byPath.set(e.path, e);
 
   const settled = await Promise.allSettled(toMap.map((d) => deps.mapFile(d)));
   let mapped = 0;
   settled.forEach((r, i) => {
     if (r.status === 'fulfilled') {
-      bySha.set(toMap[i].blobSha, r.value);
+      byPath.set(toMap[i].path, r.value);
       mapped++;
     }
     // a rejected map (unparseable reply) is skipped — one bad file must not
@@ -338,13 +352,30 @@ export async function runMapReduce(
 
   // Keep the extracts in curated (repo) order for a deterministic reduce input.
   const extracts = curated
-    .map((d) => bySha.get(d.blobSha))
+    .map((d) => byPath.get(d.path))
     .filter((e): e is FileExtract => e !== undefined);
 
+  // Only reduce over extracts that actually carry signal — a repo whose files
+  // all yield empty extracts produces no case study (same guarantee as an
+  // empty repo), never a hollow one written from path names alone.
+  const substantive = extracts.filter(hasSubstance);
   const caseStudies =
-    extracts.length === 0
+    substantive.length === 0
       ? []
-      : await Promise.all(AUDIENCES.map((a) => deps.reduce(extracts, a)));
+      : await Promise.all(
+          AUDIENCES.map((a) => deps.reduce(substantive, a, meta)),
+        );
 
   return { caseStudies, extracts, mapped, reused: reused.length };
+}
+
+/** True when an extract carries any signal worth reducing (not a `{}`-reply). */
+function hasSubstance(e: FileExtract): boolean {
+  return Boolean(
+    e.themes.length ||
+    e.architecture ||
+    e.tech.length ||
+    e.userOutcomes ||
+    e.codeDepth,
+  );
 }
