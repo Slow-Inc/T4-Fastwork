@@ -6,6 +6,7 @@ import {
   selectDocsToMap,
   buildReducePrompt,
   parseCaseStudy,
+  mapRepoMetadata,
   AUDIENCE_PERSONAS,
   AUDIENCES,
   type ProjectDocument,
@@ -236,5 +237,38 @@ describe('parseCaseStudy (Stage2)', () => {
         'business',
       ),
     ).toThrow();
+  });
+});
+
+describe('mapRepoMetadata (audit #17)', () => {
+  it('maps homepageUrl -> live_url and openGraphImageUrl -> cover fallback', () => {
+    const m = mapRepoMetadata({
+      homepageUrl: 'https://hayateotsu.space',
+      openGraphImageUrl: 'https://og.example/card.png',
+    });
+    expect(m.liveUrl).toBe('https://hayateotsu.space');
+    expect(m.coverImageFallback).toBe('https://og.example/card.png');
+  });
+
+  it('treats empty / whitespace / missing as null', () => {
+    expect(mapRepoMetadata({ homepageUrl: '', openGraphImageUrl: '  ' })).toEqual(
+      { liveUrl: null, coverImageFallback: null },
+    );
+    expect(mapRepoMetadata({})).toEqual({
+      liveUrl: null,
+      coverImageFallback: null,
+    });
+    expect(
+      mapRepoMetadata({ homepageUrl: null, openGraphImageUrl: null }),
+    ).toEqual({ liveUrl: null, coverImageFallback: null });
+  });
+
+  it('normalizes a scheme-less homepage to https so the link is not relative', () => {
+    expect(mapRepoMetadata({ homepageUrl: 'hayateotsu.space' }).liveUrl).toBe(
+      'https://hayateotsu.space',
+    );
+    expect(mapRepoMetadata({ homepageUrl: '  hayateotsu.space  ' }).liveUrl).toBe(
+      'https://hayateotsu.space',
+    );
   });
 });

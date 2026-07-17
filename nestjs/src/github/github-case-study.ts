@@ -263,3 +263,26 @@ export function parseCaseStudy(raw: string, audience: Audience): CaseStudy {
   }
   return cs;
 }
+
+// --- Repo metadata the sync currently drops (audit #17) -------------------
+
+/**
+ * Map the repo-level fields GitHub already returns but the sync throws away
+ * (audit finding #17): the repo Website → `live_url` (the "Visit site" link and
+ * the screenshot target), and the social preview → an interim cover fallback (a
+ * real screenshot of `live_url` stays preferred). Empty/whitespace → null; a
+ * scheme-less homepage is normalized to `https://` so the link is absolute.
+ */
+export function mapRepoMetadata(repo: {
+  homepageUrl?: string | null;
+  openGraphImageUrl?: string | null;
+}): { liveUrl: string | null; coverImageFallback: string | null } {
+  const clean = (v: string | null | undefined): string | null => {
+    const t = (v ?? '').trim();
+    return t.length > 0 ? t : null;
+  };
+  const home = clean(repo.homepageUrl);
+  const liveUrl =
+    home && !/^https?:\/\//i.test(home) ? `https://${home}` : home;
+  return { liveUrl, coverImageFallback: clean(repo.openGraphImageUrl) };
+}
