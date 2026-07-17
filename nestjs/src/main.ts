@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { parseAllowedOrigins } from './cors-origins';
 
 async function bootstrap() {
   // `rawBody` preserves the exact bytes for GitHub webhook HMAC verification.
@@ -12,9 +13,11 @@ async function bootstrap() {
   // default. Cap generously (the image guard bounds count + per-image size).
   app.useBodyParser('json', { limit: '12mb' });
 
-  // Allow the Next.js frontend to call this API (chat SSE etc.).
+  // Allow the Next.js frontend(s) to call this API (chat SSE etc.). Supports a
+  // comma-separated FRONTEND_ORIGIN so multiple domains work (e.g. t4labs.dev +
+  // the legacy t4labs.co during a domain migration + the Vercel URL).
   app.enableCors({
-    origin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000',
+    origin: parseAllowedOrigins(process.env.FRONTEND_ORIGIN),
     credentials: true,
   });
 
