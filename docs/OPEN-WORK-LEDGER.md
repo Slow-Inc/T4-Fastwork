@@ -3,6 +3,29 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## ✅ 2026-07-18 (AFK run) — domain-cutover SEO fix shipped; #92 rank/sync leg parked
+
+- **`#97`/`#98` SHIPPED + merged (`db3b6d5`):** `chore(seo)` — the `NEXT_PUBLIC_SITE_URL`
+  **fallback default** still pointed at legacy `t4labs.co` after the domain move. Swapped the
+  fallback in `nextjs/app/{layout,sitemap,robots}` + `.env.example` + the screenshot Action
+  `SITE_URL` default → `https://t4labs.dev`. Prod/local set the env explicitly so real traffic
+  was unaffected; this fixes the env-unset paths (fresh checkout / CI / screenshot Action, which
+  would else screenshot the old domain). New `app/site-url.test.ts` deletes the env then
+  dynamic-imports robots/sitemap to exercise the fallback (red→green). **310 unit + 52 e2e +
+  eslint + tsc green.** Left intentionally: nestjs CORS legacy origin, `admin-auth.test.ts` email
+  fixtures (email domain parked). No security boundary touched.
+- **`#92` — rank/sync revalidation leg PARKED (AFK, 3 independent reasons):** screenshot leg is
+  done; the endpoint + `lib/revalidate` seam exist. Remaining = wire `/rank/refresh` + `/github/refresh`
+  to POST it. Parked because the trigger points are **security-boundary files**
+  (`github-write.controller.ts` = *"SECURITY BOUNDARY"*; secret-guarded `/rank/refresh`) → adding a
+  secret-auth outbound call needs the reviewer AFK removes; the AC needs **prod-confirm** (no isolated
+  env); and it **overlaps #62 P6** (rank reorder inert on the still-static `/projects` until #69).
+  Full triage + exact next step on the issue (`#92` comment, bilingual). **Needs: dev to pick the seam
+  + confirm nestjs runtime env + sequence vs #69.**
+- **`www.t4labs.dev` — OFFERED, not executed:** outward-facing DNS/Vercel ops, no tracked issue →
+  not an unattended-AFK action. Ready on the dev's go (`vercel domains add www.t4labs.dev` + www CNAME).
+- Tree green on `master`. Everything else open is `ready-for-human` (#66–#71 P3–P8, #75, #81).
+
 ## ✅ 2026-07-17 (evening, interactive) — MangaDock screenshot pipeline works end-to-end
 
 - **Job A done:** developer set the Actions secrets (`SUPABASE_URL`, `SUPABASE_SECRET_KEY`,
