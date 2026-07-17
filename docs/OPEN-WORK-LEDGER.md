@@ -20,8 +20,16 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
   case_study rows, `live_url`, `generation_jobs` idempotency; overlaps P3). **#82** (pre-existing repo-wide
   `bun run lint` fail in `github-write.controller.ts` — a type-assertion bind; unrelated to P2, CI has no
   lint gate so it didn't block).
-- **Epic #62:** P0/P1/P2 ticked. **NEXT buildable:** #81 (P2 persistence) then P3 `#66` (needs the GitHub
-  App installed — developer manual step).
+- **Epic #62:** P0/P1/P2 ticked.
+- **`#82` (CLOSED, merged `#84`):** unbroke repo-wide `bun run lint` (exit 1→0) — a redundant
+  `RefreshSummary` assertion in `github-write.controller.ts` (type-only; auth path untouched).
+- **`#81` adapter (partial, merged `#85`):** `github-case-study-client.ts` `createCaseStudyLlmClient` —
+  binds the pure map-reduce to `LlmService.complete`, unit-tested end-to-end with a fake `complete`.
+  **`#81` stays open** for the `PgGenerateStore` DB side (read `project_documents` → write 3 `blog_posts`
+  case_study rows + extract cache + `live_url` + `generation_jobs`) — **deferred: no isolated test DB**, so
+  the real DB writes can't be verified unattended; do it with a test DB / the developer (overlaps P3 #66).
+- **NEXT buildable:** #81 store side (needs test-DB/developer to verify) → P3 `#66` (needs the GitHub App
+  installed — developer manual step). All remaining P2/P3 progress now gates on the developer.
 
 ## ✅ 2026-07-17 (late) — shipped to master + retro-review recovery
 
