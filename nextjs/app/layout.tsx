@@ -33,7 +33,7 @@ const thai = IBM_Plex_Sans_Thai({
   variable: "--font-thai",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://t4labs.co";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://t4labs.dev";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
