@@ -21,6 +21,14 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
   reads revalidate *on demand from admin Server Actions only* (`public-db.ts`), so a CI/cron writer
   (screenshot, rank, sync) never busts the cache. Sustainable fix = on-write revalidation trigger, not a
   manual redeploy. This is audit #0/#17 systemic; overlaps P6.
+- **AFK run (evening): both `ready-for-agent` items parked — nothing safely executable unattended.**
+  - `#92` — wrote the decision brief `docs/reports/2026-07-17-cache-revalidation-options-92.md`
+    (3 options; recommend A: secret-guarded revalidate Route Handler reusing the refresh secret).
+    Code parked: A/B/C is an architecture/caching-policy call + A is a security-boundary endpoint +
+    end-to-end verify needs prod cache observation. **Needs: dev picks a shape → then TDD build.**
+  - `#81` — parked: the store side writes a real DB and there is no isolated test DB, so it can't be
+    verified unattended. **Needs: a test DB (or dev present) to build+verify.**
+  - Everything else open is `ready-for-human` (#66–#71 P3–P8, #75). Tree green on `master`.
 
 ## ✅ 2026-07-17 (night AFK) — P1 + P2 core shipped
 
