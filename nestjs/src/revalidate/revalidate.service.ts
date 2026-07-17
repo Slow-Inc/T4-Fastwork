@@ -1,0 +1,19 @@
+import { Injectable } from '@nestjs/common';
+import { postProjectRevalidation } from './revalidate';
+
+/**
+ * Fire-and-forget bulk revalidation of the public project pages after a
+ * direct-DB write (#92). Reads FRONTEND_ORIGIN (primary site) + the shared
+ * GITHUB_REFRESH_SECRET from env; fail-soft when either is unset (dev / not yet
+ * configured). Injected into the secret-guarded rank + GitHub write paths.
+ */
+@Injectable()
+export class RevalidateService {
+  async revalidateProjects(): Promise<boolean> {
+    return postProjectRevalidation({
+      fetchImpl: globalThis.fetch,
+      frontendOrigin: process.env.FRONTEND_ORIGIN,
+      secret: process.env.GITHUB_REFRESH_SECRET,
+    });
+  }
+}

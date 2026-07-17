@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { constantTimeEqual } from '../github/webhook-verify';
 import { RankService } from './rank.service';
+import { RevalidateService } from '../revalidate/revalidate.service';
 
 /**
  * Admin/cron trigger for the AI display-ranking (SECURITY BOUNDARY). Reuses the
@@ -15,7 +16,10 @@ import { RankService } from './rank.service';
  */
 @Controller('rank')
 export class RankController {
-  constructor(private readonly rank: RankService) {}
+  constructor(
+    private readonly rank: RankService,
+    private readonly revalidate: RevalidateService,
+  ) {}
 
   @Post('refresh')
   async refresh(
@@ -26,6 +30,9 @@ export class RankController {
       throw new UnauthorizedException();
     }
     await this.rank.refreshAll();
+    // #92 — the rank write reorders projects; bust the public pages' ISR cache so
+    // the new order shows without a redeploy (fire-and-forget, fail-soft).
+    void this.revalidate.revalidateProjects();
     return { ok: true };
   }
 }

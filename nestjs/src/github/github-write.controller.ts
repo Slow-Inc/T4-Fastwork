@@ -26,6 +26,7 @@ import { parseReadme } from './github-detail.service';
 import { resolveHealTarget } from './github.config';
 import { DrizzleSnapshotStore } from './drizzle-snapshot.store';
 import { RagIngestService } from '../ingestion/rag-ingest.service';
+import { RevalidateService } from '../revalidate/revalidate.service';
 
 @Controller('github')
 export class GithubWriteController {
@@ -35,6 +36,7 @@ export class GithubWriteController {
     private readonly heal: GithubHealService,
     private readonly store: DrizzleSnapshotStore,
     private readonly rag: RagIngestService,
+    private readonly revalidate: RevalidateService,
   ) {}
 
   @Post('refresh')
@@ -55,6 +57,10 @@ export class GithubWriteController {
     // follow-up).
     if (outcome.ran && outcome.result.changed.length) {
       void this.rag.reingest().catch(() => {});
+      // #92 — a changed sync mutates project rows directly; bust the public
+      // pages' ISR cache so they reflect it without a redeploy (fire-and-forget,
+      // fail-soft — a revalidate miss must not fail the refresh).
+      void this.revalidate.revalidateProjects();
     }
     return outcome.ran
       ? outcome.result
