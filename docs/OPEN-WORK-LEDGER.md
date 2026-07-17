@@ -3,6 +3,26 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## ✅ 2026-07-17 (night AFK) — P1 + P2 core shipped
+
+- **P1 `#64` (CLOSED, merged `#80`):** migration `0020` (blog_posts case-study cols + `project_documents`
+  + `generation_jobs`, RLS) applied to prod (advisors clean); Drizzle `nestjs/src/database/schema/showcase.ts`.
+- **P2 `#65` core (CLOSED, merged `#83` squash `229d841`):** new pure module
+  `nestjs/src/github/github-case-study.ts` — map-reduce over a repo's MD, sized for the 128K gateway
+  (ADR 0009 D2). Stage0 curate · Stage1 map + `parseFileExtract` · `selectDocsToMap` (blob_sha cache,
+  **path-identity**) · Stage2 `AUDIENCE_PERSONAS`/reduce ×3 · `mapRepoMetadata` (audit #17 homepageUrl→live_url)
+  · `runMapReduce`. TDD 7 slices; **32 module / 205 nestjs tests + `nest build` green**; all LLM calls injected,
+  **not wired to any controller yet (inert)**.
+- **Adversarial review paid off:** a codex `/code-review` on the actual diff found **3 real defects** —
+  blob_sha-vs-path identity collision (major), a dead `meta` param, whitespace-only required fields — all
+  verified against code + fixed in slice 7 with regression tests.
+- **Filed:** **#81** (P2 persistence — wire `runMapReduce` → DB + real LLM: extract cache, 3 `blog_posts`
+  case_study rows, `live_url`, `generation_jobs` idempotency; overlaps P3). **#82** (pre-existing repo-wide
+  `bun run lint` fail in `github-write.controller.ts` — a type-assertion bind; unrelated to P2, CI has no
+  lint gate so it didn't block).
+- **Epic #62:** P0/P1/P2 ticked. **NEXT buildable:** #81 (P2 persistence) then P3 `#66` (needs the GitHub
+  App installed — developer manual step).
+
 ## ✅ 2026-07-17 (late) — shipped to master + retro-review recovery
 
 - **Merged to master:** `#72` (P0 status-leak fix + MangaDock overlay/live_url + the whole
