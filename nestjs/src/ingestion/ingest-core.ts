@@ -24,8 +24,6 @@ export async function runIngest(
   db: DrizzleDB,
   embedder: EmbeddingService,
 ): Promise<IngestResult> {
-  await db.delete(schema.documentEmbeddings);
-
   const chunks: Chunk[] = [];
 
   const projects = await db
@@ -99,16 +97,23 @@ export async function runIngest(
 
   const vectors = await embedder.embedMany(chunks.map((c) => c.text));
 
-  await db.insert(schema.documentEmbeddings).values(
-    chunks.map((c, i) => ({
-      sourceType: c.sourceType,
-      sourceId: c.sourceId,
-      chunkIndex: c.chunkIndex,
-      chunkText: c.text,
-      embedding: vectors[i],
-      metadata: c.metadata,
-    })),
-  );
+  const rows = chunks.map((c, i) => ({
+    sourceType: c.sourceType,
+    sourceId: c.sourceId,
+    chunkIndex: c.chunkIndex,
+    chunkText: c.text,
+    embedding: vectors[i],
+    metadata: c.metadata,
+  }));
+
+  // Replace atomically (#74): the delete happens only AFTER the load + embed above
+  // succeed, and inside one transaction with the insert. A transient embedding-API
+  // failure now leaves the existing embeddings intact instead of blanking the chat's
+  // RAG; an insert failure rolls the delete back.
+  await db.transaction(async (tx) => {
+    await tx.delete(schema.documentEmbeddings);
+    if (rows.length > 0) await tx.insert(schema.documentEmbeddings).values(rows);
+  });
 
   return { chunks: chunks.length, dim: vectors[0]?.length };
 }
