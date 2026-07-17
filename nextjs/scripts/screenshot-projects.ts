@@ -22,6 +22,28 @@ const SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
 const BUCKET = 'project-shots';
 const MIN_BYTES = 5_000; // smaller than this ⇒ almost certainly a blank page
 
+// On-demand revalidation (#92): a direct-DB write doesn't bust the site's ISR
+// cache, so tell the deployed app to re-read the updated project. Best-effort —
+// the image is already persisted; if this is unconfigured or fails, the page
+// still picks it up on the next revalidation/deploy. In CI the secret is the
+// `BACKEND_REFRESH_SECRET` Actions secret (GitHub reserves the GITHUB_ prefix);
+// it must equal the app's runtime GITHUB_REFRESH_SECRET.
+const SITE_URL = process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL;
+const REFRESH_SECRET =
+  process.env.BACKEND_REFRESH_SECRET ?? process.env.GITHUB_REFRESH_SECRET;
+
+async function revalidateProject(slug: string): Promise<void> {
+  if (!SITE_URL || !REFRESH_SECRET) return;
+  try {
+    await fetch(
+      `${SITE_URL}/api/revalidate?slug=${encodeURIComponent(slug)}`,
+      { method: 'POST', headers: { 'x-refresh-secret': REFRESH_SECRET } },
+    );
+  } catch {
+    // best-effort — DB already holds the new image
+  }
+}
+
 async function main(): Promise<void> {
   if (!SUPABASE_URL || !SECRET_KEY) {
     console.log('[screenshot] SUPABASE_URL / secret key not set — skipping.');
@@ -92,6 +114,7 @@ async function main(): Promise<void> {
           .from('projects')
           .update({ snapshot_image: pub.publicUrl })
           .eq('id', row.id);
+        await revalidateProject(row.slug);
         console.log(`[screenshot] ${row.slug}: captured → ${pub.publicUrl}`);
       } catch (err) {
         console.warn(`[screenshot] ${row.slug}: failed —`, err);

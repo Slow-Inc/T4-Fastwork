@@ -41,4 +41,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          # On-demand revalidation (#92) so a captured shot shows without a redeploy.
+          # BACKEND_REFRESH_SECRET must equal the app's runtime GITHUB_REFRESH_SECRET.
+          SITE_URL: ${{ vars.SITE_URL || 'https://t4labs.co' }}
+          BACKEND_REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
         run: bun run scripts/screenshot-projects.ts
