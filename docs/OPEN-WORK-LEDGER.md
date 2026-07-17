@@ -3,6 +3,25 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## ✅ 2026-07-17 (evening, interactive) — MangaDock screenshot pipeline works end-to-end
+
+- **Job A done:** developer set the Actions secrets (`SUPABASE_URL`, `SUPABASE_SECRET_KEY`,
+  `BACKEND_REFRESH_SECRET`). Screenshot worker debugged live over 3 rounds:
+  - `#89` — goto `networkidle` → `domcontentloaded` (live app never idles → timeout).
+  - `#90` — default HeadlessChrome UA got flagged (Cloudflare) → real Chrome UA + status logging.
+  - `#91` — migration `0021`: create the `project-shots` Storage bucket (was missing → `Bucket not
+    found`). Public read, no write policy (worker uploads under the secret key). Applied via MCP.
+  - **Result:** `mangadock` captured → `project-shots/mangadock.jpg`; `projects.snapshot_image` +
+    `live_url=hayateotsu.space` verified in prod. Cron runs every 6h for the rest.
+- **Supabase new key format adopted** (#84/#86/#87 + docs): frontend already on
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; screenshot worker → `SUPABASE_SECRET_KEY` (URL reused from
+  the public one, no dup); dropped dead legacy `SUPABASE_ANON_KEY`. Backend runtime uses only
+  `DATABASE_URL` (no API key).
+- **`#92` filed (the real last-mile):** live `/projects` still serves the pre-write ISR cache — public
+  reads revalidate *on demand from admin Server Actions only* (`public-db.ts`), so a CI/cron writer
+  (screenshot, rank, sync) never busts the cache. Sustainable fix = on-write revalidation trigger, not a
+  manual redeploy. This is audit #0/#17 systemic; overlaps P6.
+
 ## ✅ 2026-07-17 (night AFK) — P1 + P2 core shipped
 
 - **P1 `#64` (CLOSED, merged `#80`):** migration `0020` (blog_posts case-study cols + `project_documents`
