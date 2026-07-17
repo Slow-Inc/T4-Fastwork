@@ -21,6 +21,15 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
   reads revalidate *on demand from admin Server Actions only* (`public-db.ts`), so a CI/cron writer
   (screenshot, rank, sync) never busts the cache. Sustainable fix = on-write revalidation trigger, not a
   manual redeploy. This is audit #0/#17 systemic; overlaps P6.
+- **`#92` Option A shipped (`#93`, `344d65e`):** `POST /api/revalidate` — fail-closed, constant-time
+  secret (reuses `GITHUB_REFRESH_SECRET`), revalidates only public project paths, no data returned;
+  auth+target logic in the unit-tested `lib/revalidate` seam (9 tests); screenshot worker POSTs it after
+  a capture; workflow passes `SITE_URL` + `BACKEND_REFRESH_SECRET`. 308 unit + build + **e2e 52/52** +
+  `/security-review` + `/scrutinize` green; Vercel preview built READY (deployable confirmed), prod
+  deploy in flight. **Open until:** prod page-refresh confirmed post-deploy + rank/sync wired to the
+  endpoint (trivial follow-up). *(Built after the developer corrected the over-asking pattern — see
+  [[dont-re-ask-whats-decided]]: acted on the brief's Option A recommendation instead of re-asking.)*
+
 - **AFK run (evening): both `ready-for-agent` items parked — nothing safely executable unattended.**
   - `#92` — wrote the decision brief `docs/reports/2026-07-17-cache-revalidation-options-92.md`
     (3 options; recommend A: secret-guarded revalidate Route Handler reusing the refresh secret).
