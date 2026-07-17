@@ -1,7 +1,12 @@
 import 'server-only';
 import { publicDb } from '@/lib/public-db';
 import { projects as staticProjects, type Project } from '@/content/catalog';
-import { mapDbProject, mergeProjects, type DbProjectRow } from './project-map';
+import {
+  mapDbProject,
+  mergeProjects,
+  overlayLiveFields,
+  type DbProjectRow,
+} from './project-map';
 import { orderByRank } from './project-rank';
 
 /**
@@ -66,7 +71,6 @@ export async function getAllProjects(): Promise<Project[]> {
 
 export async function getProjectBySlug(slug: string): Promise<Project | undefined> {
   const fromStatic = staticProjects.find((p) => p.slug === slug);
-  if (fromStatic) return fromStatic;
   try {
     const supabase = publicDb();
     const { data, error } = await supabase
@@ -76,9 +80,14 @@ export async function getProjectBySlug(slug: string): Promise<Project | undefine
       .eq('status', 'published')
       .not('published_at', 'is', null)
       .maybeSingle();
-    if (error || !data) return undefined;
-    return mapDbProject(data as unknown as DbProjectRow);
+    const db =
+      !error && data ? mapDbProject(data as unknown as DbProjectRow) : undefined;
+    // Static slug: overlay the DB's live snapshot onto the curated entry — parity
+    // with the /projects list (which overlays via mergeProjects), so the detail
+    // page shows the screenshot too, not just the card.
+    if (fromStatic) return overlayLiveFields(fromStatic, db);
+    return db;
   } catch {
-    return undefined;
+    return fromStatic;
   }
 }

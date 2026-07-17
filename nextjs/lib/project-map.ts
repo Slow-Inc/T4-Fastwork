@@ -63,20 +63,25 @@ export function mapDbProject(row: DbProjectRow): Project {
 }
 
 /**
- * Static catalog is the curated base. For a slug present in both, the DB's LIVE
- * fields are overlaid onto the static entry (ADR 0003 — live/generated fields
- * come from the DB, the static file stays the curated identity); today that is
- * the screenshot `snapshotImage` written by the screenshot worker, which the
- * static catalog can't carry. DB rows with brand-new slugs are appended so
- * CMS-created projects still appear. `liveUrl` is intentionally NOT overlaid: the
- * seeded DB rows hold the GitHub repo URL, which is worse than the curated one.
+ * Overlay a DB row's LIVE fields onto the curated static entry (ADR 0003 — live/
+ * generated fields come from the DB, the static file stays the curated identity);
+ * today that is the screenshot `snapshotImage` written by the screenshot worker,
+ * which the static catalog can't carry. `liveUrl` is intentionally NOT overlaid:
+ * the seeded DB rows hold the GitHub repo URL, which is worse than the curated one.
+ * A missing/undefined DB row or a null `snapshotImage` leaves the static entry as-is.
+ */
+export function overlayLiveFields(base: Project, db: Project | undefined): Project {
+  return db?.snapshotImage ? { ...base, snapshotImage: db.snapshotImage } : base;
+}
+
+/**
+ * Static catalog is the curated base; for a slug present in both, the DB's live
+ * fields are overlaid ([[overlayLiveFields]]). DB rows with brand-new slugs are
+ * appended so CMS-created projects still appear.
  */
 export function mergeProjects(base: Project[], extra: Project[]): Project[] {
   const dbBySlug = new Map(extra.map((p) => [p.slug, p]));
-  const overlaid = base.map((p) => {
-    const db = dbBySlug.get(p.slug);
-    return db?.snapshotImage ? { ...p, snapshotImage: db.snapshotImage } : p;
-  });
+  const overlaid = base.map((p) => overlayLiveFields(p, dbBySlug.get(p.slug)));
   const baseSlugs = new Set(base.map((p) => p.slug));
   return [...overlaid, ...extra.filter((p) => !baseSlugs.has(p.slug))];
 }

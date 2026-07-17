@@ -1,5 +1,10 @@
 import { test, expect, describe } from 'bun:test';
-import { mapDbProject, toneForSlug, mergeProjects } from './project-map';
+import {
+  mapDbProject,
+  toneForSlug,
+  mergeProjects,
+  overlayLiveFields,
+} from './project-map';
 import type { Project } from '@/content/catalog';
 
 const dbRow = {
@@ -110,5 +115,29 @@ describe('mergeProjects', () => {
     const merged = mergeProjects(staticProjects, [dbNoShot]);
     expect(merged.length).toBe(1);
     expect(merged[0].snapshotImage).toBeUndefined();
+  });
+});
+
+describe('overlayLiveFields', () => {
+  const base = mapDbProject({ ...dbRow, slug: 'mangadock' }); // no snapshot_image
+
+  test('overlays a DB snapshotImage onto the base entry', () => {
+    const db = mapDbProject({
+      ...dbRow,
+      slug: 'mangadock',
+      snapshot_image: 'https://cdn.example/x.jpg',
+    });
+    expect(overlayLiveFields(base, db).snapshotImage).toBe(
+      'https://cdn.example/x.jpg',
+    );
+  });
+
+  test('an undefined DB row returns the base unchanged', () => {
+    expect(overlayLiveFields(base, undefined)).toBe(base);
+  });
+
+  test('a null DB snapshotImage does not clobber the base', () => {
+    const dbNoShot = mapDbProject({ ...dbRow, slug: 'mangadock' });
+    expect(overlayLiveFields(base, dbNoShot).snapshotImage).toBeUndefined();
   });
 });
