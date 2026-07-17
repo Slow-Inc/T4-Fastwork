@@ -96,9 +96,18 @@ describe('GithubFetcher.fetch', () => {
 
   it('omits Authorization when no token is configured', async () => {
     const { fn, calls } = recordingFetch(fakeRes({ status: 200, body: {} }));
-    const fetcher = new GithubFetcher(fn);
-    await fetcher.fetch('https://api.github.com/x');
-    expect(calls[0].headers.Authorization).toBeUndefined();
+    // Hermetic: Bun auto-loads nestjs/.env, so GITHUB_TOKEN may be set locally.
+    // Clear it for this case (and restore) to test the real "no token" path.
+    const prev = process.env.GITHUB_TOKEN;
+    delete process.env.GITHUB_TOKEN;
+    try {
+      const fetcher = new GithubFetcher(fn);
+      await fetcher.fetch('https://api.github.com/x');
+      expect(calls[0].headers.Authorization).toBeUndefined();
+    } finally {
+      if (prev === undefined) delete process.env.GITHUB_TOKEN;
+      else process.env.GITHUB_TOKEN = prev;
+    }
   });
 });
 

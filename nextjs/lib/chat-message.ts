@@ -4,6 +4,21 @@ import type { CardData } from "@/components/chat/inline-card";
 export type MessagePart =
   { type: "text"; text: string } | { type: "card"; card: CardData };
 
+/** A chat turn. Lives here (the message model) rather than in the client
+ * component so pure modules (persistence, the stream reducer) can share it. */
+export interface Message {
+  role: "user" | "assistant";
+  parts: MessagePart[];
+  /** The model's chain-of-thought (Open WebUI style), accumulated from reasoning
+   * events; shown in a collapsible box above the answer. */
+  reasoning?: string;
+  /** Thinking duration (reasoning start → first answer token), ms. */
+  reasoningMs?: number;
+  /** Inline images (data URLs) attached to a user turn (#42). Rendered in the
+   * turn; NOT persisted (stripped before storage to keep it lean). */
+  images?: string[];
+}
+
 /** Append a streamed token, merging into the trailing text run if there is one. */
 export function appendToken(parts: MessagePart[], text: string): MessagePart[] {
   const last = parts[parts.length - 1];

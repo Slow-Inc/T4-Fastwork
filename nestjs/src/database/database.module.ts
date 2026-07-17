@@ -9,8 +9,7 @@ export type DrizzleDB = ReturnType<typeof drizzle<typeof schema>>;
 /**
  * Global Drizzle client over the Supabase Postgres (Supavisor TRANSACTION
  * pooler, port 6543 — hence `prepare: false`, which the pooler requires).
- * Not yet imported by AppModule: it's wired in once ingestion/retrieval need
- * it and the real DB password is in DATABASE_URL.
+ * Imported by the feature modules that need the DB (RankModule, GithubModule).
  */
 @Global()
 @Module({

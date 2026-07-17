@@ -11,7 +11,7 @@ import {
   classifyContributors,
   type RosterMember,
 } from '@/lib/contributors';
-import { MarkdownContent } from '@/lib/markdown';
+import { ReadmeMarkdown } from '@/components/site/readme-markdown';
 import { WebsitePreview } from '@/components/site/website-preview';
 import { useLocale } from '@/i18n/locale-context';
 
@@ -181,7 +181,7 @@ export function ProjectDetailContent({
       {detail?.readme && (
         <section className="detail-readme rv">
           <div className="t-idx">{t('รายละเอียด (README)', 'Details (README)')}</div>
-          <MarkdownContent source={detail.readme} />
+          <ReadmeMarkdown source={detail.readme} />
         </section>
       )}
 

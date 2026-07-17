@@ -3,6 +3,76 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## 🚧 NEXT (design done, build pending) — GitHub-sourced AI case studies + site-wide static→DB sweep
+
+**One program, three inputs consolidated 2026-07-17:**
+- **Decision** → [ADR 0009](adr/0009-github-sourced-ai-authored-case-studies.md) — kill the static
+  catalog; projects+blog become GitHub-sourced native AI case studies (3 audience variants:
+  business/semitech/developer), map-reduce generation over MD (blob-sha extract cache, sized for the
+  `qwen3.6-35b-a3b` 128K gateway), webhook+cron+per-file-SHA trigger + GitHub App, revisions+overrides
+  provenance, per-project chat via the existing **FR-09 deterministic** grounding (Requirement.MD §5.5).
+- **PRD** → `docs/superpowers/specs/2026-07-17-github-ai-case-studies.md` — phases **P0–P8** (each → an
+  issue). **Design must stay faithful to Requirement.MD** (§4.2/§4.3/§5.1/§5.5/§6); the redesign is
+  additive.
+- **Audit** → `docs/reports/2026-07-17-static-db-disconnect-audit.md` — the MangaDock screenshot bug is
+  **systemic**: the public site renders static `content/*.ts` while every write pipeline writes
+  Supabase. **16 disconnects** found — **all 16 verified** against the code (audit was 100% accurate). So "kill static"
+  must be a **site-wide sweep**, not just projects/blog.
+
+**Tracked (filed 2026-07-17): epic #62 + children #63–#71 (P0–P8).** Branch `feat/github-ai-case-studies`.
+
+**Overnight AFK 2026-07-17 (done on branch, pushed, NOT merged):**
+- **#63 P0 — DONE** (`52fd7c5`): `.eq('status','published')` on the 3 public project reads. Verified:
+  read-only prod proof (would_be_hidden=0), tsc clean, unit 5/5, **e2e 52/52**. Red-first unit was not
+  feasible (no test DB) → verified via e2e + SQL semantics; a negative integration test is a follow-up.
+- **MangaDock (audit #0) — DONE** (`9821b9a`): `mergeProjects` overlays the DB `snapshotImage` onto the
+  static card (ADR 0003 pattern; TDD 7/7); `live_url` corrected `mangadock.com`(parked)→`hayateotsu.space`
+  (the repo's `homepageUrl`) in static catalog + prod DB. Screenshot capture teed up (Action cron, once
+  its Actions secrets are set). **New audit finding #17**: sync never captures repo `homepageUrl`/`openGraphImageUrl`.
+- **Decision brief** (`71a31d7`): `docs/reports/2026-07-17-adr0009-open-questions-brief.md` — 4 decisions
+  that unblock #64–#71.
+
+Remaining (needs the developer): merge the branch (P0 + MangaDock) after review; answer the 4 open
+questions to move #64–#71 → `ready-for-agent`; set the screenshot Action secrets so MangaDock captures.
+- **#63 P0** — see above (done on branch, pending merge).
+- **#64–#71 P1–P8** — schema · map-reduce generator · trigger+GitHub App · provenance revisions/
+  overrides · safety gate · **static→DB sweep (all surfaces)** · RAG+native render · per-project FR-09
+  chat. All parked-for-design (open questions: 1 URL vs 3, deep-dive marker, member-repo eligibility,
+  schema shape).
+- **Static→DB sweep surfaces** (#69, audit): projects, blog, faqs, services, certificates, recommend,
+  sitemap, member projects/certificates, RAG ingest source, chat marker resolver.
+- **Immediate quick-win option** (not yet an issue): overlay DB `snapshot_image` onto static cards +
+  fix mangadock DB `live_url` (→ `mangadock.com`) so the screenshot shows before the full cutover.
+
+## ✅ Session 2026-07-16/17 — clear-backlog program
+
+Branch `chore/clear-backlog-afk` (PR #59). What shipped this session:
+- **Close-outs:** #16–24 (freshness epic), #33/#35/#37/#38–43 (chat epic) CLOSED with
+  subagent-verified evidence; #20 superseded by #25. Tracker down to #58 (this PR).
+- **Security (Phase 1):** migration `0018_rls_chat_rag_tables.sql` — RLS + grant-trim on
+  `conversations`/`messages`/`document_embeddings` (were reachable via public PostgREST).
+  Applied to prod + committed; JWT-sim + advisors + codex adversarial review all green.
+  Sensitive specifics + 3 codex follow-up findings live in the private security note.
+- **Bug #36 FIXED** (`3256504`): loop-owned persistence (`lib/chat-stream.ts` pure reducer
+  + `persistDirect`) so a mid-stream reply survives a popup↔/chat switch; 290 unit + 52 e2e
+  green; closed with a post-mortem.
+- **Epic B (#45/#51) CLOSED:** all 5 surfaces verified rendering in `ai_rank` order (audit,
+  file:line). The optional project-CONTENT→DB migration is a future epic (zero functional gap).
+- **Security follow-ups fixed:** `app_admins` reconcile/prune of de-provisioned admins
+  (`a1296be`, closes the codex HIGH stale-admin + MED split-brain); `github_snapshots` RLS
+  policy backfilled into a migration (`12c5f7d`, migration 0019). pg_default_acl deny-by-default
+  is a LOW posture decision left for the team (private note).
+- **Phase 4 SHIPPED + CLOSED:** **#61** P3 content-gen (LlmClient adapter + `PgGenerateStore`
+  + secret-guarded `POST /github/generate` dry-run, `66b3bb1`) + **#60** RAG-freshness
+  (`runIngest` extraction + `RagIngestService` single-flight + refresh-trigger, `3401f5d`).
+  Verified: 170 nestjs tests + build + app bootstrap + live endpoint smoke (201 / 401).
+- **Research:** subagent difficulty-ladder (R0–R3) + delegation log → xeno-skills.
+
+**Tracker now: only #58 (this PR).** 🔴 **Optional follow-ups (not blockers):** #61 category-FK/M2M
+persistence + context-auto-assembly + approve RPC/UI + cron; #60 per-project incremental re-ingest;
+pg_default_acl deny-by-default posture; project-CONTENT→DB migration. All documented in
+`docs/reports/2026-07-17-p3-content-gen-rag-freshness-plan.md` + the private security note.
+
 ## Active — Open WebUI-style app-shell for /chat (epic #37)
 
 PRD: `docs/superpowers/specs/2026-07-15-owui-app-shell-chat.md`. Design inputs: `docs/design/openwebui-layout-study.md` + `docs/design/expensive-minimalism.md` + `nextjs/DESIGN.md`. Branch `feat/chat-thinking-mode`. **✅ All phases P0–P5 shipped** (commits `dc0fc3e`, `9af0f0f`, `06189eb`, `5b97857`, `6337f69`, + P4). Issues #38–#43 still OPEN pending confirm-to-close (not self-merged). Remaining: PR + close issues on the user's go.
@@ -20,9 +90,22 @@ Prereqs shipped: Visible-Grid Swiss redesign (`f45f7e8`, verified live). Style t
 
 **Follow-up shipped (post-epic, no issue): full assistant Markdown** — `components/chat/chat-markdown.tsx` (react-markdown + remark-gfm + remark-breaks + rehype-highlight): headings, bold/italic/strike, GFM tables, task/nested lists, blockquotes (tint, not side-stripe), safe new-tab links (dark-rust `#a8330f` for AA), inline code, and fenced code blocks with a language chip + copy button + highlight.js theme tuned to our palette. Assistant turns only (user stays a plain pill). 50 e2e green + real-model visual check. `/impeccable` audit fixed link contrast.
 
-## Active — bug: interrupted AI turn (#36) 🔵
+## Active — bug: interrupted AI turn (#36) 🔵 — PARKED (architecture decision) 2026-07-16
 
-Switching popup ↔ /chat mid-stream loses the in-progress reply → blank `ผู้ช่วย AI` turn. Root cause traced (shared `SHARED_CHAT_KEY` sessionStorage + per-instance SSE + no `AbortController`); architectural, pre-existing since #31 — NOT a redesign regression. Detail: scratchpad `issue-chat-switch-bug.md`. Separate from #37; fix independently.
+Switching popup ↔ /chat mid-stream loses the in-progress reply → blank `ผู้ช่วย AI` turn. Architectural, pre-existing since #31 — NOT a redesign regression. Separate from #37; fix independently.
+
+**Fail path traced (2026-07-16, debug-mantra), file:line:**
+- `send()` (`components/chat/chat-client.tsx:186`) pushes `{role:"assistant", parts:[]}` then calls `streamAssistant`.
+- `streamAssistant` (`chat-client.tsx:249`) runs an async `reader.read()` loop that writes tokens into **instance-local React state** via `mutateLastAssistant` (`:171`).
+- Persistence is a **React effect** on `messages` change (`:368`) → store (`onPersist`) + `SHARED_CHAT_KEY` sessionStorage (`chat-app-shell.tsx:116`).
+- On surface switch the streaming instance unmounts → `setMessages` becomes a no-op → the persist **effect stops firing** → tokens streamed after unmount never reach the store. The other instance seeds once from the last snapshot (`chat-app-shell.tsx:170` / `chat-client.tsx:352`), which still holds the **empty** assistant turn → permanent blank turn. (The async loop itself keeps running post-unmount, but its writes are dropped.)
+
+**Why PARKED (AFK):** the faithful fix ("reply survives the switch") is a **seam/architecture decision** — where the streaming loop lives and how it persists independent of React mount:
+1. **Loop-owned persistence** — `streamAssistant` keeps a local accumulator and writes each update straight to the store + `SHARED_CHAT_KEY` (not via the effect), so the completed reply lands even after unmount. Eventual-consistent: the other surface shows it on next mount, not live. *(smallest; recommended first)*
+2. **Module-singleton stream** — hoist the SSE loop out of the component into a per-conversation singleton; instances subscribe. True live cross-surface sync. *(largest)*
+3. **AbortController + persist-on-unmount** — abort on unmount and flush the partial. Cleanest teardown but the reply is cut short, not continued.
+
+Recommend (1) as MVP; validate with an e2e that starts a turn, switches popup↔/chat mid-stream, and asserts the reply survives + finishes. Do this as a focused interactive step (seam choice), not blind AFK. Do **not** ship a "strip the empty turn" half-fix — it hides the blank artifact while the reply is still lost.
 
 ## Active — Serverless-native live freshness (#25)
 
@@ -220,9 +303,17 @@ PRD `…ai-display-ranking.md`) · Epic C member CMS **#46** (C1–C6 **#52–#5
 
 - **nestjs lint ~692 errors on HEAD** — typescript-eslint type-resolution fails across `test/**`. Repo-wide; needs an eslint/tsconfig fix. New source files are clean. No issue yet.
 - **`github.service.spec.ts` "omits Authorization when no token" fails locally** — Bun auto-loads `nestjs/.env` (real `GITHUB_TOKEN`); passes in CI + with token unset. Env-dependent test; consider making it hermetic. No issue yet.
-- **Supabase advisors: `rls_disabled_in_public` ERROR on ~13 public tables** (faqs, services, projects, categories, tags, technologies, blog_posts, certificates, conversations, messages, project_tags, project_technologies, document_embeddings) + `sensitive_columns_exposed` on `conversations.session_id` — **pre-existing**, surfaced during #25 R2 advisor check (NOT introduced by R2; `github_snapshots` itself is clean). The backend reads these via the Postgres superuser pooler (bypasses RLS), so enabling RLS needs explicit anon policies to avoid breaking public frontend reads. Out of #25 scope; needs its own security pass. No issue yet.
+- **RLS security pass — RE-SCOPED (verified on prod 2026-07-16).** Earlier notes listed a broad set of public tables as `rls_disabled_in_public`; a direct check on prod confirms the **content tables now have RLS enabled + policies** — the member-CMS security work (PR #34, migrations 0015–0017) already covered them. A **small remaining set of chat/RAG tables** still needs a scoped RLS pass; the backend reaches them via the superuser pooler (bypasses RLS), so the pass must add scoped policies without breaking chat. The exact tables/columns + prod project ref are kept in the **private security note (personal memory)**, not this public ledger. This is **Phase 1** of the clear-backlog program — its own security pass (grill vs ADR 0007 → `/security-review`). No issue yet.
 
-## Carried over from ADR 0003 (epic #16, still open per prior handoff)
+## ✅ CLOSED — ADR 0003 live-team-portfolio epic (#16) + all sub-issues (2026-07-16)
 
-- Freshness automation: refresh cron (could be a committed GitHub Action) + org webhook on `Slow-Inc` + Cloudflare cache rule for `/github/*`. Token org-403 was **fixed this session** (fresh ≤366-day PAT set on Vercel + redeployed; refresh syncs org + 5 members).
-- Issues #16–#24 still open despite PR #26 merged — close with evidence when the epic wraps.
+Freshness epic **#16 + #17–#24 CLOSED** as completed-with-evidence after a subagent
+code-audit against `master` (Explore Task subagents, per-deliverable `file:line`) +
+a prod DB RLS check. #18's `github_snapshots` RLS confirmed **live on prod** (rls_enabled,
+1 policy — but applied directly, **not in a committed migration**: a migration-drift item to
+backfill). **#20 closed as superseded by #25** — its route/single-flight/ETag repo-list sync
+ship + live (cron HTTP 201), but the WARM-tier `pushed_at`-delta poll was never built and is
+covered by #25's event-driven cron+heal+webhook+Realtime architecture (YAGNI). The chat
+app-shell epic **#37 + #38–43** and **#33/#35** also closed (all verified vs `master`).
+- **Follow-up (🔴 no issue):** backfill the `github_snapshots` RLS policy into a committed
+  migration so a rebuilt DB reproduces it (prod is fine; the repo migration set is incomplete).

@@ -14,3 +14,4 @@ edit-to-reverse). See `docs/agents/domain.md` and the `t4-engineering-records` s
 | [0006](0006-unified-github-auth-member-is-admin.md) | Unified auth: members & admins log in with GitHub; admin = a member flagged `is_admin` | Accepted | 2026-07-15 |
 | [0007](0007-db-enforced-authz-rls-is-app-admin.md) | Authorization enforced at the database: RLS everywhere + `is_app_admin()` SECURITY DEFINER, no service-role key | Accepted | 2026-07-15 |
 | [0008](0008-ai-display-ranking-order-not-content.md) | AI display-ranking: content keeps its source; only display ORDER comes from a persisted `ai_rank` | Accepted | 2026-07-15 |
+| [0009](0009-github-sourced-ai-authored-case-studies.md) | GitHub-sourced, AI-authored native case studies: kill the static catalog; project → per-audience posts; map-reduce generation on MD change | Accepted (design) | 2026-07-17 |

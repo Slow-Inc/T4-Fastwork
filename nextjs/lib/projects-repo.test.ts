@@ -89,4 +89,26 @@ describe('mergeProjects', () => {
     expect(merged.length).toBe(1);
     expect(merged[0].title).toBe('MangaDock');
   });
+
+  test('overlays the DB snapshotImage onto a same-slug static entry (live field from DB)', () => {
+    // Static MangaDock has no snapshotImage; the screenshot worker writes it to
+    // the DB. The curated identity stays static; only the live field is overlaid.
+    const dbWithShot = mapDbProject({
+      ...dbRow,
+      slug: 'mangadock',
+      title: 'From DB',
+      snapshot_image: 'https://cdn.example/mangadock.jpg',
+    });
+    const merged = mergeProjects(staticProjects, [dbWithShot]);
+    expect(merged.length).toBe(1);
+    expect(merged[0].title).toBe('MangaDock'); // curated static field preserved
+    expect(merged[0].snapshotImage).toBe('https://cdn.example/mangadock.jpg'); // live field overlaid
+  });
+
+  test('a DB row without a snapshotImage does not clobber the static entry', () => {
+    const dbNoShot = mapDbProject({ ...dbRow, slug: 'mangadock' }); // no snapshot_image
+    const merged = mergeProjects(staticProjects, [dbNoShot]);
+    expect(merged.length).toBe(1);
+    expect(merged[0].snapshotImage).toBeUndefined();
+  });
 });

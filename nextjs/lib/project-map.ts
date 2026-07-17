@@ -62,8 +62,21 @@ export function mapDbProject(row: DbProjectRow): Project {
   };
 }
 
-/** Static catalog first; DB projects with brand-new slugs appended. */
+/**
+ * Static catalog is the curated base. For a slug present in both, the DB's LIVE
+ * fields are overlaid onto the static entry (ADR 0003 — live/generated fields
+ * come from the DB, the static file stays the curated identity); today that is
+ * the screenshot `snapshotImage` written by the screenshot worker, which the
+ * static catalog can't carry. DB rows with brand-new slugs are appended so
+ * CMS-created projects still appear. `liveUrl` is intentionally NOT overlaid: the
+ * seeded DB rows hold the GitHub repo URL, which is worse than the curated one.
+ */
 export function mergeProjects(base: Project[], extra: Project[]): Project[] {
-  const seen = new Set(base.map((p) => p.slug));
-  return [...base, ...extra.filter((p) => !seen.has(p.slug))];
+  const dbBySlug = new Map(extra.map((p) => [p.slug, p]));
+  const overlaid = base.map((p) => {
+    const db = dbBySlug.get(p.slug);
+    return db?.snapshotImage ? { ...p, snapshotImage: db.snapshotImage } : p;
+  });
+  const baseSlugs = new Set(base.map((p) => p.slug));
+  return [...overlaid, ...extra.filter((p) => !baseSlugs.has(p.slug))];
 }

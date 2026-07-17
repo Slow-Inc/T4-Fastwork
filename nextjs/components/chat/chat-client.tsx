@@ -4,13 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { SSEParser } from "@/lib/sse-parser";
 import {
-  appendToken,
-  appendCard,
   shouldShowTypingCursor,
   canSendMessage,
   type MessagePart,
   type ChatStatus,
+  type Message,
 } from "@/lib/chat-message";
+import {
+  reduceAssistant,
+  toPersistable,
+  type StreamEvent,
+} from "@/lib/chat-stream";
 import { buildProjectGreetingMessage } from "@/lib/project-chat";
 import { loadChat, saveChat } from "@/lib/chat-persist";
 import { InlineCard, type CardData } from "./inline-card";
@@ -18,21 +22,10 @@ import { ThinkingBox } from "./thinking-box";
 import { ChatMarkdown } from "./chat-markdown";
 import { useChatSession } from "./chat-session-context";
 
+export type { Message };
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4100";
-
-export interface Message {
-  role: "user" | "assistant";
-  parts: MessagePart[];
-  /** The model's chain-of-thought (Open WebUI style), accumulated from reasoning
-   * events; shown in a collapsible box above the answer. */
-  reasoning?: string;
-  /** Thinking duration (reasoning start → first answer token), ms. */
-  reasoningMs?: number;
-  /** Inline images (data URLs) attached to a user turn (#42). Rendered in the
-   * turn; NOT persisted (stripped before storage to keep it lean). */
-  images?: string[];
-}
 
 type Status = ChatStatus;
 
@@ -143,6 +136,11 @@ export function ChatClient({
   // shell's re-renders (the callback identity changes each render).
   const onPersistRef = useRef(onPersist);
   onPersistRef.current = onPersist;
+  // Mirror of `messages` for synchronous reads at event time: send()/regenerate()
+  // snapshot the base history from here (the placeholder-free prefix a streaming
+  // turn persists against) without waiting for a re-render.
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoSentRef = useRef(false);
   // When the current turn's reasoning stream began (Date.now); used to time the
@@ -162,20 +160,25 @@ export function ChatClient({
     });
   }
 
-  // Mutate the last assistant message's parts through a reducer.
-  function updateLastAssistant(fn: (parts: MessagePart[]) => MessagePart[]) {
-    mutateLastAssistant((m) => ({ ...m, parts: fn(m.parts) }));
-  }
-
-  // Mutate the whole last assistant message (parts + reasoning fields).
-  function mutateLastAssistant(fn: (m: Message) => Message) {
-    setMessages((prev) => {
-      const next = [...prev];
-      const last = next[next.length - 1];
-      if (last?.role === "assistant") next[next.length - 1] = fn(last);
-      return next;
+  // Persist the given message array directly (store-backed mode → onPersist; else
+  // sessionStorage). Loop-owned: the streaming loop calls this itself so a reply in
+  // flight lands even after this component unmounts on a surface switch (#36). Skips
+  // the lone greeting (nothing to remember yet).
+  function persistDirect(msgs: Message[]) {
+    if (msgs.length <= 1) return;
+    const persistable = toPersistable(msgs);
+    if (onPersistRef.current) {
+      onPersistRef.current({
+        messages: persistable,
+        sessionId: sessionId.current,
+      });
+      return;
+    }
+    if (!persistKey) return;
+    saveChat(window.sessionStorage, persistKey, {
+      messages: persistable,
+      sessionId: sessionId.current,
     });
-    scrollToEnd();
   }
 
   async function send(text: string) {
@@ -183,18 +186,22 @@ export function ChatClient({
     const imgs = attachments;
     if (!canSendMessage(busy, text, imgs.length)) return;
 
+    const userTurn: Message = {
+      role: "user",
+      parts: trimmed ? [{ type: "text", text: trimmed }] : [],
+      images: imgs.length ? imgs : undefined,
+    };
+    // The base a streaming turn persists against: the history through this user
+    // turn (the assistant placeholder is the slot the loop fills and owns).
+    const base = [...messagesRef.current, userTurn];
     setMessages((prev) => [
       ...prev,
-      {
-        role: "user",
-        parts: trimmed ? [{ type: "text", text: trimmed }] : [],
-        images: imgs.length ? imgs : undefined,
-      },
+      userTurn,
       { role: "assistant", parts: [] },
     ]);
     setInput("");
     setAttachments([]);
-    await streamAssistant(trimmed, imgs);
+    await streamAssistant(trimmed, imgs, base);
   }
 
   function addFiles(files: FileList | null) {
@@ -224,13 +231,15 @@ export function ChatClient({
     if (busy) return;
     const lastUser = [...messages].reverse().find((m) => m.role === "user");
     if (!lastUser) return;
-    setMessages((prev) => {
-      const next = [...prev];
-      if (next[next.length - 1]?.role === "assistant") next.pop();
-      next.push({ role: "assistant", parts: [] });
-      return next;
-    });
-    await streamAssistant(messageText(lastUser.parts), lastUser.images ?? []);
+    // Drop the trailing assistant turn; the base is the history up to and including
+    // the last user turn, and the fresh placeholder is the slot the loop refills.
+    const prior = messagesRef.current;
+    const base =
+      prior[prior.length - 1]?.role === "assistant"
+        ? prior.slice(0, -1)
+        : [...prior];
+    setMessages(() => [...base, { role: "assistant", parts: [] }]);
+    await streamAssistant(messageText(lastUser.parts), lastUser.images ?? [], base);
   }
 
   async function copyMessage(index: number, parts: MessagePart[]) {
@@ -244,12 +253,34 @@ export function ChatClient({
     }
   }
 
-  /** Stream one assistant answer. Assumes the last message is an empty assistant
-   * placeholder (send() and regenerate() both guarantee this). */
-  async function streamAssistant(userText: string, images: string[] = []) {
+  /** Stream one assistant answer into the trailing placeholder that send()/
+   * regenerate() just appended. `base` is the history through the user turn; the
+   * loop owns a local accumulator and persists `[...base, assistant]` on every
+   * event, so a reply in flight survives an unmount (surface switch) mid-stream
+   * (#36) — `setMessages` no-ops after unmount, but `persistDirect` still lands. */
+  async function streamAssistant(
+    userText: string,
+    images: string[] = [],
+    base: Message[] = [],
+  ) {
     setStatus("thinking");
     reasoningStartRef.current = undefined;
     scrollToEnd();
+
+    // Loop-owned accumulator — the source of truth for what gets persisted.
+    let assistant: Message = { role: "assistant", parts: [] };
+    const commit = (ev: StreamEvent) => {
+      assistant = reduceAssistant(assistant, ev, reasoningStartRef.current);
+      const next = assistant;
+      setMessages((prev) => {
+        const arr = [...prev];
+        const i = arr.length - 1;
+        if (arr[i]?.role === "assistant") arr[i] = next;
+        return arr;
+      });
+      persistDirect([...base, next]);
+      scrollToEnd();
+    };
 
     try {
       const res = await fetch(`${API_BASE}/chat/stream`, {
@@ -285,40 +316,27 @@ export function ChatClient({
               if (reasoningStartRef.current === undefined) {
                 reasoningStartRef.current = Date.now();
               }
-              mutateLastAssistant((m) => ({
-                ...m,
-                reasoning: (m.reasoning ?? "") + (data.text as string),
-              }));
+              commit({ kind: "reasoning", text: data.text as string });
               break;
-            case "token": {
+            case "token":
               setStatus("streaming");
-              // First answer token ends the thinking phase — stamp its duration.
-              const started = reasoningStartRef.current;
-              mutateLastAssistant((m) => ({
-                ...m,
-                parts: appendToken(m.parts, data.text as string),
-                reasoningMs:
-                  m.reasoningMs ??
-                  (started !== undefined ? Date.now() - started : undefined),
-              }));
+              // First answer token ends the thinking phase — reduceAssistant stamps
+              // its duration from reasoningStartRef, using this token's timestamp.
+              commit({ kind: "token", text: data.text as string, at: Date.now() });
               break;
-            }
             case "card":
-              updateLastAssistant((p) =>
-                appendCard(p, data as unknown as CardData),
-              );
+              commit({ kind: "card", card: data as unknown as CardData });
               break;
             case "done":
               setStatus("idle");
               reportTurnComplete();
               break;
             case "error":
-              updateLastAssistant((p) =>
-                appendToken(
-                  p,
+              commit({
+                kind: "error",
+                text:
                   (data.fallbackText as string) ?? "ขออภัย ระบบขัดข้องชั่วคราว",
-                ),
-              );
+              });
               setStatus("error");
               break;
           }
@@ -326,12 +344,10 @@ export function ChatClient({
       }
       setStatus((s) => (s === "error" ? "error" : "idle"));
     } catch {
-      updateLastAssistant((p) =>
-        appendToken(
-          p,
-          "ขออภัยครับ ตอนนี้เชื่อมต่อผู้ช่วย AI ไม่ได้ ลองใหม่อีกครั้ง หรือติดต่อทีมโดยตรงได้เลย",
-        ),
-      );
+      commit({
+        kind: "error",
+        text: "ขออภัยครับ ตอนนี้เชื่อมต่อผู้ช่วย AI ไม่ได้ ลองใหม่อีกครั้ง หรือติดต่อทีมโดยตรงได้เลย",
+      });
       setStatus("error");
     }
   }
@@ -363,26 +379,12 @@ export function ChatClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist after every change (skip the lone greeting — nothing to remember yet).
-  // Store-backed mode reports to the app-shell; otherwise sessionStorage (popup).
+  // Persist on every state change too — covers non-stream mutations and the normal
+  // mounted case. The streaming loop also persists directly (loop-owned, #36); both
+  // paths are idempotent, so a mounted stream harmlessly writes through both.
   useEffect(() => {
-    if (messages.length <= 1) return;
-    // Never persist base64 images (quota); keep only the text of each turn.
-    const persistable = messages.map((m) =>
-      m.images ? { ...m, images: undefined } : m,
-    );
-    if (onPersistRef.current) {
-      onPersistRef.current({
-        messages: persistable,
-        sessionId: sessionId.current,
-      });
-      return;
-    }
-    if (!persistKey) return;
-    saveChat(window.sessionStorage, persistKey, {
-      messages: persistable,
-      sessionId: sessionId.current,
-    });
+    persistDirect(messages);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, persistKey]);
 
   // Clear a pending "copied" reset if we unmount (e.g. switching conversations).
