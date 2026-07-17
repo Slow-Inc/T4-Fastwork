@@ -56,8 +56,18 @@ export function parseGeneratedContent(raw: string): GeneratedContent {
     tags: arr(o.tags),
     technologies: arr(o.technologies),
   };
-  if (!result.title || !result.description) {
-    throw new Error('generate: JSON missing required title/description');
+  // Require every narrative field the patch would write, not just title/description
+  // (#75): a partial reply that omitted titleEn/content would otherwise blank those
+  // columns with empty strings. tags/technologies/category may legitimately be empty.
+  if (
+    !result.title ||
+    !result.titleEn ||
+    !result.description ||
+    !result.content
+  ) {
+    throw new Error(
+      'generate: JSON missing required text (title/titleEn/description/content)',
+    );
   }
   return result;
 }

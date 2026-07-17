@@ -60,17 +60,19 @@ describe('parseGeneratedContent', () => {
     expect(r.category).toBe('AI/Automation');
   });
 
-  it('drops non-string array entries and missing fields default empty', () => {
+  it('drops non-string array entries; category/tags stay optional', () => {
     const r = parseGeneratedContent(
       JSON.stringify({
         title: 'T',
+        titleEn: 'Te',
         description: 'D',
+        content: 'body',
         tags: ['ok', 42, null],
       }),
     );
     expect(r.tags).toEqual(['ok']);
     expect(r.technologies).toEqual([]);
-    expect(r.category).toBe('');
+    expect(r.category).toBe(''); // category is optional → blank is fine
   });
 
   it('throws on non-JSON', () => {
@@ -80,6 +82,21 @@ describe('parseGeneratedContent', () => {
   it('throws when required title/description are missing', () => {
     expect(() =>
       parseGeneratedContent(JSON.stringify({ title: 'only title' })),
+    ).toThrow();
+  });
+
+  it('throws when a required narrative field (titleEn/content) is missing (#75)', () => {
+    // A partial model reply must be skipped, not written — otherwise the empty
+    // string blanks title_en / content on the project row.
+    expect(() =>
+      parseGeneratedContent(
+        JSON.stringify({ title: 'T', titleEn: 'Te', description: 'D' }), // no content
+      ),
+    ).toThrow();
+    expect(() =>
+      parseGeneratedContent(
+        JSON.stringify({ title: 'T', description: 'D', content: 'c' }), // no titleEn
+      ),
     ).toThrow();
   });
 });
