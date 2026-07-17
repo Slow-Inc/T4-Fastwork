@@ -6,6 +6,7 @@ import { HealthModule } from './health/health.module';
 import { ChatModule } from './chat/chat.module';
 import { GithubModule } from './github/github.module';
 import { GithubGenerateModule } from './github/github-generate.module';
+import { CaseStudyModule } from './github/github-case-study.module';
 import { RankModule } from './rank/rank.module';
 
 @Module({
@@ -21,6 +22,7 @@ import { RankModule } from './rank/rank.module';
     ChatModule,
     GithubModule,
     GithubGenerateModule,
+    CaseStudyModule,
     RankModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
