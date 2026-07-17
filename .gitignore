@@ -13,3 +13,6 @@ dist/
 # Playwright MCP session artifacts (screenshots, snapshots, console logs)
 /.playwright-mcp/
 .firecrawl/
+
+# Local personal MCP server config (Hostinger domain/DNS tooling; token via env)
+.mcp.json
