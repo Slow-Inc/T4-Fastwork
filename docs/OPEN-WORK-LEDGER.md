@@ -3,6 +3,25 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## ✅ 2026-07-18 (interactive→AFK, strict workflow) — #81 P2 persistence CORE shipped
+
+- **Pipeline, hard-to-reverse:** grill/grill-with-docs resolved to *"already decided"* — **ADR 0009
+  is Accepted** (D1–D4) + the open-questions brief **resolved Q1–Q4** (MVP = single `owner` column,
+  revisions/overrides → P4). So #81 became **implementation of a decided ADR**, not a design guess →
+  AFK-safe. No new ADR needed.
+- **`#81` P2 persistence CORE SHIPPED (`#101`, `8db3fa3`):** `computeManifestHash`+`PROMPT_VERSION`
+  (D3 idempotency key, shared w/ #66); `PgCaseStudyStore` (manifest read, blob_sha extract cache,
+  `blog_posts` **draft** upsert w/ `owner='auto'` guard, `generation_jobs`); `CaseStudyGenerateService`
+  (skip = **0 LLM** / generate = **3** posts / fail = record+rethrow); **migration 0022** (`project_documents.extract jsonb`, applied via MCP); `CaseStudyModule` wired inert into AppModule.
+  16 new tests (both AC clauses) + build + eslint + `DI_OK` + `/security-review` (inert, draft-only,
+  parameterized, RLS-locked → no new boundary).
+- **`#81` stays open — remainder is genuinely DOWNSTREAM, not forceable now:** `project_documents` is
+  populated by the **#66 worker** (doesn't exist) → an operator endpoint would only hit the empty-manifest
+  path (no value before #66); **`live_url` (part 4)** needs a sync→`projects` write path = **#69 P6**
+  (today sync writes only `github_snapshots`). Prod-run verify blocked (no `source='github'` project).
+  The core is correctly shipped inert, waiting for #66. Full status on the `#81` comment.
+- Tree green on `master`.
+
 ## ✅ 2026-07-18 (AFK run 2, overnight) — #75 part 2 shipped; #66/#81 triaged+parked
 
 - **`#75` part 2 SHIPPED (`#100`, `b2f0ff0`):** `pg-generate.store.applyPatch` now guards each copy
