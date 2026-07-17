@@ -17,8 +17,14 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
 - **MangaDock:** repo `homepageUrl=https://hayateotsu.space/` (the real dev-phase site; `mangadock.com`
   is a parked domain) → corrected `live_url` (static + DB); screenshot capture teed up (Action cron once
   its secrets are set). New audit **finding #17**: sync never captures repo `homepageUrl`/`openGraphImageUrl`.
-- **Open PRs:** `#59` (clear-backlog) now redundant — its content is on master via #72 (diff = ∅) → close
-  as merged-via-#72. Backlog: **#74** (ready-for-agent), **#75** (ready-for-human).
+- **Retro-review findings all handled:** **#73** fixed (#77) · **#74** RAG-ingest atomic-replace fixed
+  (#78) · **#75** part 3 (reject partial-JSON) fixed (#79) — parts 1 (apply-regenerates → design, P4/#67)
+  + 2 (applyPatch owner predicate — latent DB-race) remain in #75. `#59`/`#58` (clear-backlog) closed as
+  merged-via-#72.
+- **Everything autonomously-doable is shipped + gated** (TDD red→green, /scrutinize, PR-not-self-merge).
+  **All remaining open work needs the developer:** epic #62 + #64–#71 (P1–P8) are design-pending on the
+  4 questions in `docs/reports/2026-07-17-adr0009-open-questions-brief.md`; set the screenshot Action
+  secrets for MangaDock; decide #75 parts 1/2.
 
 ## 🚧 NEXT (design done, build pending) — GitHub-sourced AI case studies + site-wide static→DB sweep
 
