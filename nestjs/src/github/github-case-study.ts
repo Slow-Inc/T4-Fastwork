@@ -149,3 +149,28 @@ export function parseFileExtract(
     codeDepth: asStr(o.codeDepth),
   };
 }
+
+// --- blob_sha extract cache ------------------------------------------------
+
+/**
+ * Split the curated documents into the ones that must be (re-)mapped and the
+ * cached extracts that can be reused unchanged. A file is reused iff a cached
+ * extract exists for its exact `blob_sha` (content hash) — so only content
+ * changes trigger an LLM map call, and a cached extract for a file no longer
+ * present is dropped (never fed to the reduce). This is what makes regeneration
+ * cheap + idempotent (ADR 0009 D2).
+ */
+export function selectDocsToMap(
+  docs: ProjectDocument[],
+  cached: FileExtract[],
+): { toMap: ProjectDocument[]; reused: FileExtract[] } {
+  const bySha = new Map(cached.map((e) => [e.blobSha, e]));
+  const toMap: ProjectDocument[] = [];
+  const reused: FileExtract[] = [];
+  for (const d of docs) {
+    const hit = bySha.get(d.blobSha);
+    if (hit) reused.push(hit);
+    else toMap.push(d);
+  }
+  return { toMap, reused };
+}

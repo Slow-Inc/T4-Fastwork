@@ -3,7 +3,9 @@ import {
   curateDocuments,
   buildMapPrompt,
   parseFileExtract,
+  selectDocsToMap,
   type ProjectDocument,
+  type FileExtract,
 } from '../src/github/github-case-study';
 
 const doc = (path: string, blobSha = 'sha', markdown = '# x'): ProjectDocument => ({
@@ -119,5 +121,43 @@ describe('parseFileExtract (Stage1)', () => {
     expect(() =>
       parseFileExtract('not json at all', { path: 'a.md', blobSha: 's' }),
     ).toThrow();
+  });
+});
+
+describe('selectDocsToMap (blob_sha cache)', () => {
+  const extract = (path: string, blobSha: string): FileExtract => ({
+    path,
+    blobSha,
+    themes: [],
+    architecture: '',
+    tech: [],
+    userOutcomes: '',
+    codeDepth: '',
+  });
+
+  it('maps only changed-SHA files; reuses cached extracts for unchanged', () => {
+    const docs = [
+      doc('a.md', 'sha-a-v2'), // changed
+      doc('b.md', 'sha-b'), //     unchanged
+    ];
+    const cached = [extract('a.md', 'sha-a-v1'), extract('b.md', 'sha-b')];
+    const { toMap, reused } = selectDocsToMap(docs, cached);
+    expect(toMap.map((d) => d.path)).toEqual(['a.md']);
+    expect(reused.map((e) => e.path)).toEqual(['b.md']);
+  });
+
+  it('maps everything when there is no cache', () => {
+    const docs = [doc('a.md', 's1'), doc('b.md', 's2')];
+    const { toMap, reused } = selectDocsToMap(docs, []);
+    expect(toMap).toHaveLength(2);
+    expect(reused).toHaveLength(0);
+  });
+
+  it('drops a stale cached extract for a file no longer present', () => {
+    const docs = [doc('a.md', 'sha-a')];
+    const cached = [extract('a.md', 'sha-a'), extract('deleted.md', 'sha-d')];
+    const { toMap, reused } = selectDocsToMap(docs, cached);
+    expect(toMap).toHaveLength(0);
+    expect(reused.map((e) => e.path)).toEqual(['a.md']); // deleted.md not reused
   });
 });
