@@ -50,15 +50,22 @@ async function main(): Promise<void> {
     for (const row of rows as { id: number; slug: string; live_url: string }[]) {
       try {
         const page = await ctx.newPage();
+        // `networkidle` is unreliable on a live app — polling/analytics/long-lived
+        // connections keep the network busy, so it never settles and times out even
+        // though the page rendered fine (Playwright discourages it). Navigate on
+        // `domcontentloaded`, then best-effort wait for `load` + a short settle so
+        // the hero/fonts have painted before the shot.
         const res = await page.goto(row.live_url, {
-          waitUntil: 'networkidle',
-          timeout: 30_000,
+          waitUntil: 'domcontentloaded',
+          timeout: 45_000,
         });
         if (!res || !res.ok()) {
           console.warn(`[screenshot] ${row.slug}: bad response, keeping prior.`);
           await page.close();
           continue;
         }
+        await page.waitForLoadState('load', { timeout: 15_000 }).catch(() => {});
+        await page.waitForTimeout(2_500);
         const shot = await page.screenshot({ type: 'jpeg', quality: 80 });
         await page.close();
         if (shot.byteLength < MIN_BYTES) {
