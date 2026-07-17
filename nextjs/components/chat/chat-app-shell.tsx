@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  DEFAULT_TITLE,
+  applyPersist,
   createConversation,
   deleteConversation,
-  deriveTitle,
   groupByRecency,
   listConversations,
   loadState,
@@ -13,7 +12,6 @@ import {
   renameConversation,
   saveState,
   switchConversation,
-  touchConversation,
   type ConversationState,
 } from "@/lib/chat-conversations";
 import { SHARED_CHAT_KEY, loadChat, saveChat } from "@/lib/chat-persist";
@@ -37,6 +35,13 @@ export function ChatAppShell() {
   // (not per render — that would be an impure render) which is plenty fresh: the
   // buckets and "3h" labels don't need to tick live, matching Open WebUI.
   const [now, setNow] = useState(0);
+  // Latest active id in a ref so a background stream's persist (which may run
+  // through a handler captured before a conversation switch) can tell whether it
+  // targets the on-screen conversation before mirroring to the popup (#73).
+  const activeIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    activeIdRef.current = state?.activeId ?? null;
+  });
 
   // Load the store client-only (localStorage), fold in the floating conversation,
   // and guarantee an active conversation. This MUST run after mount: localStorage
@@ -94,29 +99,29 @@ export function ChatAppShell() {
     });
   }
 
-  function handlePersist(data: { messages: Message[]; sessionId?: string }) {
+  function handlePersist(data: {
+    messages: Message[];
+    sessionId?: string;
+    conversationId?: string;
+  }) {
     setState((prev) => {
-      if (!prev || !prev.activeId) return prev;
-      const active = prev.conversations.find((c) => c.id === prev.activeId);
-      const patch: { messages: unknown[]; sessionId?: string; title?: string } =
-        {
-          messages: data.messages,
-          sessionId: data.sessionId,
-        };
-      // Name the conversation from its first user turn, once.
-      if (active && active.title === DEFAULT_TITLE) {
-        const derived = deriveTitle(data.messages);
-        if (derived !== DEFAULT_TITLE) patch.title = derived;
-      }
-      const next = touchConversation(prev, prev.activeId, patch);
+      if (!prev) return prev;
+      // Target the conversation the stream ORIGINATED in, not whatever is active
+      // now — a reply still arriving after a switch must not overwrite the new
+      // conversation (#73). applyPersist also names a still-default conversation.
+      const next = applyPersist(prev, data);
       saveState(window.localStorage, next);
       return next;
     });
-    // Keep the popup widget continuous with the page's active conversation (#31).
-    saveChat(window.sessionStorage, SHARED_CHAT_KEY, {
-      messages: data.messages,
-      sessionId: data.sessionId,
-    });
+    // Mirror to the popup widget ONLY for the on-screen conversation (#31): a
+    // background stream targeting another conversation must not overwrite the
+    // popup's shared view (#73).
+    if (!data.conversationId || data.conversationId === activeIdRef.current) {
+      saveChat(window.sessionStorage, SHARED_CHAT_KEY, {
+        messages: data.messages,
+        sessionId: data.sessionId,
+      });
+    }
   }
 
   // Stable frame before the store loads (also the SSR/hydration render). The page's
@@ -166,6 +171,7 @@ export function ChatAppShell() {
           </div>
           <ChatClient
             key={state.activeId ?? "none"}
+            conversationId={state.activeId ?? undefined}
             emptyState
             initialMessages={
               active && active.messages.length
