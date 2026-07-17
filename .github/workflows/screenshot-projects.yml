@@ -4,7 +4,8 @@
 # project's live_url that has no snapshot_image yet, uploads to Supabase Storage,
 # and writes the URL back to the projects row.
 #
-# Gated: needs repo Actions secrets SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY.
+# Gated: needs repo Actions secrets SUPABASE_URL + SUPABASE_SECRET_KEY
+# (SUPABASE_SECRET_KEY = a Supabase secret key, new `sb_secret_...` or a legacy service_role).
 # Until they're set the job no-ops (the script exits early on missing env).
 name: screenshot-projects
 
@@ -39,5 +40,5 @@ jobs:
       - name: Capture missing project screenshots
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: bun run scripts/screenshot-projects.ts
