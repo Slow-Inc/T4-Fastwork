@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { LlmModule } from '../llm/llm.module';
+import { RevalidateModule } from '../revalidate/revalidate.module';
 import { LlmService } from '../llm/llm.service';
 import { RankService, RANK_STORE, RANK_CLIENT } from './rank.service';
 import { PgRankStore } from './pg-rank.store';
@@ -13,7 +14,7 @@ import type { RankClient } from './rank';
  * `POST /rank/refresh` trigger.
  */
 @Module({
-  imports: [DatabaseModule, LlmModule],
+  imports: [DatabaseModule, LlmModule, RevalidateModule],
   controllers: [RankController],
   providers: [
     { provide: RANK_STORE, useClass: PgRankStore },

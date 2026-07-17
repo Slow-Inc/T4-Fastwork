@@ -25,9 +25,10 @@ import { GithubReadService } from './github-read.service';
 import { GithubController } from './github.controller';
 import { GithubWriteController } from './github-write.controller';
 import { RagIngestService } from '../ingestion/rag-ingest.service';
+import { RevalidateModule } from '../revalidate/revalidate.module';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, RevalidateModule],
   controllers: [GithubController, GithubWriteController],
   providers: [
     DrizzleSnapshotStore,
