@@ -46,6 +46,12 @@ async function main(): Promise<void> {
     const ctx = await browser.newContext({
       viewport: { width: 1280, height: 800 },
       deviceScaleFactor: 2,
+      // Present as a normal Chrome, not the default "HeadlessChrome" UA (which
+      // CDNs/bot filters flag), and a real locale — legit for shooting our own sites.
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+        '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      locale: 'en-US',
     });
     for (const row of rows as { id: number; slug: string; live_url: string }[]) {
       try {
@@ -60,7 +66,9 @@ async function main(): Promise<void> {
           timeout: 45_000,
         });
         if (!res || !res.ok()) {
-          console.warn(`[screenshot] ${row.slug}: bad response, keeping prior.`);
+          console.warn(
+            `[screenshot] ${row.slug}: bad response (status=${res?.status() ?? 'none'}) — keeping prior.`,
+          );
           await page.close();
           continue;
         }
