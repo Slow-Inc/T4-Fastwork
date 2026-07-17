@@ -13,16 +13,18 @@ import { chromium } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Supabase secret key (new-format `sb_secret_...`, or a legacy service_role JWT) —
+// needs to bypass RLS to write the projects row + upload to Storage.
+const SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
 const BUCKET = 'project-shots';
 const MIN_BYTES = 5_000; // smaller than this ⇒ almost certainly a blank page
 
 async function main(): Promise<void> {
-  if (!SUPABASE_URL || !SERVICE_KEY) {
-    console.log('[screenshot] SUPABASE_URL / service key not set — skipping.');
+  if (!SUPABASE_URL || !SECRET_KEY) {
+    console.log('[screenshot] SUPABASE_URL / secret key not set — skipping.');
     return;
   }
-  const db = createClient(SUPABASE_URL, SERVICE_KEY);
+  const db = createClient(SUPABASE_URL, SECRET_KEY);
 
   const { data: rows, error } = await db
     .from('projects')
