@@ -19,10 +19,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { constantTimeEqual } from './webhook-verify';
-import {
-  GithubRefreshService,
-  type RefreshSummary,
-} from './github-refresh.service';
+import { GithubRefreshService } from './github-refresh.service';
 import { GithubWebhookService } from './github-webhook.service';
 import { GithubHealService } from './github-heal.service';
 import { parseReadme } from './github-detail.service';
@@ -56,7 +53,7 @@ export class GithubWriteController {
     // refresh response returns promptly. Delta-gated on the refresh reporting a
     // change (coarse: any change → re-ingest; per-published-project gating is a
     // follow-up).
-    if (outcome.ran && (outcome.result as RefreshSummary)?.changed?.length) {
+    if (outcome.ran && outcome.result.changed.length) {
       void this.rag.reingest().catch(() => {});
     }
     return outcome.ran
