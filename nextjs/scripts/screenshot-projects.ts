@@ -12,7 +12,10 @@
 import { chromium } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
+// The project URL (not secret) — reuse the app's NEXT_PUBLIC_SUPABASE_URL locally
+// so it isn't duplicated; CI sets the SUPABASE_URL repo secret, which wins.
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 // Supabase secret key (new-format `sb_secret_...`, or a legacy service_role JWT) —
 // needs to bypass RLS to write the projects row + upload to Storage.
 const SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
