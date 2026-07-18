@@ -12,8 +12,8 @@
   --muted: #6b6862; /* warm gray */
   --faint: #9a968d;
   --accent: #e8461b; /* single accent */
-  --line: rgba(19, 19, 17, 0.14);
-  --line-soft: rgba(19, 19, 17, 0.08);
+  --line: rgba(19, 19, 17, 0.1); /* softened 0.14→0.10 — grid recedes, less "busy" */
+  --line-soft: rgba(19, 19, 17, 0.06);
   --disp: var(--font-disp), var(--font-thai), sans-serif;
   --body: var(--font-body), var(--font-thai), sans-serif;
   --mono: var(--font-mono), monospace;
@@ -42,8 +42,24 @@ body::before {
   inset: 0;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.035;
+  opacity: 0.018; /* halved — the grain was vibrating over 1px hairlines on hi-DPI */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Lenis smooth-scroll base rules (component: components/site/smooth-scroll.tsx).
+   Only active while Lenis runs; native scroll otherwise (incl. reduced-motion). */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
 }
 a {
   color: inherit;
