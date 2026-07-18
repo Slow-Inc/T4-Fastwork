@@ -3,6 +3,21 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## ✅ 2026-07-18 — image chat 413 fixed (#103/#104) + /code-review + ADR 0010
+
+- **`#103`/`#104` (`ecc2998`) — image chat broke on prod, FIXED + verified live.** `/debug-mantra`:
+  inline images are base64 (>100kb) but the 12mb JSON limit was only in `main.ts`; **Vercel runs
+  `api/index.ts`** (same drift as CORS #96) → 100kb default → 413 → UI "เชื่อมต่อ AI ไม่ได้" (text
+  worked). Repro: `POST /chat/stream` 300KB→413, 10B→201 (300KB < Vercel 4.5mb → app-level, not
+  platform). Fix the CLASS: shared **`src/configure-app.ts` `configureApp(app)`** (CORS + 12mb) called
+  by both entrypoints. 238 tests + build + eslint + BOOT_OK. **Verified live: prod 300KB→201.**
+  Post-mortem: `docs/reports/2026-07-18-image-chat-413-postmortem.md`. Memory
+  [[domain-migration-t4labs-dev]] updated: *all* backend bootstrap goes in `configureApp` now.
+- **`#101` /code-review remediation (`#102`, `2fd282d`):** retroactive 2-axis review found 1 confirmed
+  bug (non-transactional store writes) → wrapped in `db.transaction` (mirror PgRankStore) + tightened
+  the extract-cache guard + `GenerateResult`→`CaseStudyResult`. **ADR 0010** written for the
+  `project_documents.extract jsonb` schema choice (ADR 0009 D2 named the location, not the shape).
+
 ## ✅ 2026-07-18 (interactive→AFK, strict workflow) — #81 P2 persistence CORE shipped
 
 - **Pipeline, hard-to-reverse:** grill/grill-with-docs resolved to *"already decided"* — **ADR 0009
