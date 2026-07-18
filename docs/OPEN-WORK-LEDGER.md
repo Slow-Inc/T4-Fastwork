@@ -3,6 +3,27 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## ✅ 2026-07-18 (AFK) — home "labs-grade" redesign shipped (#108/#109, `59dbbad`)
+
+- **Context:** dev wants the home to feel premium/"wow" like ChainGPT labs+www (same
+  warm-gray+ink+orange+visible-grid family as T4, more craft). Decided (dev + my rec):
+  **light palette kept** (on-brand, founders/CTOs), **execution-polish + a signature moment**,
+  NOT a design-language redesign. Multi-agent (codex+antigravity via clink) + firecrawl branding
+  scrapes confirmed the recipe; `.firecrawl/cg-*-branding.json` has the tokens.
+- **Shipped (one PR → one deploy):** **3D hero signature** — abstract faceted metal form
+  (`three` + `@react-three/fiber`, `hero-scene.tsx`), one orange rim-light accent, **not a mascot**;
+  `next/dynamic` `ssr:false` code-split (`hero-scene-lazy.tsx`), WebGL→CSS fallback orb,
+  reduced-motion freezes, hidden <900px, on the `Hero` wrapper so pure `HeroView` + its test are
+  untouched. **Lenis smooth scroll** (`smooth-scroll.tsx`, home-only, reduced-motion off).
+  **Quiet-polish:** `--line` 0.14→0.10, grain 0.035→0.018, buttons 6px→2px.
+- **Verify:** tsc + eslint + 310 unit + 52 e2e (WebGL renders in Chromium, 0 console errors) +
+  self-screenshots desktop(3D upper-right/orange rim)+mobile(clean). Vercel nextjs preview built
+  green (prod build works with three/r3f/lenis).
+- **PARKED (#108):** bespoke display font (needs a font file), dark cinematic variant (light chosen),
+  section de-dup (removes content — dev's call), full GSAP ScrollTrigger, bespoke robot/persona GLB
+  (needs a designer; a downloaded one = slop). See [[t4-home-design-direction]].
+- Tree green on `master`. Deploying to t4labs.dev.
+
 ## ✅ 2026-07-18 — image chat 413 fixed (#103/#104) + /code-review + ADR 0010
 
 - **`#103`/`#104` (`ecc2998`) — image chat broke on prod, FIXED + verified live.** `/debug-mantra`:
