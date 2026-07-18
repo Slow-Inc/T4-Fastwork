@@ -60,6 +60,35 @@ test("/lab: preloader → marquee + 3D + grid assemble without errors", async ({
   expect(errors, "console errors on /lab").toEqual([]);
 });
 
+test("/lab long page: every section renders and the footer sits below the nav", async ({
+  page,
+}) => {
+  const errors = trackErrors(page);
+  await page.goto("/lab", { waitUntil: "networkidle" });
+  await expect(page.locator(".lab-preloader")).toHaveCount(0, { timeout: 6000 });
+
+  // Sections down the long page.
+  await expect(page.locator(".lab-cap-cell")).toHaveCount(6);
+  await expect(page.locator(".lab-flow-node")).toHaveCount(5);
+  await expect(page.locator(".lab-work-cell").first()).toBeVisible();
+  await expect(page.locator(".lab-stat")).toHaveCount(4);
+  await expect(page.locator(".faq-item").first()).toBeVisible();
+  await expect(page.locator(".lab-drench")).toBeVisible();
+  await expect(page.locator(".lab-wordmark")).toBeVisible();
+
+  // Still a single semantic h1 (section titles are h2/h3).
+  await expect(page.locator("h1")).toHaveCount(1);
+
+  // The footer must sit well below the fixed navbar (no overlap / collapse).
+  const nav = await page.locator("nav").first().boundingBox();
+  const footer = await page.locator("footer.lab-footer").boundingBox();
+  expect(nav).not.toBeNull();
+  expect(footer).not.toBeNull();
+  expect(footer!.y).toBeGreaterThan(nav!.y + nav!.height + 200);
+
+  expect(errors, "console errors on /lab long page").toEqual([]);
+});
+
 test("/lab: marquee animation + its reduced-motion freeze both shipped in the CSS", async ({
   page,
 }) => {
