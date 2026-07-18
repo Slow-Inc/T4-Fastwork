@@ -4960,3 +4960,166 @@ footer {
     transform: none;
   }
 }
+
+/* ===== /lab — labs-grade hero prototype (ChainGPT teardown → T4) =====
+   Scoped to .lab-*; self-contained — deletable with the /lab route. */
+.lab-hero {
+  position: relative;
+  min-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: clip;
+  isolation: isolate;
+  padding: clamp(28px, 6vw, 80px);
+  padding-top: clamp(96px, 15vh, 160px);
+}
+.blueprint-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: clamp(90px, 12vw, 190px) clamp(90px, 12vw, 190px);
+}
+.bp-corner {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: var(--accent);
+}
+.bp-tl { top: 14px; left: 14px; }
+.bp-tr { top: 14px; right: 14px; }
+.bp-bl { bottom: 14px; left: 14px; }
+.bp-br { bottom: 14px; right: 14px; }
+.lab-hero-marquee {
+  position: absolute;
+  inset-inline: 0;
+  top: clamp(96px, 20vh, 230px);
+  z-index: 1;
+  pointer-events: none;
+}
+.kinetic-marquee { overflow: hidden; width: 100%; }
+.kinetic-marquee-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: lab-marquee 22s linear infinite;
+  will-change: transform;
+}
+.kinetic-marquee-item {
+  font-family: var(--disp);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: clamp(4rem, 17vw, 14rem);
+  line-height: 0.88;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  padding-inline: 0.14em;
+}
+@keyframes lab-marquee {
+  to { transform: translateX(-50%); }
+}
+.lab-hero-scene {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: clamp(-40px, 0vw, 40px);
+  width: min(52vw, 600px);
+  z-index: 2;
+  pointer-events: none;
+}
+.lab-hero-scene-fallback {
+  position: absolute;
+  inset: 20% 12%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(232, 70, 27, 0.5),
+    transparent 62%
+  );
+  filter: blur(26px);
+  opacity: 0.55;
+}
+.lab-hero-copy {
+  position: relative;
+  z-index: 3;
+  max-width: 620px;
+}
+.lab-hero-h1 {
+  font-family: var(--disp);
+  font-size: clamp(1.7rem, 3.6vw, 2.9rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+}
+.lab-hero-h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+.lab-hero-lead {
+  margin: 18px 0 0;
+  max-width: 46ch;
+}
+.lab-hero-cta {
+  margin-top: 26px;
+}
+.lab-tech-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 34px 0 0;
+}
+.lab-tech-item {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: color-mix(in srgb, var(--ink) 60%, transparent);
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+}
+.lab-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  transition: transform 0.72s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.lab-preloader.is-wiping {
+  transform: translateY(-100%);
+}
+.lab-preloader-count {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(5rem, 22vw, 15rem);
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  line-height: 1;
+}
+@media (max-width: 720px) {
+  .lab-hero-scene {
+    width: 80vw;
+    opacity: 0.45;
+  }
+  .lab-hero-copy {
+    max-width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* higher-specificity selector so the freeze wins regardless of how the build
+     (Lightning CSS) hoists/orders the merged reduced-motion blocks. */
+  .lab-hero .kinetic-marquee-track {
+    animation: none;
+  }
+  .lab-preloader {
+    transition: none;
+  }
+}
