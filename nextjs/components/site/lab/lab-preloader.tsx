@@ -28,15 +28,19 @@ export function LabPreloader() {
   useEffect(() => {
     if (phase !== 'count') return;
     let n = 0;
+    let wipeId: ReturnType<typeof setTimeout> | undefined;
     const id = setInterval(() => {
       n = Math.min(100, n + 4);
       setCount(n);
       if (n >= 100) {
         clearInterval(id);
-        setTimeout(() => setPhase('wipe'), 260);
+        wipeId = setTimeout(() => setPhase('wipe'), 260);
       }
     }, 28);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      clearTimeout(wipeId);
+    };
   }, [phase]);
 
   useEffect(() => {

@@ -5217,9 +5217,14 @@ footer {
   width: 14px;
   height: 1px;
   background: var(--line);
-}
-.lab-flow-node:last-child::after {
   display: none;
+}
+@media (min-width: 1024px) {
+  /* connectors only when all nodes sit on one row (no wrapping → no stray lines
+     pointing into empty space at the end of a wrapped row). */
+  .lab-flow-node:not(:last-child)::after {
+    display: block;
+  }
 }
 .lab-flow-no {
   font-family: var(--mono);
@@ -5448,8 +5453,5 @@ footer {
 @media (max-width: 720px) {
   .lab-footer-cols {
     grid-template-columns: 1fr 1fr;
-  }
-  .lab-flow-node::after {
-    display: none;
   }
 }
