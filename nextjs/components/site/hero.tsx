@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { MetricBand } from './metric-band';
 import { TrackedLink } from './tracked-link';
+import { HeroSceneLazy } from './hero-scene-lazy';
 import { useT } from '@/i18n/locale-context';
 import type { Metric } from '@/content/site';
 
@@ -87,5 +88,14 @@ export function Hero({
     bookCall: useT('นัดคุยโปรเจกต์', 'Book a call'),
     talkAi: useT('คุยกับ AI', 'Talk to our AI'),
   };
-  return <HeroView {...copy} />;
+  // The 3D signature lives on the Hero wrapper (not the pure, unit-tested
+  // HeroView) so it stays out of the presentational contract + its tests.
+  return (
+    <div className="hero-shell">
+      <div className="hero-scene">
+        <HeroSceneLazy />
+      </div>
+      <HeroView {...copy} />
+    </div>
+  );
 }
