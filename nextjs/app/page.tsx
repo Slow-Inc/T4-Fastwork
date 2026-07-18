@@ -20,6 +20,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { ChatButton } from "@/components/site/chat-button";
 import { RevealObserver } from "@/components/site/reveal-observer";
 import { CountUpObserver } from "@/components/site/count-up-observer";
+import { SmoothScroll } from "@/components/site/smooth-scroll";
 
 export default async function Home() {
   // AI display-rank (B5) orders the featured + selected work; content stays static.
@@ -50,6 +51,7 @@ export default async function Home() {
       <ChatButton />
       <RevealObserver />
       <CountUpObserver />
+      <SmoothScroll />
     </>
   );
 }

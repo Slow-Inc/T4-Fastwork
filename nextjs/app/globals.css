@@ -12,8 +12,8 @@
   --muted: #6b6862; /* warm gray */
   --faint: #9a968d;
   --accent: #e8461b; /* single accent */
-  --line: rgba(19, 19, 17, 0.14);
-  --line-soft: rgba(19, 19, 17, 0.08);
+  --line: rgba(19, 19, 17, 0.1); /* softened 0.14→0.10 — grid recedes, less "busy" */
+  --line-soft: rgba(19, 19, 17, 0.06);
   --disp: var(--font-disp), var(--font-thai), sans-serif;
   --body: var(--font-body), var(--font-thai), sans-serif;
   --mono: var(--font-mono), monospace;
@@ -42,8 +42,24 @@ body::before {
   inset: 0;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.035;
+  opacity: 0.018; /* halved — the grain was vibrating over 1px hairlines on hi-DPI */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Lenis smooth-scroll base rules (component: components/site/smooth-scroll.tsx).
+   Only active while Lenis runs; native scroll otherwise (incl. reduced-motion). */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
 }
 a {
   color: inherit;
@@ -156,7 +172,7 @@ h3 {
   font-size: 14px;
   font-weight: 500;
   padding: 9px 15px;
-  border-radius: 6px;
+  border-radius: 2px; /* labs-grade square precision */
   border: 1px solid var(--ink);
   background: var(--ink);
   color: var(--paper);
@@ -268,8 +284,44 @@ h3 {
 }
 
 /* ---- HERO ---- */
+.hero-shell {
+  position: relative;
+}
 header {
   padding: 172px 0 0;
+  position: relative;
+  z-index: 1; /* hero content sits above the 3D scene */
+}
+/* 3D signature (components/site/hero-scene.tsx) — abstract metal form, upper-right,
+   behind the headline. Purely decorative: pointer-events off, hidden on small
+   screens, and a static CSS orb stands in before mount / without WebGL. */
+.hero-scene {
+  position: absolute;
+  top: 104px; /* clear of the fixed nav (~76px) */
+  right: clamp(-40px, -1vw, 32px);
+  width: min(40vw, 480px);
+  height: 340px;
+  z-index: 0;
+  pointer-events: none;
+}
+.hero-scene-fallback {
+  width: 78%;
+  height: 78%;
+  margin: 11% auto;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at 38% 32%,
+    #d9d5cc,
+    #b9b4a9 52%,
+    #928d82 100%
+  );
+  opacity: 0.5;
+  filter: blur(3px);
+}
+@media (max-width: 900px) {
+  .hero-scene {
+    display: none;
+  }
 }
 .h-top {
   display: flex;
