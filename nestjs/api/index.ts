@@ -9,8 +9,9 @@
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from '../src/app.module';
-import { parseAllowedOrigins } from '../src/cors-origins';
+import { configureApp } from '../src/configure-app';
 
 type ExpressLike = (req: IncomingMessage, res: ServerResponse) => void;
 
@@ -18,14 +19,14 @@ let cached: ExpressLike | null = null;
 
 async function bootstrapServer(): Promise<ExpressLike> {
   if (cached) return cached;
-  const app = await NestFactory.create(AppModule, { rawBody: true });
-  // Same multi-origin CORS as src/main.ts — THIS is the handler Vercel runs in
-  // prod (main.ts only runs for local `bun run start`), so the allow-list must
-  // live here too or a comma-separated FRONTEND_ORIGIN is treated as one origin.
-  app.enableCors({
-    origin: parseAllowedOrigins(process.env.FRONTEND_ORIGIN),
-    credentials: true,
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
   });
+  // THIS is the handler Vercel runs in prod (main.ts only runs for local
+  // `bun run start`), so it needs the exact same config — the shared configureApp
+  // applies the CORS allow-list (#94/#96) AND the 12mb JSON limit for inline
+  // images (#103): without the latter, image chats 413 at the 100kb default.
+  configureApp(app);
   await app.init();
   cached = app.getHttpAdapter().getInstance() as ExpressLike;
   return cached;
