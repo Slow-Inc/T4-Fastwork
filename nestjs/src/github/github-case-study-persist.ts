@@ -59,7 +59,7 @@ export interface CaseStudyStore {
 }
 
 /** Outcome of a persistence run (returned by the orchestration service). */
-export interface GenerateResult {
+export interface CaseStudyResult {
   /** false when skipped (manifest unchanged) — no LLM calls, nothing written. */
   generated: boolean;
   reason?: 'unchanged' | 'no-substance';
@@ -96,7 +96,7 @@ export class CaseStudyGenerateService {
     projectId: number,
     projectSlug: string,
     meta: ReduceMeta,
-  ): Promise<GenerateResult> {
+  ): Promise<CaseStudyResult> {
     const { docs, cachedExtracts } = await this.store.readManifest(projectId);
     const manifestHash = computeManifestHash(
       curateDocuments(docs),

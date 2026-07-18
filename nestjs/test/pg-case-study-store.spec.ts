@@ -8,14 +8,18 @@ import type { CaseStudy, FileExtract } from '../src/github/github-case-study';
 // reads, feed the store fake rows through a mock `execute`.
 function fakeDb(result: unknown[] = []) {
   const calls: { text: string; params: unknown[] }[] = [];
+  const execute = (q: unknown) => {
+    const { sql: text, params } = new PgDialect().sqlToQuery(
+      q as Parameters<PgDialect['sqlToQuery']>[0],
+    );
+    calls.push({ text: text.toLowerCase(), params });
+    return Promise.resolve(result);
+  };
   const db = {
-    execute: (q: unknown) => {
-      const { sql: text, params } = new PgDialect().sqlToQuery(
-        q as Parameters<PgDialect['sqlToQuery']>[0],
-      );
-      calls.push({ text: text.toLowerCase(), params });
-      return Promise.resolve(result);
-    },
+    execute,
+    // Run the callback with a tx that captures the same way (atomic writes).
+    transaction: (cb: (tx: { execute: typeof execute }) => Promise<unknown>) =>
+      cb({ execute }),
   } as unknown as DrizzleDB;
   return { db, calls };
 }
@@ -52,6 +56,17 @@ describe('PgCaseStudyStore (#81 P2 persistence)', () => {
     });
     expect(cachedExtracts).toHaveLength(1);
     expect(cachedExtracts[0].blobSha).toBe('bbb');
+  });
+
+  it('readManifest drops a malformed cached extract (so the file is re-mapped)', async () => {
+    const { db } = fakeDb([
+      { path: 'a.md', blob_sha: 'x', markdown: 'm', extract: { blobSha: 'x' } },
+    ]);
+    const { docs, cachedExtracts } = await new PgCaseStudyStore(
+      db,
+    ).readManifest(1);
+    expect(docs).toHaveLength(1);
+    expect(cachedExtracts).toHaveLength(0);
   });
 
   it('readManifest excludes deleted rows', async () => {

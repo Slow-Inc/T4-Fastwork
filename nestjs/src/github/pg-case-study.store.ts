@@ -8,6 +8,22 @@ import type {
 } from './github-case-study';
 import type { CaseStudyStore } from './github-case-study-persist';
 
+/** A stored jsonb `extract` is only reused if it is a well-formed FileExtract —
+ * a partial/corrupt cached blob is dropped so the file is re-mapped instead. */
+function isFileExtract(e: unknown): e is FileExtract {
+  if (e == null || typeof e !== 'object') return false;
+  const o = e as Record<string, unknown>;
+  return (
+    typeof o.path === 'string' &&
+    typeof o.blobSha === 'string' &&
+    Array.isArray(o.themes) &&
+    typeof o.architecture === 'string' &&
+    Array.isArray(o.tech) &&
+    typeof o.userOutcomes === 'string' &&
+    typeof o.codeDepth === 'string'
+  );
+}
+
 /**
  * Postgres-backed CaseStudyStore over the Drizzle pooler (mirrors PgGenerateStore
  * / PgRankStore). Raw SQL over the P1 tables (`project_documents`, `blog_posts`,
@@ -40,13 +56,10 @@ export class PgCaseStudyStore implements CaseStudyStore {
     }));
     // The cached extract carries the blob_sha it was mapped from, so a file whose
     // manifest row sha changed is still re-mapped (its stored extract.blobSha no
-    // longer matches the row) — the freshness check lives in selectDocsToMap.
-    const cachedExtracts = rows
-      .map((r) => r.extract)
-      .filter(
-        (e): e is FileExtract =>
-          e != null && typeof e === 'object' && 'blobSha' in e,
-      );
+    // longer matches the row) — the freshness check lives in selectDocsToMap. A
+    // malformed cached blob is dropped (treated as uncached → re-mapped), never
+    // fed downstream as a valid extract.
+    const cachedExtracts = rows.map((r) => r.extract).filter(isFileExtract);
     return { docs, cachedExtracts };
   }
 
@@ -54,13 +67,17 @@ export class PgCaseStudyStore implements CaseStudyStore {
     projectId: number,
     extracts: FileExtract[],
   ): Promise<void> {
-    for (const e of extracts) {
-      await this.db.execute(
-        sql`update project_documents
-            set extract = ${JSON.stringify(e)}::jsonb, updated_at = now()
-            where project_id = ${projectId} and path = ${e.path}`,
-      );
-    }
+    // One transaction so a mid-loop failure never leaves the extract cache
+    // half-written (mirrors PgRankStore.applyRanks).
+    await this.db.transaction(async (tx) => {
+      for (const e of extracts) {
+        await tx.execute(
+          sql`update project_documents
+              set extract = ${JSON.stringify(e)}::jsonb, updated_at = now()
+              where project_id = ${projectId} and path = ${e.path}`,
+        );
+      }
+    });
   }
 
   async upsertCaseStudies(
@@ -68,10 +85,14 @@ export class PgCaseStudyStore implements CaseStudyStore {
     projectSlug: string,
     studies: CaseStudy[],
   ): Promise<void> {
-    for (const s of studies) {
-      const slug = `${projectSlug}-${s.audience}`;
-      await this.db.execute(
-        sql`insert into blog_posts
+    // One transaction so a mid-loop failure never leaves a partially-rewritten
+    // post set — a throw rolls back all audiences, keeping the last published
+    // case studies intact (mirrors PgRankStore.applyRanks).
+    await this.db.transaction(async (tx) => {
+      for (const s of studies) {
+        const slug = `${projectSlug}-${s.audience}`;
+        await tx.execute(
+          sql`insert into blog_posts
               (slug, title, excerpt, content, tags, project_id, audience, kind, source, owner, published_at)
             values
               (${slug}, ${s.title}, ${s.description}, ${s.content}, ${s.tags}, ${projectId}, ${s.audience}, 'case_study', 'github', 'auto', null)
@@ -81,8 +102,9 @@ export class PgCaseStudyStore implements CaseStudyStore {
               excerpt = case when blog_posts.owner = 'auto' then excluded.excerpt else blog_posts.excerpt end,
               content = case when blog_posts.owner = 'auto' then excluded.content else blog_posts.content end,
               tags = case when blog_posts.owner = 'auto' then excluded.tags else blog_posts.tags end`,
-      );
-    }
+        );
+      }
+    });
   }
 
   async isJobDone(
