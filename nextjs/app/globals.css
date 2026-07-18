@@ -1117,7 +1117,7 @@ footer {
 .pgrid {
   margin-top: 18px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 26px;
 }
 .pcard {
@@ -1470,7 +1470,7 @@ footer {
 }
 .about-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 22px;
 }
 .about-card {
@@ -1491,7 +1491,7 @@ footer {
 }
 .about-steps {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 22px;
   list-style: none;
   counter-reset: step;
@@ -1701,7 +1701,7 @@ footer {
   margin-top: 18px;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: 22px 32px;
 }
 .team-proj {
@@ -2096,7 +2096,7 @@ footer {
 .tm-certs {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
   gap: 20px;
 }
 .tm-cert {
@@ -2243,7 +2243,7 @@ footer {
 .pkg-grid {
   margin-top: 44px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: 22px;
 }
 .pkg-card {
@@ -2301,7 +2301,7 @@ footer {
 .incl-grid {
   margin-top: 64px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 40px;
 }
 .incl-col h2 {
@@ -4087,7 +4087,7 @@ footer {
 .checklist-items {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 10px 24px;
   padding: 0 4px 22px;
 }
@@ -4173,7 +4173,7 @@ footer {
 .blog-grid {
   margin-top: 40px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
   gap: 24px;
 }
 .blog-card {
@@ -4243,7 +4243,7 @@ footer {
 .partner-grid {
   margin-top: 44px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
   gap: 16px;
 }
 .partner-cell {
@@ -4547,7 +4547,7 @@ footer {
 }
 .admin-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
   gap: 18px;
   margin-top: 28px;
 }
@@ -4683,7 +4683,7 @@ footer {
 .tax-groups {
   margin-top: 24px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: 28px;
 }
 .tax-group h2 {
@@ -5162,7 +5162,7 @@ footer {
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   border: 1px solid var(--line);
   border-bottom: 0;
   border-right: 0;
@@ -5179,7 +5179,8 @@ footer {
 .lab-cap-no {
   font-family: var(--mono);
   font-size: 12px;
-  color: var(--accent);
+  /* darker orange so 12px numerals clear WCAG AA (4.5:1) on --paper */
+  color: #b5360d;
   letter-spacing: 0.1em;
 }
 .lab-cap-title {
@@ -5200,7 +5201,7 @@ footer {
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
   gap: 14px;
 }
 .lab-flow-node {
@@ -5223,7 +5224,7 @@ footer {
 .lab-flow-no {
   font-family: var(--mono);
   font-size: 12px;
-  color: var(--accent);
+  color: #b5360d;
   letter-spacing: 0.1em;
 }
 .lab-flow-title {
@@ -5242,7 +5243,7 @@ footer {
 }
 .lab-work-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   border: 1px solid var(--line);
   border-bottom: 0;
   border-right: 0;
@@ -5281,6 +5282,11 @@ footer {
   gap: 16px 24px;
   margin: 0;
 }
+.lab-work-metrics > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+}
 .lab-work-metrics dd {
   font-family: var(--disp);
   font-size: 1.15rem;
@@ -5304,7 +5310,7 @@ footer {
 }
 .lab-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
   gap: 1px;
   background: var(--line);
   border: 1px solid var(--line);

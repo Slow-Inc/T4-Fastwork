@@ -30,7 +30,10 @@ export function LabStats() {
     { value: '100%', label: useT('verify บนของจริง', 'Verified end-to-end') },
   ];
   return (
-    <section className="lab-section lab-stats-section">
+    <section
+      className="lab-section lab-stats-section"
+      aria-label={useT('ตัวเลขของเรา', 'By the numbers')}
+    >
       <LabStatsView stats={stats} />
     </section>
   );

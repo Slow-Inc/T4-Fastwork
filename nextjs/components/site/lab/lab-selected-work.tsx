@@ -28,8 +28,10 @@ export function LabSelectedWorkView({ items }: { items: WorkItem[] }) {
           <dl className="lab-work-metrics">
             {p.metrics.map((m) => (
               <div key={m.label}>
-                <dd>{m.value}</dd>
+                {/* term then description (correct <dl> semantics); CSS shows the
+                    value on top visually via column-reverse. */}
                 <dt>{m.label}</dt>
+                <dd>{m.value}</dd>
               </div>
             ))}
           </dl>

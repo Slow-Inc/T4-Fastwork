@@ -4,20 +4,26 @@ import { useEffect, useState } from 'react';
 
 /**
  * Intro preloader (ChainGPT labs 0:03–0:08): an orange full-bleed drench with a
- * big display counter racing 0→100, then a wipe reveal. Skipped entirely under
- * prefers-reduced-motion. Client-only; unmounts once done so it never traps focus
- * or scroll. Deterministic count (no timers-in-render) keeps it flake-free.
+ * big display counter racing 0→100, then a wipe reveal. It renders NOTHING on
+ * the server / first client render (phase 'init'), then a mount effect starts it
+ * — so there is no hydration mismatch and reduced-motion users never see it.
+ * Unmounts once done so it never traps focus or scroll.
  */
-type Phase = 'count' | 'wipe' | 'done';
+type Phase = 'init' | 'count' | 'wipe' | 'done';
 
 export function LabPreloader() {
-  const [phase, setPhase] = useState<Phase>(() =>
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-      ? 'done'
-      : 'count',
-  );
+  const [phase, setPhase] = useState<Phase>('init');
   const [count, setCount] = useState(0);
+
+  // Decide on the client only (avoids SSR/hydration mismatch + honors motion).
+  // Deferred into a timeout callback so the first paint stays 'init' (renders
+  // null, matching the server) and to keep setState out of the effect body.
+  useEffect(() => {
+    const reduce =
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    const id = setTimeout(() => setPhase(reduce ? 'done' : 'count'), 0);
+    return () => clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     if (phase !== 'count') return;
@@ -39,7 +45,7 @@ export function LabPreloader() {
     return () => clearTimeout(t);
   }, [phase]);
 
-  if (phase === 'done') return null;
+  if (phase === 'init' || phase === 'done') return null;
   return (
     <div
       className={`lab-preloader${phase === 'wipe' ? ' is-wiping' : ''}`}

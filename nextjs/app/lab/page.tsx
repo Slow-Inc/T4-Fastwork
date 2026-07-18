@@ -28,15 +28,17 @@ export default function LabPage() {
     <>
       <LabPreloader />
       <SiteNav />
-      <div className="wrap">
-        <LabHero />
-        <LabCapabilities />
-        <LabHowWeWork />
-        <LabSelectedWork />
-        <LabStats />
-        <LabFaqSection />
-      </div>
-      <LabDrenchCta />
+      <main>
+        <div className="wrap">
+          <LabHero />
+          <LabCapabilities />
+          <LabHowWeWork />
+          <LabSelectedWork />
+          <LabStats />
+          <LabFaqSection />
+        </div>
+        <LabDrenchCta />
+      </main>
       <LabFooter />
       <SmoothScroll />
       <RevealObserver />

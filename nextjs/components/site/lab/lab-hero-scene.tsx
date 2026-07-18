@@ -66,9 +66,14 @@ export function LabHeroScene() {
 
   return (
     <Canvas
-      dpr={[1, 2]}
+      dpr={[1, 1.5]}
       camera={{ position: [0, 0, 4.2], fov: 42 }}
       gl={{ antialias: true, alpha: true }}
+      // The scene container is pointer-events:none (clicks fall through to the
+      // copy), so bind pointer tracking to the document to keep the cursor tilt
+      // working. eventPrefix:'client' uses viewport coords for state.pointer.
+      eventSource={typeof document !== 'undefined' ? document.body : undefined}
+      eventPrefix="client"
       style={{ width: '100%', height: '100%' }}
       aria-hidden
     >

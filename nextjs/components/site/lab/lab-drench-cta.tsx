@@ -16,7 +16,7 @@ export function LabDrenchCta() {
         <p className="lab-drench-lead">
           {useT(
             'เล่าโปรเจกต์ให้เราฟัง แล้วเราจะบอกทางที่เร็วและคุ้มที่สุด',
-            'Tell us about your project — we&rsquo;ll map the fastest, soundest path.',
+            'Tell us about your project — we’ll map the fastest, soundest path.',
           )}
         </p>
         <div className="lab-drench-cta">

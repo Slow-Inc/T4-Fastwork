@@ -76,8 +76,9 @@ test("/lab long page: every section renders and the footer sits below the nav", 
   await expect(page.locator(".lab-drench")).toBeVisible();
   await expect(page.locator(".lab-wordmark")).toBeVisible();
 
-  // Still a single semantic h1 (section titles are h2/h3).
+  // Still a single semantic h1 (section titles are h2/h3) inside one <main>.
   await expect(page.locator("h1")).toHaveCount(1);
+  await expect(page.locator("main")).toHaveCount(1);
 
   // The footer must sit well below the fixed navbar (no overlap / collapse).
   const nav = await page.locator("nav").first().boundingBox();
