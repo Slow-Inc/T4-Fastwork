@@ -41,7 +41,7 @@ member-editable member CMS** (members log in with GitHub and edit their own prof
 certificates + articles as drafts → admin approve), and lead-gen flows. See the ADRs
 (`docs/adr/`) for the load-bearing decisions.
 
-**Full requirements (Thai): `Requirement.MD` at the repo root — read the relevant section before implementing any page, component, or data model.**
+**Full requirements (Thai): `requirement3.md` (v3) at the repo root is the current spec — read the relevant section before implementing any page, component, or data model.** v3 carries the product spec forward from `Requirement.MD` (v1) and **replaces the Art Direction entirely** (§14: Layered Immersive Swiss + Brand Robot Character + dual Dark/Light theme; prototype-first on the /lab track — never restyle the live home from v1/v2's §14). `Requirement.MD` and `requirement2.md` are superseded references.
 
 Target stack per the spec (§7) — **now implemented**:
 
