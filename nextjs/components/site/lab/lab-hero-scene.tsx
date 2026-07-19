@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { Bloom, EffectComposer } from '@react-three/postprocessing';
 import type { Group } from 'three';
 
 /**
@@ -40,8 +41,9 @@ function Form({ animate }: { animate: boolean }) {
         <meshStandardMaterial
           color="#e8461b"
           emissive="#e8461b"
-          emissiveIntensity={1.7}
+          emissiveIntensity={2.4}
           roughness={0.4}
+          toneMapped={false}
         />
       </mesh>
     </group>
@@ -100,6 +102,14 @@ export function LabHeroScene() {
         <directionalLight position={[-4, -2, -3]} intensity={0.8} color="#e8461b" />
         <pointLight position={[0, 0, 0]} intensity={1.6} color="#e8461b" distance={4} />
         <Form animate={animate} />
+        <EffectComposer>
+          <Bloom
+            intensity={0.9}
+            luminanceThreshold={0.3}
+            luminanceSmoothing={0.4}
+            mipmapBlur
+          />
+        </EffectComposer>
       </Canvas>
     </div>
   );
