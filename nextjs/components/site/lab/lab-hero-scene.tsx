@@ -90,7 +90,7 @@ export function LabHeroScene() {
         // renders solely on pointer/invalidate so the GPU idles when hidden.
         frameloop={animate && visible ? 'always' : 'demand'}
         dpr={[1, 1.5]}
-        camera={{ position: [0, 0, 4.2], fov: 42 }}
+        camera={{ position: [0, 0, 5.4], fov: 40 }}
         gl={{ antialias: true, alpha: true }}
         eventSource={typeof document !== 'undefined' ? document.body : undefined}
         eventPrefix="client"

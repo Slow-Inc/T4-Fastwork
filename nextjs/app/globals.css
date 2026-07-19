@@ -5023,10 +5023,11 @@ footer {
 }
 .lab-hero-scene {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  right: clamp(-40px, 0vw, 40px);
-  width: min(52vw, 600px);
+  top: 2%;
+  bottom: auto;
+  height: 60%;
+  right: clamp(-10px, 1vw, 24px);
+  width: min(40vw, 460px);
   z-index: 2;
   pointer-events: none;
 }
@@ -5044,7 +5045,7 @@ footer {
 }
 .lab-hero-copy {
   position: relative;
-  z-index: 3;
+  z-index: 5;
   max-width: 620px;
 }
 .lab-hero-h1 {
