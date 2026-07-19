@@ -96,10 +96,16 @@ test("/lab4 long page: sections, /chat door in the schematic, wordmark footer", 
   await expect(page.locator(".lab4-wordmark")).toHaveText("T4 LABS");
   await expect(page.locator('.lab4-foot-dock[data-l4-zone="footer"]')).toHaveCount(1);
 
-  // four storytelling zone markers total (§14.2.1 — the recommended set:
-  // hero → how → services → footer, and no more than 4)
+  // storytelling zone markers (§14.2.1 set + the dev-requested contact zone
+  // where the robot perches as the AI avatar): hero → how → services →
+  // contact → footer; pointing zones carry a data-l4-point selector
   await expect(page.locator('.lab4-svc-dock[data-l4-zone="services"]')).toHaveCount(1);
-  await expect(page.locator("[data-l4-zone]")).toHaveCount(4);
+  await expect(page.locator('.lab4-cta-dock[data-l4-zone="contact"]')).toHaveCount(1);
+  await expect(page.locator("[data-l4-zone]")).toHaveCount(5);
+  await expect(page.locator("[data-l4-point]")).toHaveCount(3);
+
+  // the AI-avatar invite chip is a real door into /chat
+  await expect(page.locator('a.lab4-ai-chip[href="/chat"]')).toHaveCount(1);
 
   expect(errors, "console errors on /lab4 long page").toEqual([]);
 });

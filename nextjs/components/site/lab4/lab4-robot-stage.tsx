@@ -15,14 +15,19 @@ import type { Group } from 'three';
  * per section. Interactions: damped cursor-follow, drag-to-rotate on the
  * hero stage ([data-l4-grab]), and a reset via the `lab4-robot-reset` event.
  *
- * Model: /lab4/t4bot.glb — T4 Bot v2 (dev's re-modelled mesh, 305 KB;
- * Meshy image-to-3D → Blender split). Named nodes: T4BotRoot › Head / Body.
- * Split by whole-island centroid at the neck gap (Z=0) — NOT a planar
- * bisect — so nothing is sliced (the v1 head-amputation failure mode is
- * impossible this way). Head pivot sits at the neck base (0,0,0) so the
- * cursor-follow reads as a neck joint; the natural island gap IS the hover
- * gap. Arms are part of Body; pointing poses need a vertex-group re-split
- * in prototypes/t4bot/t4bot-v3-split.blend first.
+ * Model: /lab4/t4bot.glb — T4 Bot v2 (dev's re-modelled mesh, 308 KB;
+ * Meshy image-to-3D → Blender split). Named nodes: T4BotRoot › Head / Body /
+ * ArmL / ArmR. Split by whole-island centroid — NOT a planar bisect — so
+ * nothing is sliced (the v1 head-amputation failure mode is impossible this
+ * way): head at the neck gap (Z=0), arm pods at |X| > 0.4 (the island gap
+ * between torso 0.38 and pods 0.41). Head pivot sits at the neck base,
+ * arm pivots at the shoulder tops, so rotations read as joints.
+ *
+ * Pointing (§14.2.1 "Robot ตอบสนองเนื้อหา"): a zone marker may carry
+ * data-l4-point=<selector>; the robot then aims its head and raises the
+ * near arm toward the hovered candidate (else the one nearest the viewport
+ * centre) and the target gets the .l4-aim highlight — the robot presents
+ * real content instead of floating idle.
  */
 const MODEL = '/lab4/t4bot.glb';
 useGLTF.preload(MODEL);
@@ -35,24 +40,57 @@ const FOV = 38;
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
 /* ------------------------------------------------------------- zone travel */
-type ZoneTarget = { x: number; y: number; scale: number; yaw: number; pitch: number };
+type ZoneTarget = {
+  x: number;
+  y: number;
+  scale: number;
+  yaw: number;
+  pitch: number;
+  point: string;
+  float: number;
+};
+
+function toWorld(cx: number, cy: number, viewport: { w: number; h: number }) {
+  const worldH = 2 * CAM_Z * Math.tan((FOV / 2) * (Math.PI / 180));
+  const worldW = worldH * (viewport.w / viewport.h);
+  return {
+    x: (cx / viewport.w - 0.5) * worldW,
+    y: -(cy / viewport.h - 0.5) * worldH,
+  };
+}
 
 function readZoneTarget(el: HTMLElement, viewport: { w: number; h: number }): ZoneTarget & { dist: number } {
   const r = el.getBoundingClientRect();
   const cx = r.left + r.width / 2;
   const cy = r.top + r.height / 2;
   const worldH = 2 * CAM_Z * Math.tan((FOV / 2) * (Math.PI / 180));
-  const worldW = worldH * (viewport.w / viewport.h);
   const perPx = worldH / viewport.h;
   const minDim = Math.min(r.width, r.height);
   return {
-    x: (cx / viewport.w - 0.5) * worldW,
-    y: -(cy / viewport.h - 0.5) * worldH,
+    ...toWorld(cx, cy, viewport),
     scale: clamp(minDim * perPx * Number(el.dataset.l4Scale ?? 0.8), 0.35, 3.4),
     yaw: Number(el.dataset.l4Yaw ?? 0),
     pitch: Number(el.dataset.l4Pitch ?? 0),
+    point: el.dataset.l4Point ?? '',
+    float: Number(el.dataset.l4Float ?? 1),
     dist: Math.abs(cy - viewport.h / 2),
   };
+}
+
+/** pick the element the robot should present: hovered wins, else the
+ *  candidate nearest the viewport centre (= what the reader is looking at) */
+function pickPointTarget(els: HTMLElement[], viewport: { w: number; h: number }) {
+  let best: { el: HTMLElement; d: number } | null = null;
+  for (const el of els) {
+    if (el.matches(':hover')) return el;
+    const r = el.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > viewport.h) continue;
+    const d =
+      Math.abs(r.top + r.height / 2 - viewport.h / 2) +
+      Math.abs(r.left + r.width / 2 - viewport.w / 2) * 0.25;
+    if (!best || d < best.d) best = { el, d };
+  }
+  return best?.el ?? null;
 }
 
 function RobotTraveller({ light }: { light: boolean }) {
@@ -75,11 +113,22 @@ function RobotTraveller({ light }: { light: boolean }) {
 
   // the levitating head node — cursor-follow rotates THIS, not the group,
   // so the body stays calm under the head's attention (layered motion);
-  // held in a ref because useFrame mutates its rotation every frame
+  // held in refs because useFrame mutates their rotation every frame.
+  // Arm pods pivot at the shoulders: rotation.z swings them outward/up,
+  // which is the pointing gesture.
   const headRef = useRef<THREE.Object3D | null>(null);
+  const armLRef = useRef<THREE.Object3D | null>(null);
+  const armRRef = useRef<THREE.Object3D | null>(null);
   useEffect(() => {
     headRef.current = scene.getObjectByName('Head') ?? null;
+    armLRef.current = scene.getObjectByName('ArmL') ?? null;
+    armRRef.current = scene.getObjectByName('ArmR') ?? null;
   }, [scene]);
+
+  // point-target bookkeeping: candidate cache per selector + the currently
+  // highlighted element (gets the .l4-aim class so CSS can mark it)
+  const pointEls = useRef<{ sel: string; els: HTMLElement[] }>({ sel: '', els: [] });
+  const aimedEl = useRef<HTMLElement | null>(null);
 
   // signal-orange emissive boost: Meshy bakes the eyes/ring/emblem near-cream,
   // tinting the emissive factor warms them into the brand accent + lets Bloom
@@ -139,6 +188,7 @@ function RobotTraveller({ light }: { light: boolean }) {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('lab4-robot-reset', onReset);
+      aimedEl.current?.classList.remove('l4-aim');
     };
   }, []);
 
@@ -165,21 +215,65 @@ function RobotTraveller({ light }: { light: boolean }) {
       drag.current.vel *= Math.pow(0.0001, dt); // ~fast decay, frame-rate safe
     }
 
+    // resolve the presented element for pointing zones (§14.2.1 — the robot
+    // responds to CONTENT: hovered candidate wins, else nearest the centre)
+    let aim: HTMLElement | null = null;
+    if (target.point) {
+      if (pointEls.current.sel !== target.point) {
+        pointEls.current = {
+          sel: target.point,
+          els: Array.from(document.querySelectorAll<HTMLElement>(target.point)),
+        };
+      }
+      aim = pickPointTarget(pointEls.current.els, { w: size.width, h: size.height });
+    }
+    if (aim !== aimedEl.current) {
+      aimedEl.current?.classList.remove('l4-aim');
+      aim?.classList.add('l4-aim');
+      aimedEl.current = aim;
+    }
+
     // body/group: zone pose + the user's drag; head: cursor attention —
     // two layers with different lag is what reads as "alive" (§14.2.1)
     const followW = reduced ? 0 : 1;
     const yawTarget = target.yaw + drag.current.yaw;
     const pitchTarget = target.pitch;
-    const headYaw = clamp(state.pointer.x * 0.55, -0.55, 0.55) * followW;
-    const headPitch = clamp(-state.pointer.y * 0.28, -0.28, 0.28) * followW;
-    const float = reduced ? 0 : Math.sin(t * 1.1) * 0.035 * target.scale;
+    let headYaw = clamp(state.pointer.x * 0.55, -0.55, 0.55) * followW;
+    let headPitch = clamp(-state.pointer.y * 0.28, -0.28, 0.28) * followW;
+    let lean = 0;
+    // arm rest pose = a slight idle sway so the pods never look frozen
+    let armLGoal = reduced ? 0 : Math.sin(t * 1.3) * 0.05;
+    let armRGoal = reduced ? 0 : Math.sin(t * 1.3 + 1.7) * -0.05;
+
+    if (aim) {
+      const r = aim.getBoundingClientRect();
+      const w = toWorld(r.left + r.width / 2, r.top + r.height / 2, {
+        w: size.width,
+        h: size.height,
+      });
+      const rx = w.x - g.position.x;
+      const ry = w.y - g.position.y;
+      // head looks AT the content (a dash of cursor keeps it alive)
+      headYaw = clamp(Math.atan2(rx, 3.2), -0.9, 0.9) + state.pointer.x * 0.15 * followW;
+      headPitch = clamp(-Math.atan2(ry, 3.2), -0.5, 0.5);
+      // the near arm swings up from hanging (-90°) toward the target angle;
+      // pivot sits at the shoulder so +z raises ArmR outward, -z raises ArmL
+      const s = clamp(Math.atan2(ry, Math.abs(rx)) + Math.PI / 2, 0.35, 2.2);
+      if (rx >= 0) armRGoal = s;
+      else armLGoal = -s;
+      lean = clamp(rx * 0.05, -0.13, 0.13); // lean into the gesture
+    }
+
+    const float = reduced ? 0 : Math.sin(t * 1.1) * 0.035 * target.scale * target.float;
 
     if (reduced || !started.current) {
       // snap on first frame (no fly-in from origin) and under reduced motion
       g.position.set(target.x, target.y + float, 0);
       g.scale.setScalar(target.scale);
-      g.rotation.set(pitchTarget, yawTarget, 0);
+      g.rotation.set(pitchTarget, yawTarget, lean);
       headRef.current?.rotation.set(headPitch, headYaw, 0);
+      armLRef.current?.rotation.set(0, 0, armLGoal);
+      armRRef.current?.rotation.set(0, 0, armRGoal);
       started.current = true;
       return;
     }
@@ -191,12 +285,18 @@ function RobotTraveller({ light }: { light: boolean }) {
     g.scale.setScalar(s);
     g.rotation.y += (yawTarget - g.rotation.y) * Math.min(1, dt * 3);
     g.rotation.x += (pitchTarget - g.rotation.x) * Math.min(1, dt * 3);
+    g.rotation.z += (lean - g.rotation.z) * Math.min(1, dt * 3);
     const head = headRef.current;
     if (head) {
       const hk = Math.min(1, dt * 4.5);
       head.rotation.y += (headYaw - head.rotation.y) * hk;
       head.rotation.x += (headPitch - head.rotation.x) * hk;
     }
+    const ak = Math.min(1, dt * 5);
+    const armL = armLRef.current;
+    const armR = armRRef.current;
+    if (armL) armL.rotation.z += (armLGoal - armL.rotation.z) * ak;
+    if (armR) armR.rotation.z += (armRGoal - armR.rotation.z) * ak;
   });
 
   return (

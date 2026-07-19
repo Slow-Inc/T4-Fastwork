@@ -6754,9 +6754,46 @@ footer {
 }
 
 /* --- 04 · closing CTA --- */
-.lab4-cta { display: grid; gap: 22px; justify-items: start; }
+.lab4-cta { position: relative; display: grid; gap: 22px; justify-items: start; }
 .lab4-cta h2 { font-size: clamp(2.3rem, 5.4vw, 4.4rem); line-height: 1.06; }
 .lab4-cta-note { margin: 0; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--l4-ink-faint); }
+/* the robot perches on the headline's shoulder and points down at the
+   buttons (zone marker only — the canvas draws the robot) */
+.lab4-cta-dock {
+  position: absolute;
+  top: clamp(48px, 9vh, 96px);
+  left: min(52vw, 660px);
+  width: clamp(120px, 15vw, 180px);
+  height: clamp(120px, 15vw, 180px);
+  pointer-events: none;
+}
+/* AI-avatar invite — same character as /chat (§14.2.1) */
+.lab4-ai-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--l4-ink);
+  text-decoration: none;
+}
+.lab4-ai-chip i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--l4-signal);
+  box-shadow: 0 0 10px var(--l4-signal-soft);
+}
+.lab4-ai-chip .arw { color: var(--l4-signal); transition: transform 0.2s; }
+.lab4-ai-chip:hover .arw { transform: translateX(4px); }
+/* what the robot is pointing at right now (class set by the r3f stage) */
+.lab4 .l4-aim { outline: 1px dashed var(--l4-signal); outline-offset: 6px; }
+@media (max-width: 899px) {
+  .lab4-cta-dock { display: none; }
+}
 
 /* --- Oversized Brand Wordmark footer + robot peek dock (§14.10) --- */
 .lab4-footer { position: relative; z-index: 1; border-top: 1px solid var(--l4-line); padding: 24px 0 36px; overflow: hidden; }
