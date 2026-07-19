@@ -15,12 +15,14 @@ import type { Group } from 'three';
  * per section. Interactions: damped cursor-follow, drag-to-rotate on the
  * hero stage ([data-l4-grab]), and a reset via the `lab4-robot-reset` event.
  *
- * Model: /lab4/t4bot.glb — the real T4 Bot v1 (character sheet approved
- * 2026-07-20; Meshy image-to-3D → Blender cleanup). Named nodes:
- * T4BotRoot › Head (pivot at its base, hover-gapped) / Body — the head
- * follows the cursor on its own node. Arms are currently fused into Body
- * (the bisect split cracked under smoothing); pointing poses need a
- * vertex-group re-split in prototypes/t4bot/t4bot-split.blend first.
+ * Model: /lab4/t4bot.glb — T4 Bot v2 (dev's re-modelled mesh, 305 KB;
+ * Meshy image-to-3D → Blender split). Named nodes: T4BotRoot › Head / Body.
+ * Split by whole-island centroid at the neck gap (Z=0) — NOT a planar
+ * bisect — so nothing is sliced (the v1 head-amputation failure mode is
+ * impossible this way). Head pivot sits at the neck base (0,0,0) so the
+ * cursor-follow reads as a neck joint; the natural island gap IS the hover
+ * gap. Arms are part of Body; pointing poses need a vertex-group re-split
+ * in prototypes/t4bot/t4bot-v3-split.blend first.
  */
 const MODEL = '/lab4/t4bot.glb';
 useGLTF.preload(MODEL);
