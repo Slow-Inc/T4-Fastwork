@@ -107,12 +107,15 @@ URL/license, Unicorn terms/hosting, Rive rights. Keep source model + repro optim
 reduced-motion · `ScrollTrigger.refresh()` ONLY after fonts + model dims settle · one owner for the
 ticker; sections register timelines, never new loops.
 
-## Decisions still needed from the dev
-1. **Font**: buy a licensed variable display (e.g. PP Neue Montreal) + a Thai companion, or stay Space
-   Grotesk for now? (blocks Phase 0/1 finalization)
-2. **Robot**: generate via the in-harness **Meshy skill** now (needs a plan/credits), Tripo, or keep the
-   procedural form until later?
-3. **Ambient layer**: Unicorn Studio (fastest labs-look) vs an in-canvas r3f shader vs skip (Phase 4).
+## Decisions — RESOLVED (dev: free tools, max-wow ambient)
+1. **Font (free):** **Clash Display** (Fontshare, free commercial, variable grotesk) as `--disp` +
+   **IBM Plex Sans Thai** (Thai companion, already loaded) + **JetBrains Mono** (mono, already loaded).
+   *(Space Grotesk kept temporarily until the Clash Display woff2 is dropped in — like-for-like grotesk
+   swap; ScrollTrigger.refresh() on `document.fonts.ready` absorbs the metric change.)*
+2. **Robot (free):** **Meshy free tier** (gen+auto-rig+animate→GLB) → optimize; fallback CC0
+   (Quaternius / Poly Pizza / Sketchfab-CC0) if credits run out. HDRI = Poly Haven CC0.
+3. **Ambient:** max-wow → **Unicorn Studio** reactive WebGL background (desktop) + full r3f robot +
+   HDR/bloom + GSAP; graceful mobile degrade. Goal: impress target customers on first impression.
 
 ## First action (agreed by both reviewers)
 The **Phase 1 hero vertical slice** (final-ish typography + bigger headline + one 3-state pinned GSAP

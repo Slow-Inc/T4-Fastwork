@@ -9,7 +9,7 @@ import { LabStats } from '@/components/site/lab/lab-stats';
 import { LabFaqSection } from '@/components/site/lab/lab-faq-section';
 import { LabDrenchCta } from '@/components/site/lab/lab-drench-cta';
 import { LabFooter } from '@/components/site/lab/lab-footer';
-import { SmoothScroll } from '@/components/site/smooth-scroll';
+import { LabScroll } from '@/components/site/lab/lab-scroll';
 import { RevealObserver } from '@/components/site/reveal-observer';
 
 export const metadata: Metadata = {
@@ -40,7 +40,7 @@ export default function LabPage() {
         <LabDrenchCta />
       </main>
       <LabFooter />
-      <SmoothScroll />
+      <LabScroll />
       <RevealObserver />
     </>
   );
