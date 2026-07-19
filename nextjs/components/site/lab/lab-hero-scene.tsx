@@ -27,24 +27,24 @@ function Form({ animate }: { animate: boolean }) {
   });
   return (
     <group ref={ref}>
+      {/* Solid faceted crystal — occludes the marquee behind it (no see-through
+          wireframe letting text bleed through) and glows on its own. */}
       <mesh>
-        <icosahedronGeometry args={[1.5, 0]} />
-        <meshStandardMaterial
-          color="#cbc7be"
-          metalness={0.6}
-          roughness={0.28}
-          wireframe
-        />
-      </mesh>
-      <mesh>
-        <icosahedronGeometry args={[0.66, 0]} />
+        <icosahedronGeometry args={[1.35, 0]} />
         <meshStandardMaterial
           color="#e8461b"
           emissive="#e8461b"
-          emissiveIntensity={2.4}
-          roughness={0.4}
+          emissiveIntensity={0.6}
+          metalness={0.45}
+          roughness={0.28}
+          flatShading
           toneMapped={false}
         />
+      </mesh>
+      {/* Thin chrome edge cage for a technical read, drawn over the solid form. */}
+      <mesh scale={1.008}>
+        <icosahedronGeometry args={[1.35, 0]} />
+        <meshBasicMaterial color="#1b1b1b" wireframe transparent opacity={0.35} />
       </mesh>
     </group>
   );
@@ -103,11 +103,13 @@ export function LabHeroScene() {
         <pointLight position={[0, 0, 0]} intensity={1.6} color="#e8461b" distance={4} />
         <Form animate={animate} />
         <EffectComposer>
+          {/* Tight glow on the crystal only — higher threshold + lower intensity
+              so the orange doesn't wash the whole sector. */}
           <Bloom
-            intensity={0.9}
-            luminanceThreshold={0.3}
-            luminanceSmoothing={0.4}
-            mipmapBlur
+            intensity={0.45}
+            luminanceThreshold={0.5}
+            luminanceSmoothing={0.2}
+            radius={0.4}
           />
         </EffectComposer>
       </Canvas>
