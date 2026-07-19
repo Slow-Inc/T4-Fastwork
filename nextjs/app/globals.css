@@ -5757,3 +5757,1018 @@ footer {
   .lab2 [data-rv] { opacity: 1; transform: none; transition: none; }
   .lab2-card::after, .lab2-btn, .lab2-nav-cta { transition: none; }
 }
+
+/* ==========================================================================
+   /lab3 — Layered Immersive Swiss System (requirement2.md §14).
+   Dark immersive canvas · 3D layer-1 · Swiss layer-2 · Liquid Glass inserts ·
+   Blueprint field · signal-trace motion. Self-contained, scoped .lab3-*.
+   ========================================================================== */
+.lab3 {
+  /* §14.7 starting tokens */
+  --l3-void: #080a0c;
+  --l3-raised: #0d1114;
+  --l3-panel: #11171a;
+  --l3-ink: #f1f1ea;
+  --l3-ink-soft: #b6b8b2;
+  --l3-ink-faint: #787d7a;
+  --l3-signal: #ff6846;
+  --l3-blue: rgba(140, 176, 188, 0.13);
+  --l3-blue-minor: rgba(140, 176, 188, 0.055);
+  --l3-glass: rgba(13, 17, 20, 0.64);
+  --l3-line: rgba(220, 232, 228, 0.16);
+  --l3-line-soft: rgba(220, 232, 228, 0.08);
+  /* §14.7 shape system */
+  --l3-r-sm: 8px;
+  --l3-r-md: 14px;
+  --l3-r-lg: 24px;
+  position: relative;
+  min-height: 100vh;
+  background: var(--l3-void);
+  color: var(--l3-ink);
+  overflow-x: hidden;
+}
+.lab3 ::selection { background: var(--l3-signal); color: var(--l3-void); }
+.lab3 :focus-visible { outline: 2px solid var(--l3-signal); outline-offset: 3px; border-radius: 2px; }
+
+/* --- blueprint field: visible at the hero, fading to quiet below (§14.5) --- */
+.lab3-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--l3-blue-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--l3-blue-minor) 1px, transparent 1px),
+    linear-gradient(var(--l3-blue) 1px, transparent 1px),
+    linear-gradient(90deg, var(--l3-blue) 1px, transparent 1px);
+  background-size: 44px 44px, 44px 44px, 220px 220px, 220px 220px;
+  -webkit-mask-image: radial-gradient(ellipse 110% 85% at 60% 20%, #000 40%, transparent 95%);
+  mask-image: radial-gradient(ellipse 110% 85% at 60% 20%, #000 40%, transparent 95%);
+}
+
+.lab3-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding-inline: clamp(20px, 4vw, 64px);
+}
+
+/* --- liquid glass primitive (§14.6 material spec) --- */
+.lab3-glass {
+  background: var(--l3-glass);
+  -webkit-backdrop-filter: blur(20px) saturate(1.35);
+  backdrop-filter: blur(20px) saturate(1.35);
+  border: 1px solid var(--l3-line-soft);
+  box-shadow:
+    0 1px 0 rgba(241, 241, 234, 0.09) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.35) inset,
+    0 18px 50px -30px rgba(0, 0, 0, 0.8);
+}
+
+/* --- floating glass nav (§14.10) --- */
+.lab3-nav {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: min(1400px, calc(100% - 28px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px 10px 18px;
+  border-radius: var(--l3-r-lg);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.lab3-nav.scrolled {
+  background: rgba(13, 17, 20, 0.82);
+  box-shadow:
+    0 1px 0 rgba(241, 241, 234, 0.09) inset,
+    0 14px 40px -18px rgba(0, 0, 0, 0.9);
+}
+.lab3-brand {
+  font-family: var(--disp);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.lab3-brand i {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  background: var(--l3-signal);
+  box-shadow: 0 0 12px rgba(255, 104, 70, 0.55);
+}
+.lab3-brand em {
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--l3-ink-faint);
+  border: 1px solid var(--l3-line-soft);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+.lab3-nav-links {
+  display: none;
+  gap: clamp(14px, 2vw, 28px);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.lab3-nav-links a { color: var(--l3-ink-soft); transition: color 0.2s; }
+.lab3-nav-links a:hover { color: var(--l3-signal); }
+@media (min-width: 900px) { .lab3-nav-links { display: flex; } }
+.lab3-nav-cta {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 10px 18px;
+  border-radius: var(--l3-r-sm);
+  background: var(--l3-signal);
+  color: var(--l3-void);
+  font-weight: 600;
+  transition: transform 0.2s, filter 0.2s;
+}
+.lab3-nav-cta:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+/* --- hero: Swiss asymmetric grid over the reactor stage --- */
+.lab3-hero {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  padding-top: 118px;
+  padding-bottom: 40px;
+}
+@media (min-width: 1000px) {
+  .lab3-hero { grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr); gap: clamp(16px, 2vw, 32px); }
+}
+.lab3-hero-copy { position: relative; z-index: 3; max-width: 640px; }
+.lab3-coord {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--l3-signal);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.lab3-coord::before { content: ""; width: 26px; height: 1px; background: var(--l3-signal); }
+.lab3-h1 {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(2.7rem, 6.6vw, 5.6rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  margin: 20px 0 0;
+}
+.lab3-h1 em { font-style: normal; color: var(--l3-signal); }
+.lab3-h1 .outline { -webkit-text-stroke: 1.5px var(--l3-ink); color: transparent; }
+.lab3-lead {
+  margin: 24px 0 0;
+  max-width: 46ch;
+  font-size: clamp(1rem, 1.2vw, 1.1rem);
+  line-height: 1.75;
+  color: var(--l3-ink-soft);
+}
+.lab3-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.lab3-btn {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 14px 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s, color 0.2s, border-color 0.2s, filter 0.2s;
+}
+.lab3-btn.solid { background: var(--l3-signal); color: var(--l3-void); font-weight: 600; }
+.lab3-btn.solid:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.lab3-btn.ghost { border-color: var(--l3-line); color: var(--l3-ink); }
+.lab3-btn.ghost:hover { border-color: var(--l3-signal); color: var(--l3-signal); }
+.lab3-btn .arw { transition: transform 0.2s; }
+.lab3-btn:hover .arw { transform: translateX(4px); }
+.lab3-trust {
+  display: flex;
+  gap: clamp(22px, 3vw, 44px);
+  margin: 44px 0 0;
+  padding-top: 22px;
+  border-top: 1px solid var(--l3-line-soft);
+}
+.lab3-trust dt {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(1.7rem, 2.6vw, 2.3rem);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.lab3-trust dt em { font-style: normal; color: var(--l3-signal); font-size: 0.66em; margin-left: 2px; }
+.lab3-trust dd {
+  margin: 8px 0 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--l3-ink-faint);
+}
+
+/* --- hero stage: layer-1 reactor + glass spec inserts --- */
+.lab3-stage { position: relative; height: min(76vh, 700px); z-index: 2; }
+@media (max-width: 999px) { .lab3-stage { height: 46vh; min-height: 320px; margin-top: 20px; } }
+.lab3-scene {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: radial-gradient(ellipse 66% 62% at 50% 46%, #000 48%, transparent 80%);
+  mask-image: radial-gradient(ellipse 66% 62% at 50% 46%, #000 48%, transparent 80%);
+}
+/* static fallback keeps brand memory when WebGL is unavailable (§14.10) */
+.lab3-scene-fallback {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255, 104, 70, 0.32) 0%, transparent 26%),
+    repeating-radial-gradient(circle at 50% 46%, transparent 0 46px, var(--l3-blue) 46px 47px),
+    radial-gradient(circle at 50% 46%, var(--l3-raised) 0%, transparent 62%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 56% at 50% 46%, #000 40%, transparent 76%);
+  mask-image: radial-gradient(ellipse 60% 56% at 50% 46%, #000 40%, transparent 76%);
+}
+.lab3-spec {
+  position: absolute;
+  z-index: 4;
+  padding: 12px 14px;
+  border-radius: var(--l3-r-md);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  min-width: 150px;
+}
+.lab3-spec .k { display: block; color: var(--l3-ink-faint); text-transform: uppercase; font-size: 9.5px; letter-spacing: 0.1em; }
+.lab3-spec .v { display: flex; align-items: center; gap: 7px; color: var(--l3-ink); font-weight: 600; margin-top: 3px; }
+.lab3-spec .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--l3-signal); box-shadow: 0 0 8px var(--l3-signal); }
+.lab3-spec.s1 { top: 10%; left: 0; }
+.lab3-spec.s2 { bottom: 10%; right: 0; }
+@media (max-width: 999px) { .lab3-spec.s2 { display: none; } }
+
+/* --- section rhythm + heads --- */
+.lab3-section { position: relative; z-index: 1; padding: clamp(76px, 11vh, 140px) 0; }
+.lab3-sec-head { display: grid; gap: 16px; margin-bottom: clamp(36px, 5vh, 56px); max-width: 780px; }
+.lab3-sec-head h2, .lab3-cta h2 {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(1.8rem, 3.6vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  margin: 0;
+  text-wrap: balance;
+}
+.lab3-sec-head .soft { color: var(--l3-ink-faint); }
+.lab3-sec-note { margin: 0; font-family: var(--mono); font-size: 12px; color: var(--l3-ink-faint); letter-spacing: 0.04em; }
+
+/* --- 01 · solution selector: typographic index, mixed spans (§14.10) --- */
+.lab3-sols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--l3-line-soft);
+  border-block: 1px solid var(--l3-line-soft);
+}
+.lab3-sol {
+  position: relative;
+  display: grid;
+  gap: 8px 18px;
+  padding: clamp(20px, 2.6vw, 32px);
+  background: var(--l3-void);
+  transition: background 0.3s;
+  overflow: hidden;
+}
+.lab3-sol.wide {
+  grid-column: 1 / -1;
+  grid-template-columns: 52px minmax(0, 1.2fr) minmax(0, 1fr) 32px;
+  align-items: center;
+}
+.lab3-sol.narrow { grid-template-rows: auto 1fr auto; align-content: start; }
+.lab3-sol .idx { font-family: var(--mono); font-size: 11px; color: var(--l3-signal); letter-spacing: 0.1em; }
+.lab3-sol .body { display: grid; gap: 6px; min-width: 0; }
+.lab3-sol .t {
+  font-family: var(--disp);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-size: clamp(1.25rem, 2.4vw, 2rem);
+  line-height: 1.1;
+  transition: color 0.25s;
+}
+.lab3-sol.narrow .t { font-size: clamp(1.1rem, 1.6vw, 1.3rem); }
+.lab3-sol .d { font-size: 0.92rem; line-height: 1.6; color: var(--l3-ink-soft); }
+.lab3-sol .meta {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--l3-ink-faint);
+  justify-self: start;
+}
+.lab3-sol.wide .meta { justify-self: end; text-align: right; }
+.lab3-sol .arw { color: var(--l3-ink-faint); transition: transform 0.25s, color 0.25s; justify-self: end; }
+.lab3-sol:hover { background: var(--l3-raised); }
+.lab3-sol:hover .t { color: var(--l3-signal); }
+.lab3-sol:hover .arw { transform: translateX(5px); color: var(--l3-signal); }
+.lab3-sol::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 0;
+  background: var(--l3-signal);
+  transition: width 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.lab3-sol:hover::after { width: 100%; }
+@media (max-width: 899px) {
+  .lab3-sols { grid-template-columns: 1fr; }
+  .lab3-sol.wide { grid-template-columns: 40px minmax(0, 1fr) 24px; }
+  .lab3-sol.wide .meta { display: none; }
+}
+
+/* --- 02 · system schematic: real request path + signal traces (§14.18) --- */
+.lab3-stack { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; }
+.lab3-node {
+  position: relative;
+  background: var(--l3-panel);
+  border: 1px solid var(--l3-line-soft);
+  border-radius: var(--l3-r-md);
+  padding: 18px 16px 16px;
+  display: grid;
+  gap: 6px;
+  transition: border-color 0.25s, transform 0.25s;
+}
+.lab3-node:hover { border-color: rgba(255, 104, 70, 0.5); transform: translateY(-3px); }
+.lab3-node .coord { position: absolute; top: 10px; right: 12px; font-family: var(--mono); font-size: 9px; color: var(--l3-ink-faint); letter-spacing: 0.12em; }
+.lab3-node .lbl { font-family: var(--disp); font-weight: 700; font-size: 1.02rem; letter-spacing: 0.05em; }
+.lab3-node .tech { font-family: var(--mono); font-size: 11px; color: var(--l3-signal); letter-spacing: 0.04em; }
+.lab3-node .d { font-size: 0.8rem; line-height: 1.55; color: var(--l3-ink-soft); }
+.lab3-node .trace { position: absolute; top: 50%; right: -18px; width: 18px; height: 1px; background: var(--l3-line); overflow: hidden; }
+.lab3-node .trace i { position: absolute; top: 0; left: 0; width: 7px; height: 1px; background: var(--l3-signal); animation: lab3-trace 1.6s linear infinite; }
+@keyframes lab3-trace { from { transform: translateX(-8px); } to { transform: translateX(19px); } }
+@media (max-width: 999px) {
+  .lab3-stack { grid-template-columns: 1fr 1fr; }
+  .lab3-node .trace { display: none; }
+}
+@media (max-width: 559px) { .lab3-stack { grid-template-columns: 1fr; } }
+.lab3-process {
+  list-style: none;
+  margin: clamp(36px, 5vh, 56px) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 18px;
+}
+.lab3-step { border-top: 1px solid var(--l3-line); padding-top: 14px; display: grid; gap: 5px; }
+.lab3-step .no { font-family: var(--mono); font-size: 10.5px; color: var(--l3-signal); letter-spacing: 0.12em; }
+.lab3-step .t { font-family: var(--disp); font-weight: 600; font-size: 1rem; letter-spacing: -0.01em; }
+.lab3-step .d { font-size: 0.8rem; line-height: 1.55; color: var(--l3-ink-faint); }
+@media (max-width: 999px) { .lab3-process { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 559px) { .lab3-process { grid-template-columns: 1fr; } }
+
+/* --- 03 · services complexity ladder --- */
+.lab3-svcs { border-top: 1px solid var(--l3-line-soft); }
+.lab3-svc {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1.3fr) minmax(220px, 0.9fr);
+  gap: 10px 24px;
+  align-items: center;
+  padding: clamp(18px, 2.4vh, 26px) clamp(4px, 1vw, 14px);
+  border-bottom: 1px solid var(--l3-line-soft);
+  transition: background 0.3s;
+}
+.lab3-svc:hover { background: var(--l3-raised); }
+.lab3-svc .no { font-family: var(--mono); font-size: 11px; color: var(--l3-signal); letter-spacing: 0.1em; align-self: start; padding-top: 5px; }
+.lab3-svc .body h3 { font-family: var(--disp); font-weight: 700; font-size: clamp(1.05rem, 1.8vw, 1.35rem); letter-spacing: -0.015em; margin: 0; }
+.lab3-svc .body p { margin: 6px 0 0; font-size: 0.9rem; line-height: 1.6; color: var(--l3-ink-soft); }
+.lab3-svc .scale { display: grid; gap: 8px; }
+.lab3-svc .meter { position: relative; display: block; height: 2px; background: var(--l3-line-soft); border-radius: 999px; overflow: hidden; }
+.lab3-svc .meter i {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: calc(var(--lv) / 6 * 100%);
+  background: linear-gradient(90deg, rgba(255, 104, 70, 0.35), var(--l3-signal));
+  border-radius: 999px;
+}
+.lab3-svc .stack { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; color: var(--l3-ink-faint); text-transform: uppercase; }
+@media (max-width: 767px) {
+  .lab3-svc { grid-template-columns: 40px minmax(0, 1fr); }
+  .lab3-svc .scale { grid-column: 2; }
+}
+
+/* --- 04 · closing CTA + footer --- */
+.lab3-cta { display: grid; gap: 22px; justify-items: start; }
+.lab3-cta h2 { font-size: clamp(2.3rem, 5.4vw, 4.4rem); line-height: 1.06; }
+.lab3-cta-note { margin: 0; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--l3-ink-faint); }
+.lab3-footer { position: relative; z-index: 1; border-top: 1px solid var(--l3-line); padding: 56px 0 36px; }
+.lab3-wordmark {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(3rem, 12vw, 11rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--l3-line);
+}
+.lab3-foot-meta { display: block; margin-top: 18px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; color: var(--l3-ink-faint); }
+
+/* --- reveal micro-motion (meso tier, §14.9) --- */
+.lab3 [data-rv] { opacity: 0; transform: translateY(16px); transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.lab3 [data-rv].in { opacity: 1; transform: none; }
+.lab3 [data-rv][data-rv-d="1"] { transition-delay: 0.08s; }
+.lab3 [data-rv][data-rv-d="2"] { transition-delay: 0.16s; }
+.lab3 [data-rv][data-rv-d="3"] { transition-delay: 0.24s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lab3 [data-rv] { opacity: 1; transform: none; transition: none; }
+  .lab3-sol::after, .lab3-btn, .lab3-nav, .lab3-nav-cta, .lab3-node, .lab3-svc { transition: none; }
+  .lab3-node .trace i { animation: none; }
+}
+
+/* ==========================================================================
+   /lab4 — requirement3.md §14 v3 prototype.
+   Layer-1 T4 Bot storytelling (one fixed canvas, zone travel) · Swiss layer-2 ·
+   Liquid Glass inserts · Blueprint field · DUAL THEME (§14.7: dark + light
+   labs-grade, both first-class — html[data-lab4-theme] flips the token set).
+   Self-contained, scoped .lab4-*.
+   ========================================================================== */
+.lab4 {
+  /* §14.7 dark labs-grade (default) */
+  --l4-canvas: #080a0c;
+  --l4-raised: #0d1114;
+  --l4-panel: #11171a;
+  --l4-ink: #f1f1ea;
+  --l4-ink-soft: #b6b8b2;
+  --l4-ink-faint: #787d7a;
+  --l4-signal: #ff6846;
+  --l4-signal-soft: rgba(255, 104, 70, 0.5);
+  --l4-blue: rgba(140, 176, 188, 0.13);
+  --l4-blue-minor: rgba(140, 176, 188, 0.055);
+  --l4-glass: rgba(13, 17, 20, 0.64);
+  --l4-glass-strong: rgba(13, 17, 20, 0.82);
+  --l4-line: rgba(220, 232, 228, 0.16);
+  --l4-line-soft: rgba(220, 232, 228, 0.08);
+  --l4-spec-top: rgba(241, 241, 234, 0.09);
+  --l4-shadow: 0 18px 50px -30px rgba(0, 0, 0, 0.8);
+  /* §14.7 shape system */
+  --l4-r-sm: 8px;
+  --l4-r-md: 14px;
+  --l4-r-lg: 24px;
+  position: relative;
+  min-height: 100vh;
+  background: var(--l4-canvas);
+  color: var(--l4-ink);
+  overflow-x: hidden;
+  transition: background 0.35s ease, color 0.35s ease;
+}
+/* §14.7 light labs-grade — same roles, one attribute flip, no layout shift */
+.lab4[data-lab4-theme="light"] {
+  --l4-canvas: #f4f2ed;
+  --l4-raised: #eceae2;
+  --l4-panel: #fbfaf7;
+  --l4-ink: #131311;
+  --l4-ink-soft: #6b6862;
+  --l4-ink-faint: #9a968d;
+  --l4-signal: #e8461b;
+  --l4-signal-soft: rgba(232, 70, 27, 0.45);
+  --l4-blue: rgba(19, 42, 56, 0.1);
+  --l4-blue-minor: rgba(19, 42, 56, 0.045);
+  --l4-glass: rgba(244, 242, 237, 0.62);
+  --l4-glass-strong: rgba(244, 242, 237, 0.85);
+  --l4-line: rgba(19, 19, 17, 0.14);
+  --l4-line-soft: rgba(19, 19, 17, 0.08);
+  --l4-spec-top: rgba(255, 255, 255, 0.75);
+  --l4-shadow: 0 18px 44px -30px rgba(19, 19, 17, 0.35);
+}
+.lab4 ::selection { background: var(--l4-signal); color: var(--l4-canvas); }
+.lab4 :focus-visible { outline: 2px solid var(--l4-signal); outline-offset: 3px; border-radius: 2px; }
+
+/* --- blueprint field: visible at the hero, fading to quiet below (§14.5) --- */
+.lab4-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--l4-blue-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--l4-blue-minor) 1px, transparent 1px),
+    linear-gradient(var(--l4-blue) 1px, transparent 1px),
+    linear-gradient(90deg, var(--l4-blue) 1px, transparent 1px);
+  background-size: 44px 44px, 44px 44px, 220px 220px, 220px 220px;
+  -webkit-mask-image: radial-gradient(ellipse 110% 85% at 60% 20%, #000 40%, transparent 95%);
+  mask-image: radial-gradient(ellipse 110% 85% at 60% 20%, #000 40%, transparent 95%);
+}
+
+.lab4-shell {
+  /* no z-index here — it would trap the hero chips (z:3) below the fixed
+     robot canvas (z:2); children raise themselves in the root context */
+  position: relative;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding-inline: clamp(20px, 4vw, 64px);
+}
+
+/* --- the fixed robot travel layer (§14.2.1 seam rule) --- */
+.lab4-stagefx {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* --- liquid glass primitive (§14.6), theme-aware material --- */
+.lab4-glass {
+  background: var(--l4-glass);
+  -webkit-backdrop-filter: blur(20px) saturate(1.35);
+  backdrop-filter: blur(20px) saturate(1.35);
+  border: 1px solid var(--l4-line-soft);
+  box-shadow:
+    0 1px 0 var(--l4-spec-top) inset,
+    var(--l4-shadow);
+}
+
+/* --- floating glass nav (§14.10) --- */
+.lab4-nav {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: min(1400px, calc(100% - 28px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px 10px 18px;
+  border-radius: var(--l4-r-lg);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.lab4-nav.scrolled { background: var(--l4-glass-strong); }
+.lab4-brand {
+  font-family: var(--disp);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.lab4-brand i {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  background: var(--l4-signal);
+  box-shadow: 0 0 12px var(--l4-signal-soft);
+}
+.lab4-brand em {
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--l4-ink-faint);
+  border: 1px solid var(--l4-line-soft);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+.lab4-nav-links {
+  display: none;
+  gap: clamp(14px, 2vw, 28px);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.lab4-nav-links a { color: var(--l4-ink-soft); transition: color 0.2s; }
+.lab4-nav-links a:hover { color: var(--l4-signal); }
+@media (min-width: 900px) { .lab4-nav-links { display: flex; } }
+.lab4-nav-tools { display: flex; align-items: center; gap: 8px; }
+.lab4-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  padding: 9px 12px;
+  border-radius: var(--l4-r-sm);
+  border: 1px solid var(--l4-line);
+  background: transparent;
+  color: var(--l4-ink);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.lab4-theme-btn:hover { border-color: var(--l4-signal); color: var(--l4-signal); }
+.lab4-theme-btn .ic { font-size: 13px; line-height: 1; }
+.lab4-nav-cta {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 10px 18px;
+  border-radius: var(--l4-r-sm);
+  background: var(--l4-signal);
+  color: #fff;
+  font-weight: 600;
+  transition: transform 0.2s, filter 0.2s;
+}
+.lab4-nav-cta:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+/* --- hero: Swiss asymmetric grid, robot home stage on the right --- */
+.lab4-hero {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  padding-top: 118px;
+  padding-bottom: 40px;
+}
+@media (min-width: 1000px) {
+  .lab4-hero { grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr); gap: clamp(16px, 2vw, 32px); }
+}
+.lab4-hero-copy { position: relative; z-index: 3; max-width: 640px; }
+.lab4-coord {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--l4-signal);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.lab4-coord::before { content: ""; width: 26px; height: 1px; background: var(--l4-signal); }
+.lab4-h1 {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(2.7rem, 6.6vw, 5.6rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  margin: 20px 0 0;
+}
+.lab4-h1 em { font-style: normal; color: var(--l4-signal); }
+.lab4-h1 .outline { -webkit-text-stroke: 1.5px var(--l4-ink); color: transparent; }
+.lab4-lead {
+  margin: 24px 0 0;
+  max-width: 46ch;
+  font-size: clamp(1rem, 1.2vw, 1.1rem);
+  line-height: 1.75;
+  color: var(--l4-ink-soft);
+}
+.lab4-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.lab4-btn {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 14px 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s, color 0.2s, border-color 0.2s, filter 0.2s;
+}
+.lab4-btn.solid { background: var(--l4-signal); color: #fff; font-weight: 600; }
+.lab4-btn.solid:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.lab4-btn.ghost { border-color: var(--l4-line); color: var(--l4-ink); }
+.lab4-btn.ghost:hover { border-color: var(--l4-signal); color: var(--l4-signal); }
+.lab4-btn .arw { transition: transform 0.2s; }
+.lab4-btn:hover .arw { transform: translateX(4px); }
+.lab4-trust {
+  display: flex;
+  gap: clamp(22px, 3vw, 44px);
+  margin: 44px 0 0;
+  padding-top: 22px;
+  border-top: 1px solid var(--l4-line-soft);
+}
+.lab4-trust dt {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(1.7rem, 2.6vw, 2.3rem);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.lab4-trust dt em { font-style: normal; color: var(--l4-signal); font-size: 0.66em; margin-left: 2px; }
+.lab4-trust dd {
+  margin: 8px 0 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--l4-ink-faint);
+}
+
+/* --- hero stage: the robot's home zone + glass inserts --- */
+.lab4-stage {
+  position: relative;
+  height: min(72vh, 660px);
+  z-index: 3; /* above the fixed robot canvas so the glass chips stay legible */
+  cursor: grab;
+  touch-action: pan-y; /* one-finger page scroll stays available (§14.2.1) */
+}
+.lab4-stage.grabbing { cursor: grabbing; }
+@media (max-width: 999px) { .lab4-stage { height: 44vh; min-height: 300px; margin-top: 20px; } }
+/* poster fallback keeps brand memory when WebGL is unavailable (§14.2.1) */
+.lab4-scene-fallback { display: none; }
+.lab4-nogl .lab4-scene-fallback {
+  display: block;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 44%, var(--l4-signal-soft) 0%, transparent 24%),
+    repeating-radial-gradient(circle at 50% 44%, transparent 0 46px, var(--l4-blue) 46px 47px),
+    radial-gradient(circle at 50% 44%, var(--l4-raised) 0%, transparent 62%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 56% at 50% 46%, #000 40%, transparent 76%);
+  mask-image: radial-gradient(ellipse 60% 56% at 50% 46%, #000 40%, transparent 76%);
+}
+.lab4-spec {
+  position: absolute;
+  z-index: 4;
+  padding: 12px 14px;
+  border-radius: var(--l4-r-md);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  min-width: 150px;
+  pointer-events: none;
+}
+.lab4-spec .k { display: block; color: var(--l4-ink-faint); text-transform: uppercase; font-size: 9.5px; letter-spacing: 0.1em; }
+.lab4-spec .v { display: flex; align-items: center; gap: 7px; color: var(--l4-ink); font-weight: 600; margin-top: 3px; }
+.lab4-spec .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--l4-signal); box-shadow: 0 0 8px var(--l4-signal); }
+.lab4-spec.s1 { top: 8%; left: 0; }
+.lab4-hint {
+  position: absolute;
+  z-index: 4;
+  bottom: 7%;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--l4-r-md);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--l4-ink-faint);
+}
+.lab4-hint .k { pointer-events: none; }
+.lab4-reset {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--l4-ink);
+  background: transparent;
+  border: 1px solid var(--l4-line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.lab4-reset:hover { border-color: var(--l4-signal); color: var(--l4-signal); }
+@media (max-width: 999px) { .lab4-hint { display: none; } }
+
+/* --- section rhythm + heads --- */
+.lab4-section { position: relative; z-index: 1; padding: clamp(76px, 11vh, 140px) 0; }
+.lab4-sec-head { display: grid; gap: 16px; margin-bottom: clamp(36px, 5vh, 56px); max-width: 780px; }
+.lab4-sec-head.with-dock {
+  max-width: none;
+  grid-template-columns: minmax(0, 780px) minmax(180px, 1fr);
+  align-items: end;
+}
+.lab4-sec-head.with-dock > div { display: grid; gap: 16px; }
+.lab4-how-dock { height: clamp(180px, 26vh, 280px); }
+@media (max-width: 899px) {
+  .lab4-sec-head.with-dock { grid-template-columns: 1fr; }
+  .lab4-how-dock { display: none; }
+}
+.lab4-sec-head h2, .lab4-cta h2 {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(1.8rem, 3.6vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  margin: 0;
+  text-wrap: balance;
+}
+.lab4-sec-head .soft { color: var(--l4-ink-faint); }
+.lab4-sec-note { margin: 0; font-family: var(--mono); font-size: 12px; color: var(--l4-ink-faint); letter-spacing: 0.04em; }
+
+/* --- 01 · solution selector: typographic index, mixed spans (§14.10) --- */
+.lab4-sols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--l4-line-soft);
+  border-block: 1px solid var(--l4-line-soft);
+}
+.lab4-sol {
+  position: relative;
+  display: grid;
+  gap: 8px 18px;
+  padding: clamp(20px, 2.6vw, 32px);
+  background: var(--l4-canvas);
+  transition: background 0.3s;
+  overflow: hidden;
+}
+.lab4-sol.wide {
+  grid-column: 1 / -1;
+  grid-template-columns: 52px minmax(0, 1.2fr) minmax(0, 1fr) 32px;
+  align-items: center;
+}
+.lab4-sol.narrow { grid-template-rows: auto 1fr auto; align-content: start; }
+.lab4-sol .idx { font-family: var(--mono); font-size: 11px; color: var(--l4-signal); letter-spacing: 0.1em; }
+.lab4-sol .body { display: grid; gap: 6px; min-width: 0; }
+.lab4-sol .t {
+  font-family: var(--disp);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-size: clamp(1.25rem, 2.4vw, 2rem);
+  line-height: 1.1;
+  transition: color 0.25s;
+}
+.lab4-sol.narrow .t { font-size: clamp(1.1rem, 1.6vw, 1.3rem); }
+.lab4-sol .d { font-size: 0.92rem; line-height: 1.6; color: var(--l4-ink-soft); }
+.lab4-sol .meta {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--l4-ink-faint);
+  justify-self: start;
+}
+.lab4-sol.wide .meta { justify-self: end; text-align: right; }
+.lab4-sol .arw { color: var(--l4-ink-faint); transition: transform 0.25s, color 0.25s; justify-self: end; }
+.lab4-sol:hover { background: var(--l4-raised); }
+.lab4-sol:hover .t { color: var(--l4-signal); }
+.lab4-sol:hover .arw { transform: translateX(5px); color: var(--l4-signal); }
+.lab4-sol::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 0;
+  background: var(--l4-signal);
+  transition: width 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.lab4-sol:hover::after { width: 100%; }
+@media (max-width: 899px) {
+  .lab4-sols { grid-template-columns: 1fr; }
+  .lab4-sol.wide { grid-template-columns: 40px minmax(0, 1fr) 24px; }
+  .lab4-sol.wide .meta { display: none; }
+}
+
+/* --- 02 · system schematic: real request path + live /chat door (§14.18) --- */
+.lab4-stack { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; }
+.lab4-cell { display: grid; }
+.lab4-node {
+  position: relative;
+  background: var(--l4-panel);
+  border: 1px solid var(--l4-line-soft);
+  border-radius: var(--l4-r-md);
+  padding: 18px 16px 16px;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  transition: border-color 0.25s, transform 0.25s;
+}
+.lab4-node:hover { border-color: var(--l4-signal-soft); transform: translateY(-3px); }
+.lab4-node .coord { position: absolute; top: 10px; right: 12px; font-family: var(--mono); font-size: 9px; color: var(--l4-ink-faint); letter-spacing: 0.12em; }
+.lab4-node .lbl { font-family: var(--disp); font-weight: 700; font-size: 1.02rem; letter-spacing: 0.05em; color: var(--l4-ink); }
+.lab4-node .tech { font-family: var(--mono); font-size: 11px; color: var(--l4-signal); letter-spacing: 0.04em; }
+.lab4-node .d { font-size: 0.8rem; line-height: 1.55; color: var(--l4-ink-soft); }
+.lab4-node.link { border-color: var(--l4-signal-soft); }
+.lab4-node.link .go {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--l4-signal);
+  margin-top: 4px;
+  transition: transform 0.2s;
+}
+.lab4-node.link:hover .go { transform: translateX(4px); }
+.lab4-node .trace { position: absolute; top: 50%; right: -18px; width: 18px; height: 1px; background: var(--l4-line); overflow: hidden; }
+.lab4-node .trace i { position: absolute; top: 0; left: 0; width: 7px; height: 1px; background: var(--l4-signal); animation: lab4-trace 1.6s linear infinite; }
+@keyframes lab4-trace { from { transform: translateX(-8px); } to { transform: translateX(19px); } }
+@media (max-width: 999px) {
+  .lab4-stack { grid-template-columns: 1fr 1fr; }
+  .lab4-node .trace { display: none; }
+}
+@media (max-width: 559px) { .lab4-stack { grid-template-columns: 1fr; } }
+.lab4-process {
+  list-style: none;
+  margin: clamp(36px, 5vh, 56px) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 18px;
+}
+.lab4-step { border-top: 1px solid var(--l4-line); padding-top: 14px; display: grid; gap: 5px; }
+.lab4-step .no { font-family: var(--mono); font-size: 10.5px; color: var(--l4-signal); letter-spacing: 0.12em; }
+.lab4-step .t { font-family: var(--disp); font-weight: 600; font-size: 1rem; letter-spacing: -0.01em; }
+.lab4-step .d { font-size: 0.8rem; line-height: 1.55; color: var(--l4-ink-faint); }
+@media (max-width: 999px) { .lab4-process { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 559px) { .lab4-process { grid-template-columns: 1fr; } }
+
+/* --- 03 · services complexity ladder --- */
+.lab4-svcs { border-top: 1px solid var(--l4-line-soft); }
+.lab4-svc {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1.3fr) minmax(220px, 0.9fr);
+  gap: 10px 24px;
+  align-items: center;
+  padding: clamp(18px, 2.4vh, 26px) clamp(4px, 1vw, 14px);
+  border-bottom: 1px solid var(--l4-line-soft);
+  transition: background 0.3s;
+}
+.lab4-svc:hover { background: var(--l4-raised); }
+.lab4-svc .no { font-family: var(--mono); font-size: 11px; color: var(--l4-signal); letter-spacing: 0.1em; align-self: start; padding-top: 5px; }
+.lab4-svc .body h3 { font-family: var(--disp); font-weight: 700; font-size: clamp(1.05rem, 1.8vw, 1.35rem); letter-spacing: -0.015em; margin: 0; }
+.lab4-svc .body p { margin: 6px 0 0; font-size: 0.9rem; line-height: 1.6; color: var(--l4-ink-soft); }
+.lab4-svc .scale { display: grid; gap: 8px; }
+.lab4-svc .meter { position: relative; display: block; height: 2px; background: var(--l4-line-soft); border-radius: 999px; overflow: hidden; }
+.lab4-svc .meter i {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: calc(var(--lv) / 6 * 100%);
+  background: linear-gradient(90deg, var(--l4-signal-soft), var(--l4-signal));
+  border-radius: 999px;
+}
+.lab4-svc .stack { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; color: var(--l4-ink-faint); text-transform: uppercase; }
+@media (max-width: 767px) {
+  .lab4-svc { grid-template-columns: 40px minmax(0, 1fr); }
+  .lab4-svc .scale { grid-column: 2; }
+}
+
+/* --- 04 · closing CTA --- */
+.lab4-cta { display: grid; gap: 22px; justify-items: start; }
+.lab4-cta h2 { font-size: clamp(2.3rem, 5.4vw, 4.4rem); line-height: 1.06; }
+.lab4-cta-note { margin: 0; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--l4-ink-faint); }
+
+/* --- Oversized Brand Wordmark footer + robot peek dock (§14.10) --- */
+.lab4-footer { position: relative; z-index: 1; border-top: 1px solid var(--l4-line); padding: 24px 0 36px; overflow: hidden; }
+.lab4-wordmark-wrap { position: relative; }
+.lab4-wordmark {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(4rem, 16.5vw, 15rem);
+  line-height: 0.86;
+  letter-spacing: -0.045em;
+  color: var(--l4-ink);
+  white-space: nowrap;
+  user-select: none;
+  margin-bottom: -0.06em; /* editorial baseline crop */
+}
+.lab4-foot-dock {
+  position: absolute;
+  top: clamp(-140px, -12vw, -60px);
+  right: clamp(4px, 6vw, 120px);
+  width: clamp(110px, 14vw, 210px);
+  height: clamp(110px, 14vw, 210px);
+}
+.lab4-foot-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--l4-line-soft);
+}
+.lab4-foot-brand { font-family: var(--disp); font-weight: 700; letter-spacing: -0.02em; }
+.lab4-foot-meta { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; color: var(--l4-ink-faint); }
+
+/* --- reveal micro-motion (meso tier, §14.9) --- */
+.lab4 [data-rv] { opacity: 0; transform: translateY(16px); transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.lab4 [data-rv].in { opacity: 1; transform: none; }
+.lab4 [data-rv][data-rv-d="1"] { transition-delay: 0.08s; }
+.lab4 [data-rv][data-rv-d="2"] { transition-delay: 0.16s; }
+.lab4 [data-rv][data-rv-d="3"] { transition-delay: 0.24s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lab4 [data-rv] { opacity: 1; transform: none; transition: none; }
+  .lab4, .lab4-sol::after, .lab4-btn, .lab4-nav, .lab4-nav-cta, .lab4-node, .lab4-svc, .lab4-theme-btn { transition: none; }
+  .lab4-node .trace i { animation: none; }
+}
