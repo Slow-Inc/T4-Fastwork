@@ -15,82 +15,21 @@ import type { Group } from 'three';
  * per section. Interactions: damped cursor-follow, drag-to-rotate on the
  * hero stage ([data-l4-grab]), and a reset via the `lab4-robot-reset` event.
  *
- * Model: /lab/robot-head.glb — a STAND-IN for the final Eve-inspired T4 Bot
- * (pending an approved character sheet; see §13 open questions).
+ * Model: /lab4/t4bot.glb — the real T4 Bot v1 (character sheet approved
+ * 2026-07-20; Meshy image-to-3D → Blender part split). Named nodes:
+ * T4BotRoot › Head (pivot at its base, hover-gapped) / Body / ArmL / ArmR
+ * (arm pivots at the shoulders) — the head follows the cursor on its own
+ * node, arms are ready for pointing poses (§14.2.1).
  */
-const MODEL = '/lab/robot-head.glb';
+const MODEL = '/lab4/t4bot.glb';
 useGLTF.preload(MODEL);
 
 const SIGNAL_DARK = '#ff6846';
 const SIGNAL_LIGHT = '#e8461b';
-const FACE = { x: 0, y: 0.4, z: 0.52 };
-const FACE_SIZE = { w: 0.82, h: 0.74 };
 const CAM_Z = 7;
 const FOV = 38;
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
-
-/* --------------------------------------------------- expressive eye screen */
-const EYES_VERT = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-// Always-on friendly eyes (blink + faint pixel shimmer) — the boot loop from
-// /lab is dropped; the character reads as "awake" the whole journey.
-const EYES_FRAG = /* glsl */ `
-  precision highp float;
-  uniform float uTime;
-  varying vec2 vUv;
-
-  float hash(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
-  float rbox(vec2 p, vec2 b, float r){
-    vec2 d = abs(p) - b + r;
-    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - r;
-  }
-
-  void main(){
-    vec2 uv = vUv;
-    vec2 cp = (uv - 0.5) * 2.0;
-    if (rbox(cp, vec2(0.94, 0.94), 0.34) > 0.0) discard;
-
-    vec2 grid = vec2(24.0, 20.0);
-    vec2 cell = floor(uv * grid);
-    vec2 cuv = fract(uv * grid);
-    float rnd = hash(cell);
-    float gap = step(0.08, cuv.x) * step(0.08, cuv.y) * step(cuv.x, 0.92) * step(cuv.y, 0.92);
-
-    // blink ~ every 4.5s, quick double-ease
-    float bl = fract(uTime / 4.5);
-    float blink = 1.0 - smoothstep(0.94, 0.955, bl) * (1.0 - smoothstep(0.975, 0.99, bl));
-    float eyeH = 0.08 * blink + 0.008;
-
-    float e1 = rbox(uv - vec2(0.37, 0.52), vec2(0.05, eyeH), 0.04);
-    float e2 = rbox(uv - vec2(0.63, 0.52), vec2(0.05, eyeH), 0.04);
-    float eye = 1.0 - smoothstep(-0.01, 0.02, min(e1, e2));
-
-    vec3 bg = vec3(0.015, 0.015, 0.02);
-    vec3 orange = vec3(0.98, 0.34, 0.10);
-    vec3 col = bg;
-    col += orange * gap * 0.05 * (0.6 + 0.4 * sin(uTime * 2.0 + rnd * 30.0));
-    col += mix(vec3(1.0), orange, 0.12) * eye * 1.6;
-    gl_FragColor = vec4(col, 1.0);
-  }
-`;
-
-// module singleton — this client-only chunk never runs on the server, only
-// one robot exists, and the per-frame uTime mutation must live outside render
-const EYES_MATERIAL = new THREE.ShaderMaterial({
-  vertexShader: EYES_VERT,
-  fragmentShader: EYES_FRAG,
-  transparent: true,
-  toneMapped: false,
-  depthWrite: false,
-  uniforms: { uTime: { value: 0 } },
-});
 
 /* ------------------------------------------------------------- zone travel */
 type ZoneTarget = { x: number; y: number; scale: number; yaw: number; pitch: number };
@@ -121,8 +60,7 @@ function RobotTraveller({ light }: { light: boolean }) {
   const drag = useRef({ active: false, lastX: 0, yaw: 0, vel: 0 });
   const started = useRef(false);
 
-  // normalise the head to ~1 world unit inside an inner group, so FACE
-  // coordinates stay valid in model space
+  // normalise the bot to ~1 world unit
   const { offset, fit } = useMemo(() => {
     const box = new THREE.Box3().setFromObject(scene);
     const s = box.getSize(new THREE.Vector3());
@@ -130,6 +68,29 @@ function RobotTraveller({ light }: { light: boolean }) {
       offset: box.getCenter(new THREE.Vector3()).multiplyScalar(-1),
       fit: 1 / Math.max(s.x, s.y, s.z),
     };
+  }, [scene]);
+
+  // the levitating head node — cursor-follow rotates THIS, not the group,
+  // so the body stays calm under the head's attention (layered motion);
+  // held in a ref because useFrame mutates its rotation every frame
+  const headRef = useRef<THREE.Object3D | null>(null);
+  useEffect(() => {
+    headRef.current = scene.getObjectByName('Head') ?? null;
+  }, [scene]);
+
+  // signal-orange emissive boost: Meshy bakes the eyes/ring/emblem near-cream,
+  // tinting the emissive factor warms them into the brand accent + lets Bloom
+  // pick them up (same recipe as the lab3 reactor core)
+  useMemo(() => {
+    scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      if (mat?.emissiveMap) {
+        mat.emissive.setRGB(1.0, 0.55, 0.28);
+        mat.emissiveIntensity = 2.6;
+      }
+    });
   }, [scene]);
 
 
@@ -182,7 +143,6 @@ function RobotTraveller({ light }: { light: boolean }) {
     const g = group.current;
     if (!g) return;
     const t = state.clock.elapsedTime;
-    EYES_MATERIAL.uniforms.uTime.value = t;
 
     const zones = zonesRef.current;
     if (!zones.length) return;
@@ -202,9 +162,13 @@ function RobotTraveller({ light }: { light: boolean }) {
       drag.current.vel *= Math.pow(0.0001, dt); // ~fast decay, frame-rate safe
     }
 
-    const followW = reduced ? 0 : 0.3;
-    const yawTarget = target.yaw + drag.current.yaw + state.pointer.x * followW;
-    const pitchTarget = target.pitch - state.pointer.y * followW * 0.5;
+    // body/group: zone pose + the user's drag; head: cursor attention —
+    // two layers with different lag is what reads as "alive" (§14.2.1)
+    const followW = reduced ? 0 : 1;
+    const yawTarget = target.yaw + drag.current.yaw;
+    const pitchTarget = target.pitch;
+    const headYaw = clamp(state.pointer.x * 0.55, -0.55, 0.55) * followW;
+    const headPitch = clamp(-state.pointer.y * 0.28, -0.28, 0.28) * followW;
     const float = reduced ? 0 : Math.sin(t * 1.1) * 0.035 * target.scale;
 
     if (reduced || !started.current) {
@@ -212,6 +176,7 @@ function RobotTraveller({ light }: { light: boolean }) {
       g.position.set(target.x, target.y + float, 0);
       g.scale.setScalar(target.scale);
       g.rotation.set(pitchTarget, yawTarget, 0);
+      headRef.current?.rotation.set(headPitch, headYaw, 0);
       started.current = true;
       return;
     }
@@ -223,16 +188,18 @@ function RobotTraveller({ light }: { light: boolean }) {
     g.scale.setScalar(s);
     g.rotation.y += (yawTarget - g.rotation.y) * Math.min(1, dt * 3);
     g.rotation.x += (pitchTarget - g.rotation.x) * Math.min(1, dt * 3);
+    const head = headRef.current;
+    if (head) {
+      const hk = Math.min(1, dt * 4.5);
+      head.rotation.y += (headYaw - head.rotation.y) * hk;
+      head.rotation.x += (headPitch - head.rotation.x) * hk;
+    }
   });
 
   return (
     <group ref={group}>
       <group scale={fit}>
         <primitive object={scene} position={offset.toArray()} />
-        <mesh position={[FACE.x, FACE.y, FACE.z]}>
-          <planeGeometry args={[FACE_SIZE.w, FACE_SIZE.h, 1, 1]} />
-          <primitive object={EYES_MATERIAL} attach="material" />
-        </mesh>
       </group>
       <pointLight
         position={[0, 0.2, 1.2]}

@@ -228,7 +228,7 @@ export default function Lab4Page() {
                 <span className="k">Brand character</span>
                 <span className="v">
                   <i className="dot" />
-                  T4 Bot · stand-in
+                  T4 Bot v1 · 434 KB
                 </span>
               </div>
               <div className="lab4-meta-block" data-rv data-rv-d="2">
