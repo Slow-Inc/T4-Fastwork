@@ -300,16 +300,29 @@ export default function Lab4Page() {
           <Lab4Schematic stack={STACK} process={PROCESS} />
         </section>
 
-        {/* ------------------------------------------- 03 · services ladder */}
+        {/* ------------------------------------------- 03 · services ladder
+            Storytelling zone 3: the robot escorts the reader down the
+            spectrum ladder (§14.2.1 — the recommended 4-zone set) */}
         <section className="lab4-section" id="services">
-          <header className="lab4-sec-head">
-            <span className="lab4-coord" data-rv>
-              03 — SERVICES
-            </span>
-            <h2 data-rv data-rv-d="1">
-              รับครบสเปกตรัม
-              <span className="soft"> จากหน้าเดียว ถึงทั้งแพลตฟอร์ม</span>
-            </h2>
+          <header className="lab4-sec-head with-dock">
+            <div>
+              <span className="lab4-coord" data-rv>
+                03 — SERVICES
+              </span>
+              <h2 data-rv data-rv-d="1">
+                รับครบสเปกตรัม
+                <span className="soft"> จากหน้าเดียว ถึงทั้งแพลตฟอร์ม</span>
+              </h2>
+            </div>
+            {/* zone marker 3 — the robot presents the service spectrum */}
+            <div
+              className="lab4-svc-dock"
+              data-l4-zone="services"
+              data-l4-scale="0.7"
+              data-l4-yaw="-0.3"
+              data-l4-pitch="0.1"
+              aria-hidden
+            />
           </header>
           <Lab4Services items={SERVICES} />
         </section>

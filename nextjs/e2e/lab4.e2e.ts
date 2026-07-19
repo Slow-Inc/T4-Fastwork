@@ -96,8 +96,10 @@ test("/lab4 long page: sections, /chat door in the schematic, wordmark footer", 
   await expect(page.locator(".lab4-wordmark")).toHaveText("T4 LABS");
   await expect(page.locator('.lab4-foot-dock[data-l4-zone="footer"]')).toHaveCount(1);
 
-  // three storytelling zone markers total (§14.2.1 — 3–4 zones max)
-  await expect(page.locator("[data-l4-zone]")).toHaveCount(3);
+  // four storytelling zone markers total (§14.2.1 — the recommended set:
+  // hero → how → services → footer, and no more than 4)
+  await expect(page.locator('.lab4-svc-dock[data-l4-zone="services"]')).toHaveCount(1);
+  await expect(page.locator("[data-l4-zone]")).toHaveCount(4);
 
   expect(errors, "console errors on /lab4 long page").toEqual([]);
 });

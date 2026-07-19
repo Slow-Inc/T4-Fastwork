@@ -6589,10 +6589,10 @@ footer {
   align-items: end;
 }
 .lab4-sec-head.with-dock > div { display: grid; gap: 16px; }
-.lab4-how-dock { height: clamp(180px, 26vh, 280px); }
+.lab4-how-dock, .lab4-svc-dock { height: clamp(180px, 26vh, 280px); }
 @media (max-width: 899px) {
   .lab4-sec-head.with-dock { grid-template-columns: 1fr; }
-  .lab4-how-dock { display: none; }
+  .lab4-how-dock, .lab4-svc-dock { display: none; }
 }
 .lab4-sec-head h2, .lab4-cta h2 {
   font-family: var(--disp);
