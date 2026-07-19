@@ -357,20 +357,24 @@ export function Lab4RobotStage() {
         eventPrefix="client"
         style={{ width: '100%', height: '100%' }}
       >
-        <ambientLight intensity={light ? 0.9 : 0.5} />
-        <directionalLight position={[4, 6, 4]} intensity={light ? 1.7 : 1.4} />
+        {/* light mode runs much dimmer than dark: the white shell sits on a
+            near-white canvas, so any excess light + bloom blows out the
+            panel-line detail (§14.2.1 wants the shell contrast to come from
+            shading/rim, not glow) */}
+        <ambientLight intensity={light ? 0.45 : 0.5} />
+        <directionalLight position={[4, 6, 4]} intensity={light ? 1.0 : 1.4} />
         <Suspense fallback={null}>
           <RobotTraveller light={light} />
           <Environment resolution={256} frames={1}>
-            <Lightformer intensity={light ? 3 : 2.4} position={[0, 3, 3]} scale={[7, 3, 1]} />
+            <Lightformer intensity={light ? 1.4 : 2.4} position={[0, 3, 3]} scale={[7, 3, 1]} />
             <Lightformer intensity={1.6} position={[-4, 1, -2]} scale={[4, 5, 1]} color={signal} />
-            <Lightformer intensity={light ? 2.2 : 1.6} position={[4, 2, 2]} scale={[3, 4, 1]} />
+            <Lightformer intensity={light ? 1.0 : 1.6} position={[4, 2, 2]} scale={[3, 4, 1]} />
           </Environment>
         </Suspense>
         <EffectComposer>
           <Bloom
-            intensity={light ? 0.35 : 0.7}
-            luminanceThreshold={0.6}
+            intensity={light ? 0.25 : 0.7}
+            luminanceThreshold={light ? 0.92 : 0.6}
             luminanceSmoothing={0.22}
             radius={0.5}
             mipmapBlur
