@@ -12,7 +12,7 @@ export function LabSectionHeader({
   id?: string;
 }) {
   return (
-    <div className="lab-sec-head rv" id={id}>
+    <div className="lab-sec-head" id={id}>
       <span className="lab-kicker">
         <i />
         {kicker}
