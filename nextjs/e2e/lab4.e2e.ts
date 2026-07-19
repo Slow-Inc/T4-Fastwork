@@ -43,6 +43,9 @@ test("/lab4: hero renders on the dark canvas for dark-scheme users without error
   await expect(page.locator("h1")).toHaveCount(1);
   await expect(page.locator("h1")).toBeVisible();
 
+  // kinetic marquee band scrolls behind the robot (/lab v1 motif)
+  await expect(page.locator(".lab4-marquee .kinetic-marquee-track")).toBeVisible();
+
   // glass nav with CTA + theme switch
   await expect(page.locator(".lab4-nav")).toBeVisible();
   await expect(page.locator(".lab4-nav-cta")).toBeVisible();

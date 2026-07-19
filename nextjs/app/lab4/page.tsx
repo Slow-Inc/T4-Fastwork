@@ -13,6 +13,7 @@ import {
   type Lab4StackNode,
 } from '@/components/site/lab4/lab4-schematic';
 import { Lab4Services, type Lab4Service } from '@/components/site/lab4/lab4-services';
+import { KineticMarquee } from '@/components/site/lab/kinetic-marquee';
 
 export const metadata: Metadata = {
   title: 'Lab4 — v3 prototype: Robot storytelling × dual theme',
@@ -180,6 +181,11 @@ export default function Lab4Page() {
             Storytelling zone 1: the T4 Bot greets, follows the cursor and can
             be grabbed — B2C-friendly headline, engineering-grade sub (§14.0) */}
         <section className="lab4-hero">
+          {/* giant kinetic text band scrolling behind the robot (/lab v1 motif);
+              decorative — the semantic h1 lives in the hero copy */}
+          <div className="lab4-marquee">
+            <KineticMarquee text="BUILDING TOMORROW —" />
+          </div>
           <div className="lab4-hero-copy">
             <span className="lab4-coord" data-rv>
               00 — POSITIONING

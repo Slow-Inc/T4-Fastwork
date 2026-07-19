@@ -6478,6 +6478,23 @@ footer {
   color: var(--l4-ink-faint);
 }
 
+/* --- kinetic marquee band behind the robot (/lab v1 motif) --- */
+.lab4-marquee {
+  position: absolute;
+  left: calc(50% - 50vw);
+  width: 100vw;
+  top: clamp(150px, 34vh, 340px);
+  z-index: 1; /* above the blueprint field, below the robot canvas (z:2) */
+  pointer-events: none;
+}
+/* theme-aware outline treatment so the band layers under the copy without
+   fighting the h1 (one dominant element per viewport, req3 §14.0) */
+.lab4 .kinetic-marquee-item {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--l4-ink);
+  opacity: 0.34;
+}
+
 /* --- hero stage: the robot's home zone + glass inserts --- */
 .lab4-stage {
   position: relative;
@@ -6771,4 +6788,5 @@ footer {
   .lab4 [data-rv] { opacity: 1; transform: none; transition: none; }
   .lab4, .lab4-sol::after, .lab4-btn, .lab4-nav, .lab4-nav-cta, .lab4-node, .lab4-svc, .lab4-theme-btn { transition: none; }
   .lab4-node .trace i { animation: none; }
+  .lab4 .kinetic-marquee-track { animation: none; }
 }
