@@ -5023,13 +5023,25 @@ footer {
 }
 .lab-hero-scene {
   position: absolute;
-  top: 2%;
+  top: 0%;
   bottom: auto;
-  height: 60%;
-  right: clamp(-10px, 1vw, 24px);
-  width: min(40vw, 460px);
+  height: 68%;
+  right: clamp(-40px, 0vw, 8px);
+  width: min(46vw, 540px);
   z-index: 2;
   pointer-events: none;
+  /* Fade the transparent canvas edges into the paper so the bloom haze doesn't
+     read as a hard rectangle framing the robot. */
+  -webkit-mask-image: radial-gradient(
+    ellipse 64% 66% at 55% 42%,
+    #000 42%,
+    transparent 74%
+  );
+  mask-image: radial-gradient(
+    ellipse 64% 66% at 55% 42%,
+    #000 42%,
+    transparent 74%
+  );
 }
 .lab-hero-scene-fallback {
   position: absolute;
