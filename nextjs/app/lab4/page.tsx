@@ -178,71 +178,83 @@ export default function Lab4Page() {
 
       <main className="lab4-shell">
         {/* ------------------------------------------------ 00 · hero thesis
-            Storytelling zone 1: the T4 Bot greets, follows the cursor and can
-            be grabbed — B2C-friendly headline, engineering-grade sub (§14.0) */}
+            Storytelling zone 1, ChainGPT-labs structure: the kinetic band IS
+            the only display-scale type (one dominant per viewport, §14.0);
+            below it a Swiss table band — mono copy · robot · meta cells —
+            closed by a full-width trust strip. */}
         <section className="lab4-hero">
-          {/* giant kinetic text band scrolling behind the robot (/lab v1 motif);
-              decorative — the semantic h1 lives in the hero copy */}
+          {/* display headline = the marquee itself; decorative (real h1 below) */}
           <div className="lab4-marquee">
             <KineticMarquee text="BUILDING TOMORROW —" />
           </div>
-          <div className="lab4-hero-copy">
-            <span className="lab4-coord" data-rv>
-              00 — POSITIONING
-            </span>
-            <h1 className="lab4-h1" data-rv data-rv-d="1">
-              อยากมีเว็บแบบไหน
-              <br />
-              เรา<em>สร้างได้</em>
-              <br />
-              <span className="outline">ถึงระดับ product</span>
-            </h1>
-            <p className="lab4-lead" data-rv data-rv-d="2">
-              ตั้งแต่เว็บร้านค้าหน้าเดียว จนถึง SaaS, Web Application และ AI
-              Product ที่ซับซ้อนสูง — T4 Labs ดูแลด้วยมาตรฐานวิศวกรรมเดียวกัน
-              คุยกับ dev โดยตรง เข้าใจง่าย ไม่ต้องรู้ศัพท์เทคนิค
-            </p>
-            <div className="lab4-actions" data-rv data-rv-d="3">
-              <a className="lab4-btn solid" href="#contact">
-                ติดต่อ / จ้างงาน <span className="arw">→</span>
-              </a>
-              <a className="lab4-btn ghost" href="/chat">
-                คุยกับ AI
-              </a>
+
+          <div className="lab4-hero-grid">
+            <div className="lab4-hero-cell copy">
+              <span className="lab4-coord" data-rv>
+                <i aria-hidden />
+                00 — POSITIONING
+              </span>
+              <h1 className="lab4-h1" data-rv data-rv-d="1">
+                อยากมีเว็บแบบไหน เรา<em>สร้างได้</em> — ตั้งแต่หน้าเดียว
+                ถึงระดับ product
+              </h1>
+              <p className="lab4-lead" data-rv data-rv-d="2">
+                เว็บร้านค้า, SaaS, Web Application, AI Product —
+                มาตรฐานวิศวกรรมเดียวกันทุกสเกล คุยกับ dev โดยตรง
+                ไม่ต้องรู้ศัพท์เทคนิค
+              </p>
+              <div className="lab4-actions" data-rv data-rv-d="3">
+                <a className="lab4-btn solid" href="#contact">
+                  ติดต่อ / จ้างงาน <span className="arw">→</span>
+                </a>
+                <a className="lab4-btn ghost" href="/chat">
+                  คุยกับ AI
+                </a>
+              </div>
             </div>
-            <dl className="lab4-trust" data-rv data-rv-d="3">
-              {TRUST.map((t) => (
-                <div key={t.label}>
-                  <dt>
-                    {t.n}
-                    <em>{t.unit}</em>
-                  </dt>
-                  <dd>{t.label}</dd>
-                </div>
-              ))}
-            </dl>
+
+            {/* zone marker 1 — the robot's home cell; grab = drag-to-rotate */}
+            <div
+              className="lab4-stage"
+              data-l4-zone="hero"
+              data-l4-grab
+              data-l4-scale="0.8"
+            >
+              <div className="lab4-scene-fallback" aria-hidden />
+            </div>
+
+            <div className="lab4-hero-cell meta">
+              <div className="lab4-meta-block" data-rv>
+                <span className="k">Brand character</span>
+                <span className="v">
+                  <i className="dot" />
+                  T4 Bot · stand-in
+                </span>
+              </div>
+              <div className="lab4-meta-block" data-rv data-rv-d="2">
+                <span className="k">Interaction</span>
+                <span className="v">DRAG TO ROTATE</span>
+                <Lab4ResetButton />
+              </div>
+              <div className="lab4-meta-block grow" data-rv data-rv-d="3">
+                <span className="k">Render</span>
+                <span className="v">R3F · zone travel · dual theme</span>
+              </div>
+            </div>
           </div>
 
-          {/* zone marker 1 — the robot's home position; grab = drag-to-rotate */}
-          <div
-            className="lab4-stage"
-            data-l4-zone="hero"
-            data-l4-grab
-            data-l4-scale="0.78"
-          >
-            <div className="lab4-scene-fallback" aria-hidden />
-            <div className="lab4-spec lab4-glass s1" data-rv>
-              <span className="k">Brand character</span>
-              <span className="v">
-                <i className="dot" />
-                T4 Bot · stand-in model
-              </span>
-            </div>
-            <div className="lab4-hint lab4-glass" data-rv data-rv-d="2">
-              <span className="k">DRAG TO ROTATE</span>
-              <Lab4ResetButton />
-            </div>
-          </div>
+          {/* trust strip — the ChainGPT partners-row slot, filled with proof */}
+          <dl className="lab4-trust" data-rv>
+            {TRUST.map((t) => (
+              <div key={t.label}>
+                <dt>
+                  {t.n}
+                  <em>{t.unit}</em>
+                </dt>
+                <dd>{t.label}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
 
         {/* ---------------------------------------------- 01 · solution index */}
