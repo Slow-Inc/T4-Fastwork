@@ -306,7 +306,7 @@ function RobotTraveller({ light }: { light: boolean }) {
       </group>
       <pointLight
         position={[0, 0.2, 1.2]}
-        intensity={light ? 0.6 : 1.4}
+        intensity={light ? 1.0 : 1.4}
         color={light ? SIGNAL_LIGHT : SIGNAL_DARK}
         distance={4}
       />
@@ -357,24 +357,25 @@ export function Lab4RobotStage() {
         eventPrefix="client"
         style={{ width: '100%', height: '100%' }}
       >
-        {/* light mode runs much dimmer than dark: the white shell sits on a
-            near-white canvas, so any excess light + bloom blows out the
-            panel-line detail (§14.2.1 wants the shell contrast to come from
-            shading/rim, not glow) */}
-        <ambientLight intensity={light ? 0.45 : 0.5} />
-        <directionalLight position={[4, 6, 4]} intensity={light ? 1.0 : 1.4} />
+        {/* light mode is LIT but restrained: a clear warm key + rim so the
+            robot reads as spotlit on the pale canvas, yet dim enough that
+            the white shell keeps its panel-line detail (the 0.9/1.7/3.0 rig
+            used to bloom the whole shell into a halo — §14.2.1 wants shell
+            contrast from shading/rim, not glow) */}
+        <ambientLight intensity={light ? 0.55 : 0.5} />
+        <directionalLight position={[4, 6, 4]} intensity={light ? 1.35 : 1.4} />
         <Suspense fallback={null}>
           <RobotTraveller light={light} />
           <Environment resolution={256} frames={1}>
-            <Lightformer intensity={light ? 1.4 : 2.4} position={[0, 3, 3]} scale={[7, 3, 1]} />
+            <Lightformer intensity={light ? 1.8 : 2.4} position={[0, 3, 3]} scale={[7, 3, 1]} />
             <Lightformer intensity={1.6} position={[-4, 1, -2]} scale={[4, 5, 1]} color={signal} />
-            <Lightformer intensity={light ? 1.0 : 1.6} position={[4, 2, 2]} scale={[3, 4, 1]} />
+            <Lightformer intensity={light ? 1.3 : 1.6} position={[4, 2, 2]} scale={[3, 4, 1]} />
           </Environment>
         </Suspense>
         <EffectComposer>
           <Bloom
-            intensity={light ? 0.25 : 0.7}
-            luminanceThreshold={light ? 0.92 : 0.6}
+            intensity={light ? 0.4 : 0.7}
+            luminanceThreshold={light ? 0.85 : 0.6}
             luminanceSmoothing={0.22}
             radius={0.5}
             mipmapBlur
