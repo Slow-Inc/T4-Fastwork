@@ -16,10 +16,11 @@ import type { Group } from 'three';
  * hero stage ([data-l4-grab]), and a reset via the `lab4-robot-reset` event.
  *
  * Model: /lab4/t4bot.glb — the real T4 Bot v1 (character sheet approved
- * 2026-07-20; Meshy image-to-3D → Blender part split). Named nodes:
- * T4BotRoot › Head (pivot at its base, hover-gapped) / Body / ArmL / ArmR
- * (arm pivots at the shoulders) — the head follows the cursor on its own
- * node, arms are ready for pointing poses (§14.2.1).
+ * 2026-07-20; Meshy image-to-3D → Blender cleanup). Named nodes:
+ * T4BotRoot › Head (pivot at its base, hover-gapped) / Body — the head
+ * follows the cursor on its own node. Arms are currently fused into Body
+ * (the bisect split cracked under smoothing); pointing poses need a
+ * vertex-group re-split in prototypes/t4bot/t4bot-split.blend first.
  */
 const MODEL = '/lab4/t4bot.glb';
 useGLTF.preload(MODEL);
