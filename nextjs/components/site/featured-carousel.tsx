@@ -3,7 +3,14 @@ import type { Project } from '@/content/catalog';
 
 /** Featured projects carousel (Requirement §4.1.4) — CSS scroll-snap track, no
  * JS needed; scrolls horizontally with snap points. */
-export function FeaturedCarousel({ projects }: { projects: Project[] }) {
+export function FeaturedCarousel({
+  projects,
+  eyebrow = '01 — Featured',
+}: {
+  projects: Project[];
+  /** section index label; overridable so the host page keeps a coherent count */
+  eyebrow?: string;
+}) {
   if (projects.length === 0) return null;
 
   return (
@@ -11,7 +18,7 @@ export function FeaturedCarousel({ projects }: { projects: Project[] }) {
       <div className="work-head rv">
         <h2>Featured</h2>
         <div style={{ textAlign: 'right' }}>
-          <div className="t-idx">01 — Featured</div>
+          <div className="t-idx">{eyebrow}</div>
           <div className="t-meta" style={{ marginTop: 6 }}>
             เลื่อนเพื่อดูเพิ่ม →
           </div>

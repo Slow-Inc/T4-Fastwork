@@ -10,15 +10,17 @@ export function TeamSectionView({
   en,
   members,
   projects,
+  idx = '07 — Team',
 }: {
   en: boolean;
   members: TeamMember[];
   projects: TeamOrgProject[];
+  idx?: string;
 }) {
   return (
     <section id="team" className="section">
       <div className="proc-head rv">
-        <div className="t-idx">07 — Team</div>
+        <div className="t-idx">{idx}</div>
         <h2>{en ? 'The people building it.' : 'ทีมที่ลงมือสร้างจริง'}</h2>
         <p className="t-body">
           {en

@@ -10,7 +10,7 @@ export function TechStackView({ techs, en }: { techs: string[]; en: boolean }) {
       <div className="work-head rv">
         <h2>Tech stack</h2>
         <div style={{ textAlign: 'right' }}>
-          <div className="t-idx">05 — Stack</div>
+          <div className="t-idx">07 — Stack</div>
           <div className="t-meta" style={{ marginTop: 6 }}>
             {en ? 'Click to filter work' : 'คลิกเพื่อกรองผลงาน'}
           </div>

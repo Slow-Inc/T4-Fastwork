@@ -13,9 +13,11 @@ const CERT_LIMIT = 9;
 export function CertificatesView({
   certificates,
   onOpen,
+  idx = '05 — Credentials',
 }: {
   certificates: Certificate[];
   onOpen?: (index: number) => void;
+  idx?: string;
 }) {
   const row = (c: Certificate, i: number) => (
     <button
@@ -47,7 +49,7 @@ export function CertificatesView({
     <section id="certs" className="section">
       <div className="cert-wrap">
         <div className="rv">
-          <div className="t-idx">05 — Credentials</div>
+          <div className="t-idx">{idx}</div>
           <h2>Certified, and still learning.</h2>
           <p className="t-body">
             ทีมสะสมใบรับรองด้าน AI, Data และ Security ต่อเนื่อง —

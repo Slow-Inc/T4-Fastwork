@@ -11,7 +11,7 @@ export function SdlcSectionView({ en }: { en: boolean }) {
     <section id="sdlc" className="section">
       <div className="sdlc-wrap">
         <div className="sdlc-head rv">
-          <div className="t-idx">06 — SDLC</div>
+          <div className="t-idx">05 — SDLC</div>
           <h2>{en ? 'The SDLC we actually run.' : 'SDLC ที่เราใช้จริง'}</h2>
           <p className="t-body">
             {en

@@ -147,20 +147,15 @@ export default async function Home() {
         </section>
 
         {/* ------------------------------------------------ 02 · proof of work */}
-        <section className="lab4-section lab4-embed" id="work">
-          <header className="lab4-sec-head">
-            <span className="lab4-coord" data-rv>
-              02 — SELECTED WORK
-            </span>
-            <h2 data-rv data-rv-d="1">
-              หลักฐานผลงาน
-              <span className="soft"> ที่ส่งมอบจริง</span>
-            </h2>
-          </header>
+        {/* FeaturedCarousel renders its OWN section head — don't wrap it in a
+            second lab4-sec-head or the page shows two stacked headers with
+            clashing index numbers. */}
+        <div className="lab4-embed">
           <FeaturedCarousel
+            eyebrow="02 — Selected work"
             projects={orderByRank(filterProjects({ featured: true }), rank)}
           />
-        </section>
+        </div>
 
         {/* ------------------------------------------- 03 · system schematic */}
         <section className="lab4-section" id="how">
@@ -225,9 +220,9 @@ export default async function Home() {
             themed via the dark-token bridge; §14.3 requires them on Home) */}
         <div className="lab4-embed">
           <SdlcSection />
-          <TeamSection />
+          <TeamSection idx="06 — Team" />
           <TechStack techs={projectTechnologies} />
-          <Certificates />
+          <Certificates idx="08 — Credentials" />
         </div>
 
         {/* --------------------------------------------------- 09 · closing */}
