@@ -29,7 +29,8 @@ import type { Group } from 'three';
  * centre) and the target gets the .l4-aim highlight — the robot presents
  * real content instead of floating idle.
  */
-const MODEL = '/lab4/t4bot.glb';
+// ?v busts stale caches when the asset is re-authored (same public URL)
+const MODEL = '/lab4/t4bot.glb?v=3';
 useGLTF.preload(MODEL);
 
 const SIGNAL_DARK = '#ff6846';
@@ -86,14 +87,24 @@ function readZoneTarget(el: HTMLElement, viewport: { w: number; h: number }): Zo
 
 /* ------------------------------------------------------------ expressions */
 /**
- * The face is a small canvas-textured plane riding on the Head node, over
- * the baked visor (§14.2.1: "แสดงอารมณ์ผ่านไฟตา/แสง signal ไม่ใช่ใบหน้าการ์ตูน").
- * A dark backing band melts into the black visor and hides the baked eyes;
- * the amber pixel eyes redraw per mood — neutral / focus / happy / wow —
- * plus blinks and a subtle gaze shift that follows the head's attention.
+ * The face is a transparent canvas-textured plane riding on the Head node
+ * (§14.2.1: "แสดงอารมณ์ผ่านไฟตา/แสง signal ไม่ใช่ใบหน้าการ์ตูน"). The GLB's
+ * baked eyes are ERASED from its baseColor+emissive textures (Blender pass,
+ * prototypes/t4bot/t4bot-v3-noeyes.blend), so only the canvas eyes exist —
+ * no backing patch, no double eyes. Geometry measured from the baked eyes'
+ * emissive UVs in Head-local space: eye centres x ±0.195, height y 0.607,
+ * visor front z 0.524, eye ≈ 0.048×0.037 — the plane (0.6×0.3 at y 0.607,
+ * z 0.535) maps those to the canvas fractions below, so the drawn eyes sit
+ * exactly where the baked ones were.
  */
 const FACE_W = 256;
 const FACE_H = 128;
+const FACE_PLANE_W = 0.6;
+const FACE_PLANE_H = 0.3;
+const FACE_POS = { x: 0, y: 0.607, z: 0.535 };
+const EYE_X = 0.325; // ±offset, fraction of canvas W  (0.195 / 0.6)
+const EYE_W = 0.05; // half-width fraction of W        (~0.048·1.25 / 0.6 / 2)
+const EYE_H = 0.077; // half-height fraction of H      (~0.037·1.25 / 0.3 / 2)
 
 function drawFace(
   ctx: CanvasRenderingContext2D,
@@ -106,58 +117,54 @@ function drawFace(
   const H = FACE_H;
   ctx.clearRect(0, 0, W, H);
 
-  // visor backing — melts into the baked black visor, hides the baked eyes
-  ctx.fillStyle = 'rgba(9, 9, 12, 0.97)';
-  ctx.beginPath();
-  ctx.roundRect(W * 0.02, H * 0.06, W * 0.96, H * 0.88, H * 0.3);
-  ctx.fill();
-
-  const cxL = W * 0.5 - W * 0.21 + lookX * W * 0.05;
-  const cxR = W * 0.5 + W * 0.21 + lookX * W * 0.05;
-  const cy = H * 0.5 + lookY * H * 0.16;
+  const cxL = W * 0.5 - W * EYE_X + lookX * W * 0.02;
+  const cxR = W * 0.5 + W * EYE_X + lookX * W * 0.02;
+  const cy = H * 0.5 + lookY * H * 0.08;
+  const ew = W * EYE_W;
+  const eh = H * EYE_H;
 
   ctx.fillStyle = '#ffb238';
   ctx.strokeStyle = '#ffb238';
   ctx.shadowColor = 'rgba(255, 160, 60, 0.9)';
-  ctx.shadowBlur = 14;
+  ctx.shadowBlur = 12;
 
   const eye = (cx: number) => {
     if (blink && mood !== 'wow') {
       // lids down — a thin warm bar
       ctx.beginPath();
-      ctx.roundRect(cx - W * 0.075, cy - H * 0.035, W * 0.15, H * 0.07, H * 0.035);
+      ctx.roundRect(cx - ew, cy - eh * 0.25, ew * 2, eh * 0.5, eh * 0.25);
       ctx.fill();
       return;
     }
     switch (mood) {
       case 'happy': {
         // ∩-curved smiling eyes
-        ctx.lineWidth = H * 0.11;
+        ctx.lineWidth = eh * 0.8;
         ctx.lineCap = 'round';
         ctx.beginPath();
-        ctx.arc(cx, cy + H * 0.14, W * 0.078, Math.PI * 1.12, Math.PI * 1.88);
+        ctx.arc(cx, cy + eh * 0.5, ew * 1.05, Math.PI * 1.12, Math.PI * 1.88);
         ctx.stroke();
         break;
       }
       case 'focus': {
         // narrowed, attentive
         ctx.beginPath();
-        ctx.roundRect(cx - W * 0.08, cy - H * 0.14, W * 0.16, H * 0.28, W * 0.03);
+        ctx.roundRect(cx - ew * 1.1, cy - eh * 0.6, ew * 2.2, eh * 1.2, ew * 0.3);
         ctx.fill();
         break;
       }
       case 'wow': {
         // wide-open rings
-        ctx.lineWidth = H * 0.09;
+        ctx.lineWidth = eh * 0.55;
         ctx.beginPath();
-        ctx.arc(cx, cy, W * 0.075, 0, Math.PI * 2);
+        ctx.arc(cx, cy, ew * 1.15, 0, Math.PI * 2);
         ctx.stroke();
         break;
       }
       default: {
-        // neutral — the model's own pixel-eye proportions
+        // neutral — the baked pixel-eyes' own measured proportions
         ctx.beginPath();
-        ctx.roundRect(cx - W * 0.07, cy - H * 0.22, W * 0.14, H * 0.44, W * 0.028);
+        ctx.roundRect(cx - ew, cy - eh, ew * 2, eh * 2, ew * 0.35);
         ctx.fill();
       }
     }
@@ -227,18 +234,6 @@ function RobotTraveller({ light }: { light: boolean }) {
   useEffect(() => {
     const head = headRef.current;
     if (!head) return;
-    // head-local bounds locate the visor band (the model faces +z)
-    const box = new THREE.Box3();
-    head.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (m.isMesh && m.geometry) {
-        m.geometry.computeBoundingBox();
-        if (m.geometry.boundingBox) box.union(m.geometry.boundingBox);
-      }
-    });
-    if (box.isEmpty()) return;
-    const size = box.getSize(new THREE.Vector3());
-    const c = box.getCenter(new THREE.Vector3());
     const canvas = document.createElement('canvas');
     canvas.width = FACE_W;
     canvas.height = FACE_H;
@@ -247,12 +242,13 @@ function RobotTraveller({ light }: { light: boolean }) {
     drawFace(ctx, 'neutral', false, 0, 0);
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
-    const w = size.x * 0.58;
     const mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(w, w * (FACE_H / FACE_W)),
+      new THREE.PlaneGeometry(FACE_PLANE_W, FACE_PLANE_H),
       new THREE.MeshBasicMaterial({ map: tex, transparent: true, toneMapped: false }),
     );
-    mesh.position.set(c.x, c.y + size.y * 0.04, box.max.z + 0.012);
+    // measured from the baked eyes' UVs (see the constants above) — the
+    // canvas eyes land exactly where the model's erased eyes were
+    mesh.position.set(FACE_POS.x, FACE_POS.y, FACE_POS.z);
     head.add(mesh);
     face.current = { ctx, tex, key: '', nextBlink: 2.5, blinkUntil: 0 };
     return () => {
@@ -499,11 +495,14 @@ function RobotTraveller({ light }: { light: boolean }) {
       <group scale={fit}>
         <primitive object={scene} position={offset.toArray()} />
       </group>
+      {/* warm signal glow hugging the CHEST — kept on a tight falloff so its
+          specular reflection can never reach the glossy visor (it used to
+          land mid-screen and read as a stray red dot) */}
       <pointLight
-        position={[0, 0.2, 1.2]}
-        intensity={light ? 1.0 : 1.4}
+        position={[0, -0.55, 0.75]}
+        intensity={light ? 1.1 : 1.5}
         color={light ? SIGNAL_LIGHT : SIGNAL_DARK}
-        distance={4}
+        distance={1.5}
       />
     </group>
   );
