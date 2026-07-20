@@ -515,12 +515,13 @@ PRD `…ai-display-ranking.md`) · Epic C member CMS **#46** (C1–C6 **#52–#5
   for the **override** fields (profile, which GitHub repos to show, README toggle,
   skills, tech stack) and **additive** fields (certificates, blog articles). Blog
   admin currently has no edit action and no member authoring.
-- **Team tech-stack carousel** on home (NEW — "Phase A" quick win). Icon marquee of
-  the **union of members' `stack`** (reuse `TechChips`/`tech-logos`), placed between
-  Hero and Featured. Interim: derive from static `member.stack`; swap source to the
-  members DB later (data shape stable). Note: a prior standalone tech marquee at
-  section 05 was removed 2026-07-15 (commit `c639344`) as a duplicate of the filter
-  chips — this new one is icon-based + team-sourced + a different purpose.
+- ✅ **Team tech-stack carousel** on home — DONE (2026-07-20, `00e6676`, on the v3
+  home): the icon marquee sits between the hero trust strip and Solutions and is
+  now the home's **single** tech display — the standalone tech-stack section was
+  removed by dev request, so the carousel inherited the §4.1.8 contract (`#tech`,
+  chips link `/projects?tech=` via TechChips' new `linkToFilter` mode). The
+  "duplicate of the filter chips" concern that killed the 2026-07-15 marquee is
+  resolved by there being only one display now.
 - **Website iframe-preview popup** — already tracked as "P6 iframe preview popup
   deferred" (showcase section above); confirmed still absent (0 `iframe` in nextjs).
 
