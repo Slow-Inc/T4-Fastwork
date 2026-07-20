@@ -103,6 +103,8 @@ test("/lab4 long page: sections, /chat door in the schematic, wordmark footer", 
   await expect(page.locator('.lab4-cta-dock[data-l4-zone="contact"]')).toHaveCount(1);
   await expect(page.locator("[data-l4-zone]")).toHaveCount(5);
   await expect(page.locator("[data-l4-point]")).toHaveCount(3);
+  // perch zones: the robot sits ON the services headline + the Fastwork button
+  await expect(page.locator("[data-l4-perch]")).toHaveCount(2);
 
   // the AI-avatar invite chip is a real door into /chat
   await expect(page.locator('a.lab4-ai-chip[href="/chat"]')).toHaveCount(1);

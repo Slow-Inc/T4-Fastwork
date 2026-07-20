@@ -47,6 +47,7 @@ type ZoneTarget = {
   yaw: number;
   pitch: number;
   point: string;
+  perch: string;
   float: number;
 };
 
@@ -72,8 +73,10 @@ function readZoneTarget(el: HTMLElement, viewport: { w: number; h: number }): Zo
     yaw: Number(el.dataset.l4Yaw ?? 0),
     pitch: Number(el.dataset.l4Pitch ?? 0),
     point: el.dataset.l4Point ?? '',
+    perch: el.dataset.l4Perch ?? '',
     float: Number(el.dataset.l4Float ?? 1),
     dist: Math.abs(cy - viewport.h / 2),
+    hidden: r.width === 0 && r.height === 0, // display:none marker (mobile)
   };
 }
 
@@ -129,6 +132,9 @@ function RobotTraveller({ light }: { light: boolean }) {
   // highlighted element (gets the .l4-aim class so CSS can mark it)
   const pointEls = useRef<{ sel: string; els: HTMLElement[] }>({ sel: '', els: [] });
   const aimedEl = useRef<HTMLElement | null>(null);
+  // perch-target cache: the element the robot sits ON (rect re-read every
+  // frame so the seat tracks scroll/resize)
+  const perchEl = useRef<{ sel: string; el: HTMLElement | null }>({ sel: '', el: null });
 
   // signal-orange emissive boost: Meshy bakes the eyes/ring/emblem near-cream,
   // tinting the emissive factor warms them into the brand accent + lets Bloom
@@ -202,12 +208,33 @@ function RobotTraveller({ light }: { light: boolean }) {
 
     // chase the marker nearest the viewport centre — the damped pursuit IS
     // the seam between storytelling zones (§14.2.1)
-    let target: (ZoneTarget & { dist: number }) | null = null;
+    let target: ReturnType<typeof readZoneTarget> | null = null;
     for (const el of zones) {
       const zt = readZoneTarget(el, { w: size.width, h: size.height });
+      if (zt.hidden) continue; // display:none dock must never win the chase
       if (!target || zt.dist < target.dist) target = zt;
     }
     if (!target) return;
+
+    // perch zones sit ON a real element: the robot lands on the target's top
+    // edge and tracks it through scroll/resize (เกาะ text / เกาะปุ่ม)
+    if (target.perch) {
+      if (perchEl.current.sel !== target.perch) {
+        perchEl.current = {
+          sel: target.perch,
+          el: document.querySelector<HTMLElement>(target.perch),
+        };
+      }
+      const seat = perchEl.current.el;
+      if (seat) {
+        const r = seat.getBoundingClientRect();
+        const w = toWorld(r.left + r.width / 2, r.top, { w: size.width, h: size.height });
+        target.x = w.x;
+        // model is ~1 unit tall and centred, so half the scaled height rests
+        // the feet on the edge (small sink so it reads as sitting, not hovering)
+        target.y = w.y + 0.46 * target.scale;
+      }
+    }
 
     // inertia decay for the user's drag yaw
     if (!drag.current.active && Math.abs(drag.current.vel) > 0.0001) {

@@ -316,15 +316,17 @@ export default function Lab4Page() {
                 <span className="soft"> จากหน้าเดียว ถึงทั้งแพลตฟอร์ม</span>
               </h2>
             </div>
-            {/* zone marker 3 — the robot presents the ladder row you're
-                reading (hover a row and it points there instantly) */}
+            {/* zone marker 3 — the robot PERCHES on the headline itself and
+                presents the ladder row you're reading (hover = instant) */}
             <div
               className="lab4-svc-dock"
               data-l4-zone="services"
-              data-l4-scale="0.7"
-              data-l4-yaw="-0.3"
-              data-l4-pitch="0.1"
+              data-l4-scale="0.5"
+              data-l4-yaw="-0.2"
+              data-l4-pitch="0.08"
               data-l4-point=".lab4-svc"
+              data-l4-perch="#services .lab4-sec-head h2"
+              data-l4-float="0.2"
               aria-hidden
             />
           </header>
@@ -360,15 +362,16 @@ export default function Lab4Page() {
           <p className="lab4-cta-note" data-rv data-rv-d="3">
             ตอบไว · คุยกับ dev โดยตรง · ชำระผ่าน Fastwork ปลอดภัย
           </p>
-          {/* zone marker 4 — perched on the headline (calm float), pointing
-              at the CTA buttons below */}
+          {/* zone marker 4 — the robot lands ON the Fastwork button (the
+              money path) and points at the AI button: "or just ask me" */}
           <div
             className="lab4-cta-dock"
             data-l4-zone="contact"
-            data-l4-scale="0.6"
-            data-l4-float="0.3"
-            data-l4-yaw="-0.15"
-            data-l4-point=".lab4-cta .lab4-btn"
+            data-l4-scale="0.42"
+            data-l4-float="0.18"
+            data-l4-yaw="0.1"
+            data-l4-point=".lab4-cta .lab4-btn.ghost"
+            data-l4-perch=".lab4-cta .lab4-btn.solid"
             aria-hidden
           />
           <a className="lab4-ai-chip lab4-glass" href="/chat" data-rv data-rv-d="2">
