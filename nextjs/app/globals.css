@@ -6915,10 +6915,111 @@ footer {
   --line: rgba(255, 255, 255, 0.12);
   --line-soft: rgba(255, 255, 255, 0.07);
 }
+/* ---------------------------------------------------------------------------
+   fix3: Dark-mode navbar = dark liquid glass lit by controlled studio light.
+   Light mode already reads as glass because a white environment produces its
+   own reflection; the dark surface had none, so it flattened into a black bar.
+   Four coordinated layers, no extra DOM, no aurora, no default animation:
+     1. smoked-glass base       (this rule)
+     2. internal refracted light (::before — cool at the logo, warm at the CTA)
+     3. top-edge reflection      (::after)
+     4. exterior separation bloom (this rule's outer box-shadow)
+   Every value is a token so the layers stay independently tunable.
+   -------------------------------------------------------------------------- */
 .lab4[data-lab4-theme='dark'] .site-nav {
-  background: rgba(15, 17, 21, 0.72);
+  --nav-cool: 216, 240, 255;   /* pale, low-saturation studio white */
+  --nav-warm: 255, 104, 70;    /* the existing orange signal */
+  --nav-cool-a: 0.13;          /* material-defining source (spec 0.08-0.16) */
+  --nav-warm-a: 0.07;          /* local accent — deliberately weaker */
+  --nav-edge-a: 0.2;           /* top reflection (spec 0.16-0.24) */
+
+  position: relative;
+  isolation: isolate;
+  background: rgba(15, 17, 21, 0.74);
+  backdrop-filter: blur(18px) saturate(115%);
   border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  /* exterior bloom: cool, contained, well under the 0.12 halo ceiling */
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.35),
+    0 10px 34px rgba(var(--nav-cool), 0.055);
+}
+
+/* 2 · internal refracted-light field — clipped to the navbar shape. The centre
+   is intentionally the darkest part of the sweep so the nav labels sit in a
+   calm reading zone rather than on top of the brightest gradient. */
+.lab4[data-lab4-theme='dark'] .site-nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(
+      120% 220% at 6% 0%,
+      rgba(var(--nav-cool), var(--nav-cool-a)),
+      transparent 42%
+    ),
+    /* pooled AROUND the Contact CTA, not behind it — the button is a solid
+       surface, so light directly under it is invisible */
+    radial-gradient(
+      95% 200% at 88% 40%,
+      rgba(var(--nav-warm), var(--nav-warm-a)),
+      transparent 42%
+    );
+}
+
+/* 3 · top-edge reflection — lit from above, so the upper edge is brighter than
+   the lower one, and it fades toward the sides instead of ringing the whole
+   component (a full outline reads as a border, not a reflection). */
+.lab4[data-lab4-theme='dark'] .site-nav::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, var(--nav-edge-a)) 18%,
+      rgba(255, 255, 255, calc(var(--nav-edge-a) * 0.7)) 55%,
+      transparent 92%
+    )
+      top / 100% 1px no-repeat,
+    /* barely-there lower edge so the bar can't merge into the canvas */
+    linear-gradient(
+      90deg,
+      transparent 10%,
+      rgba(255, 255, 255, 0.05) 45%,
+      transparent 90%
+    )
+      bottom / 100% 1px no-repeat;
+}
+
+/* CTA: the warm reflection firms up on hover — a state change, not a glow */
+.lab4[data-lab4-theme='dark'] .site-nav:hover { --nav-warm-a: 0.1; }
+.lab4[data-lab4-theme='dark'] .site-nav {
+  transition: box-shadow 0.2s ease, background 0.2s ease;
+}
+
+/* Mobile: static, lower intensity, tighter bloom (spec "Mobile") */
+@media (max-width: 860px) {
+  .lab4[data-lab4-theme='dark'] .site-nav {
+    --nav-cool-a: 0.1;
+    --nav-warm-a: 0.04;
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.35),
+      0 6px 18px rgba(var(--nav-cool), 0.04);
+  }
+}
+
+/* Fallback: without backdrop-filter the glass illusion depends on a slightly
+   more opaque surface. Border and top reflection are kept; only the blur
+   dependency is dropped. Content and interaction are identical. */
+@supports not (backdrop-filter: blur(1px)) {
+  .lab4[data-lab4-theme='dark'] .site-nav { background: rgba(15, 17, 21, 0.93); }
 }
 /* theme switch floats under the site nav on the home shell */
 .lab4-theme-float {
