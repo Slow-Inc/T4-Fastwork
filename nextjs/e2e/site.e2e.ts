@@ -954,6 +954,9 @@ test("the floating chat keeps its conversation when closed and reopened", async 
 test("the floating popup and the /chat page share one conversation (#31)", async ({
   page,
 }) => {
+  // three networkidle page-loads in one journey — the v3 home also boots the
+  // robot stage, so give this the slow-test budget instead of racing 30s
+  test.slow();
   // Type a message in the floating popup...
   await page.goto("/", { waitUntil: "networkidle" });
   await page.getByRole("button", { name: /Ask T4 AI/i }).click();

@@ -6818,6 +6818,34 @@ footer {
 /* what the robot is pointing at right now (class set by the r3f stage) —
    unscoped: the stage also runs on the live site outside .lab4 */
 .l4-aim { outline: 1px dashed var(--l4-signal, #e8461b); outline-offset: 6px; }
+
+/* --- live home (v3 graduation, ADR 0011/#110): site sections inside the
+       .lab4 shell — the dark-token BRIDGE remaps the 8 site tokens so the
+       embedded (paper-token) sections flip with the shell theme --- */
+.lab4[data-lab4-theme='dark'] {
+  --paper: var(--l4-canvas);
+  --paper-deep: #14171c;
+  --ink: var(--l4-ink);
+  --muted: var(--l4-ink-soft);
+  --faint: var(--l4-ink-faint);
+  --accent: var(--l4-signal);
+  --line: rgba(255, 255, 255, 0.12);
+  --line-soft: rgba(255, 255, 255, 0.07);
+}
+.lab4[data-lab4-theme='dark'] .site-nav {
+  background: rgba(15, 17, 21, 0.72);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+/* theme switch floats under the site nav on the home shell */
+.lab4-theme-float {
+  position: fixed;
+  top: 82px;
+  right: var(--mx);
+  z-index: 99;
+}
+/* embedded site sections keep their own inner rhythm inside the shell */
+.lab4 .lab4-embed .section { padding: clamp(76px, 11vh, 140px) 0; }
 @media (max-width: 899px) {
   .lab4-cta-dock { display: none; }
 }

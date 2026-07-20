@@ -519,20 +519,19 @@ export function Lab4RobotStage() {
       return false;
     }
   });
-  const [light, setLight] = useState(false);
-
   // follow [data-lab4-theme] so scene light derives from the active theme
-  // tokens (§14.7 dual-theme rule); pages without a themed shell (the live
-  // site is light editorial) run the light rig
+  // tokens (§14.7 dual-theme rule); pages without a themed shell run the
+  // light rig. Client-only component (ssr:false), so the initializer can
+  // read the DOM — no setState-in-effect.
+  const [light, setLight] = useState<boolean>(() => {
+    if (typeof document === 'undefined') return false;
+    const el = document.querySelector<HTMLElement>('[data-lab4-theme]');
+    return !el || el.dataset.lab4Theme === 'light';
+  });
   useEffect(() => {
     const el = document.querySelector<HTMLElement>('[data-lab4-theme]');
-    if (!el) {
-      setLight(true);
-      return;
-    }
-    const read = () => setLight(el.dataset.lab4Theme === 'light');
-    read();
-    const mo = new MutationObserver(read);
+    if (!el) return;
+    const mo = new MutationObserver(() => setLight(el.dataset.lab4Theme === 'light'));
     mo.observe(el, { attributes: true, attributeFilter: ['data-lab4-theme'] });
     return () => mo.disconnect();
   }, []);
