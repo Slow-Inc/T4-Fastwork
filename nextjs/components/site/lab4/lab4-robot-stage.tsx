@@ -139,23 +139,33 @@ function drawFace(
   const ew = W * EYE_W;
   const eh = H * EYE_H;
 
-  // Mask the baked LEDs before drawing a different expression over them, with a
-  // feathered edge so it dissolves into the dark panel instead of reading as a
-  // rectangle stuck on the glass.
-  const mask = (cx: number) => {
-    const r = Math.max(ew, eh) * 3.2;
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-    g.addColorStop(0, 'rgba(6, 6, 8, 1)');
-    g.addColorStop(0.6, 'rgba(6, 6, 8, 0.96)');
-    g.addColorStop(1, 'rgba(6, 6, 8, 0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fill();
-  };
-  // the baked eyes never move, so mask their fixed position, not the gaze offset
-  mask(W * 0.5 - W * EYE_X);
-  mask(W * 0.5 + W * EYE_X);
+  // Mask the baked LEDs before drawing a different expression over them.
+  //
+  // Two small circles per eye were not enough: the baked dot-matrix eye is
+  // TALLER than it is wide (~16×21px on this canvas) while the drawn shapes are
+  // wider and shorter, so the bake's top and bottom edges survived the mask and
+  // a blink never looked closed. A band across the whole eye row covers them
+  // regardless of small positional error, and is also what a closing lid
+  // physically looks like. Feathered vertically so it dissolves into the panel
+  // rather than reading as a rectangle stuck on the glass.
+  // The baked LEDs are fixed in the texture, so the mask must be anchored to the
+  // canvas centre — NOT to `cy`, which carries the gaze offset. Following the
+  // gaze slid the band off the bake and left a row of LEDs showing above or
+  // below it, which is exactly what a half-closed blink looked like.
+  const maskCy = H * 0.5;
+  const bandH = eh * 9;
+  const grad = ctx.createLinearGradient(0, maskCy - bandH / 2, 0, maskCy + bandH / 2);
+  grad.addColorStop(0, 'rgba(6, 6, 8, 0)');
+  grad.addColorStop(0.12, 'rgba(6, 6, 8, 1)');
+  grad.addColorStop(0.88, 'rgba(6, 6, 8, 1)');
+  grad.addColorStop(1, 'rgba(6, 6, 8, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(
+    W * 0.5 - W * EYE_X - ew * 4,
+    maskCy - bandH / 2,
+    W * EYE_X * 2 + ew * 8,
+    bandH,
+  );
 
   ctx.fillStyle = '#ffb238';
   ctx.strokeStyle = '#ffb238';
