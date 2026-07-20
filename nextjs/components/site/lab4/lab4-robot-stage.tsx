@@ -40,6 +40,8 @@ const FOV = 38;
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
 /* ------------------------------------------------------------- zone travel */
+type Mood = 'neutral' | 'focus' | 'happy' | 'wow';
+
 type ZoneTarget = {
   x: number;
   y: number;
@@ -49,6 +51,7 @@ type ZoneTarget = {
   point: string;
   perch: string;
   float: number;
+  mood: Mood;
 };
 
 function toWorld(cx: number, cy: number, viewport: { w: number; h: number }) {
@@ -75,9 +78,93 @@ function readZoneTarget(el: HTMLElement, viewport: { w: number; h: number }): Zo
     point: el.dataset.l4Point ?? '',
     perch: el.dataset.l4Perch ?? '',
     float: Number(el.dataset.l4Float ?? 1),
+    mood: (el.dataset.l4Mood as Mood) ?? 'neutral',
     dist: Math.abs(cy - viewport.h / 2),
     hidden: r.width === 0 && r.height === 0, // display:none marker (mobile)
   };
+}
+
+/* ------------------------------------------------------------ expressions */
+/**
+ * The face is a small canvas-textured plane riding on the Head node, over
+ * the baked visor (§14.2.1: "แสดงอารมณ์ผ่านไฟตา/แสง signal ไม่ใช่ใบหน้าการ์ตูน").
+ * A dark backing band melts into the black visor and hides the baked eyes;
+ * the amber pixel eyes redraw per mood — neutral / focus / happy / wow —
+ * plus blinks and a subtle gaze shift that follows the head's attention.
+ */
+const FACE_W = 256;
+const FACE_H = 128;
+
+function drawFace(
+  ctx: CanvasRenderingContext2D,
+  mood: Mood,
+  blink: boolean,
+  lookX: number,
+  lookY: number,
+) {
+  const W = FACE_W;
+  const H = FACE_H;
+  ctx.clearRect(0, 0, W, H);
+
+  // visor backing — melts into the baked black visor, hides the baked eyes
+  ctx.fillStyle = 'rgba(9, 9, 12, 0.97)';
+  ctx.beginPath();
+  ctx.roundRect(W * 0.02, H * 0.06, W * 0.96, H * 0.88, H * 0.3);
+  ctx.fill();
+
+  const cxL = W * 0.5 - W * 0.21 + lookX * W * 0.05;
+  const cxR = W * 0.5 + W * 0.21 + lookX * W * 0.05;
+  const cy = H * 0.5 + lookY * H * 0.16;
+
+  ctx.fillStyle = '#ffb238';
+  ctx.strokeStyle = '#ffb238';
+  ctx.shadowColor = 'rgba(255, 160, 60, 0.9)';
+  ctx.shadowBlur = 14;
+
+  const eye = (cx: number) => {
+    if (blink && mood !== 'wow') {
+      // lids down — a thin warm bar
+      ctx.beginPath();
+      ctx.roundRect(cx - W * 0.075, cy - H * 0.035, W * 0.15, H * 0.07, H * 0.035);
+      ctx.fill();
+      return;
+    }
+    switch (mood) {
+      case 'happy': {
+        // ∩-curved smiling eyes
+        ctx.lineWidth = H * 0.11;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(cx, cy + H * 0.14, W * 0.078, Math.PI * 1.12, Math.PI * 1.88);
+        ctx.stroke();
+        break;
+      }
+      case 'focus': {
+        // narrowed, attentive
+        ctx.beginPath();
+        ctx.roundRect(cx - W * 0.08, cy - H * 0.14, W * 0.16, H * 0.28, W * 0.03);
+        ctx.fill();
+        break;
+      }
+      case 'wow': {
+        // wide-open rings
+        ctx.lineWidth = H * 0.09;
+        ctx.beginPath();
+        ctx.arc(cx, cy, W * 0.075, 0, Math.PI * 2);
+        ctx.stroke();
+        break;
+      }
+      default: {
+        // neutral — the model's own pixel-eye proportions
+        ctx.beginPath();
+        ctx.roundRect(cx - W * 0.07, cy - H * 0.22, W * 0.14, H * 0.44, W * 0.028);
+        ctx.fill();
+      }
+    }
+  };
+  eye(cxL);
+  eye(cxR);
+  ctx.shadowBlur = 0;
 }
 
 /** pick the element the robot should present: hovered wins, else the
@@ -126,6 +213,55 @@ function RobotTraveller({ light }: { light: boolean }) {
     headRef.current = scene.getObjectByName('Head') ?? null;
     armLRef.current = scene.getObjectByName('ArmL') ?? null;
     armRRef.current = scene.getObjectByName('ArmR') ?? null;
+  }, [scene]);
+
+  // the face screen — created once per model load, updated when the
+  // expression key (mood|blink|gaze) actually changes
+  const face = useRef<{
+    ctx: CanvasRenderingContext2D;
+    tex: THREE.CanvasTexture;
+    key: string;
+    nextBlink: number;
+    blinkUntil: number;
+  } | null>(null);
+  useEffect(() => {
+    const head = headRef.current;
+    if (!head) return;
+    // head-local bounds locate the visor band (the model faces +z)
+    const box = new THREE.Box3();
+    head.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh && m.geometry) {
+        m.geometry.computeBoundingBox();
+        if (m.geometry.boundingBox) box.union(m.geometry.boundingBox);
+      }
+    });
+    if (box.isEmpty()) return;
+    const size = box.getSize(new THREE.Vector3());
+    const c = box.getCenter(new THREE.Vector3());
+    const canvas = document.createElement('canvas');
+    canvas.width = FACE_W;
+    canvas.height = FACE_H;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    drawFace(ctx, 'neutral', false, 0, 0);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const w = size.x * 0.58;
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(w, w * (FACE_H / FACE_W)),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, toneMapped: false }),
+    );
+    mesh.position.set(c.x, c.y + size.y * 0.04, box.max.z + 0.012);
+    head.add(mesh);
+    face.current = { ctx, tex, key: '', nextBlink: 2.5, blinkUntil: 0 };
+    return () => {
+      head.remove(mesh);
+      mesh.geometry.dispose();
+      (mesh.material as THREE.Material).dispose();
+      tex.dispose();
+      face.current = null;
+    };
   }, [scene]);
 
   // point-target bookkeeping: candidate cache per selector + the currently
@@ -289,6 +425,26 @@ function RobotTraveller({ light }: { light: boolean }) {
       if (rx >= 0) armRGoal = s;
       else armLGoal = -s;
       lean = clamp(rx * 0.05, -0.13, 0.13); // lean into the gesture
+    }
+
+    // expression: zone mood (drag = wow), blinks, gaze follows the head —
+    // redraw only when the face actually changes
+    const mood: Mood = drag.current.active ? 'wow' : target.mood;
+    const f = face.current;
+    if (f) {
+      if (!reduced && t > f.nextBlink) {
+        f.blinkUntil = t + 0.13;
+        f.nextBlink = t + 2.6 + Math.random() * 2.8;
+      }
+      const blink = !reduced && t < f.blinkUntil;
+      const qx = Math.round((headYaw / 0.9) * 10) / 10;
+      const qy = Math.round((headPitch / 0.5) * 10) / 10;
+      const key = `${mood}|${blink}|${qx}|${qy}`;
+      if (key !== f.key) {
+        f.key = key;
+        drawFace(f.ctx, mood, blink, qx, qy);
+        f.tex.needsUpdate = true;
+      }
     }
 
     const float = reduced ? 0 : Math.sin(t * 1.1) * 0.035 * target.scale * target.float;

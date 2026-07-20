@@ -296,6 +296,7 @@ export default function Lab4Page() {
               data-l4-scale="0.75"
               data-l4-yaw="-0.35"
               data-l4-point=".lab4-node"
+              data-l4-mood="focus"
               aria-hidden
             />
           </header>
@@ -327,6 +328,7 @@ export default function Lab4Page() {
               data-l4-point=".lab4-svc"
               data-l4-perch="#services .lab4-sec-head h2"
               data-l4-float="0.2"
+              data-l4-mood="focus"
               aria-hidden
             />
           </header>
@@ -372,6 +374,7 @@ export default function Lab4Page() {
             data-l4-yaw="0.1"
             data-l4-point=".lab4-cta .lab4-btn.ghost"
             data-l4-perch=".lab4-cta .lab4-btn.solid"
+            data-l4-mood="happy"
             aria-hidden
           />
           <a className="lab4-ai-chip lab4-glass" href="/chat" data-rv data-rv-d="2">
