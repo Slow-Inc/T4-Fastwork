@@ -375,7 +375,28 @@ screenshotted, dev OK on localhost before merge.
 
 ---
 
-## 7. Open questions for the dev
+## 7. Home sections audit — the req1 leftovers inside the v3 shell (2026-07-20)
+
+Dev asked for a survey of what on the swapped home still speaks requirement-1
+design language. Verified in the browser, dark + light:
+
+| Section | State | What's req1 about it / needed |
+|---|---|---|
+| **Footer band** | ✅ fixed this pass | Now identical to lab4 (shrink-wrapped centred wordmark, robot perched on the letters). Root cause: lab4's band is a `<footer>` and inherited the global `footer{display:flex}` rule by accident; the class now declares flex itself. SiteFooter's utility row stays beneath (§14.10 requires the links). |
+| **#featured carousel** | ⚠️ req1 head + tiles | `work-head` (left h2 + right t-idx) is the req1 section-head pattern, not the v3 coord+headline; card tiles are tone-colour + title text, but §14.12 wants **real project imagery as the visual lead** (screenshot pipeline exists — MangaDock shots are in Storage); uniform card scale ignores `ai_rank` (§14.10: span by importance). |
+| **team-tech marquee** | ✅ close enough | Reads as the ChainGPT partners-strip slot; chips flip themes via tokens. Minor: could take a `lab4-coord` micro-label later. |
+| **#sdlc** | ✅ mostly v3 already | Big mono numerals + hairline rows already match the craft language. Gap: `t-idx` eyebrow style ≠ `lab4-coord` (no dash prefix / signal treatment) — cosmetic alignment only. |
+| **#team** | ✅ works in dark | Directory rows + org projects flip cleanly. Same eyebrow mismatch; presence map assigns a C-tier **wave** render at the block head. |
+| **#certs** | ✅ works in dark | Hairline rows already v3-adjacent; lightbox still req1 paper styling (glass restyle queued with /about Tier 2). |
+| **AI greeting popup** | 🔴 theme mismatch | `.ai-greeting` background is a **hardcoded light rgba(244,242,237,.96)** — on the dark home it pops as a paper card from the old design. Needs tokenized/glass treatment (and it's slated to carry the robot face, §5.4). |
+| **Chat panel / FAB** | ⚠️ req1 styling | Functional; visual pass belongs to the /chat Tier-1 redesign (shared components). |
+| **Locale gap** | ⚠️ known interim | The lab4-native sections (hero h1, section heads, CTA copy) are Thai-only hardcode; embedded req1 sections + nav are bilingual. EN visitors get mixed languages — needs the v3 copy moved into `useT` pairs. |
+
+Priority from this audit: **greeting-popup theme fix** (visible clash on every
+dark visit) → **featured-carousel v3 head + real imagery** → eyebrow alignment
+(sdlc/team/certs) → bilingual v3 copy.
+
+## 8. Open questions for the dev
 
 1. **Home vs About duplication** — trim Home to summaries + links (recommended,
    and what §14.3 says), or keep both full?

@@ -6856,7 +6856,12 @@ footer {
 }
 
 /* --- Oversized Brand Wordmark footer + robot peek dock (§14.10) --- */
-.lab4-footer { position: relative; z-index: 1; border-top: 1px solid var(--l4-line); padding: 24px 0 36px; overflow: hidden; }
+/* display:flex is load-bearing: with .lab4-shell's auto margins it
+   shrink-wraps + centres the wordmark so the robot dock (right-anchored)
+   lands ON the letters. On /lab4 the band is a <footer> and inherited flex
+   from the global footer{} rule by accident; declared here so the home's
+   <div> band behaves identically. */
+.lab4-footer { position: relative; z-index: 1; display: flex; border-top: 1px solid var(--l4-line); padding: 24px 0 36px; overflow: hidden; }
 .lab4-wordmark-wrap { position: relative; }
 .lab4-wordmark {
   font-family: var(--disp);
