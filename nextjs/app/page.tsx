@@ -6,7 +6,7 @@ import { SmoothScroll } from "@/components/site/smooth-scroll";
 import { FeaturedCarousel } from "@/components/site/featured-carousel";
 import { SdlcSection } from "@/components/site/sdlc-section";
 import { TeamSection } from "@/components/site/team-section";
-import { TechStack } from "@/components/site/tech-stack";
+import { TeamTechSection } from "@/components/site/team-tech-section";
 import { Certificates } from "@/components/site/certificates";
 import { KineticMarquee } from "@/components/site/lab/kinetic-marquee";
 import { Lab4Fx } from "@/components/site/lab4/lab4-fx";
@@ -17,7 +17,7 @@ import { Lab4SolutionSelector } from "@/components/site/lab4/lab4-solution-selec
 import { Lab4Schematic } from "@/components/site/lab4/lab4-schematic";
 import { Lab4Services } from "@/components/site/lab4/lab4-services";
 import { SOLUTIONS, STACK, PROCESS, SERVICES } from "@/content/home-v3";
-import { projectTechnologies, filterProjects } from "@/content/catalog";
+import { filterProjects } from "@/content/catalog";
 import { getProjectRankMap } from "@/lib/projects-repo";
 import { getSiteStats } from "@/lib/site-stats";
 import { orderByRank } from "@/lib/project-rank";
@@ -132,6 +132,11 @@ export default async function Home() {
           </dl>
         </section>
 
+        {/* ambient team tech-stack marquee (ledger "Phase A" band, back by dev
+            request) — the home's single tech display: #tech, chips filter
+            /projects?tech= (§4.1.8) */}
+        <TeamTechSection />
+
         {/* ---------------------------------------------- 01 · solution index */}
         <section className="lab4-section" id="solutions">
           <header className="lab4-sec-head">
@@ -221,14 +226,13 @@ export default async function Home() {
         <div className="lab4-embed">
           <SdlcSection />
           <TeamSection idx="06 — Team" />
-          <TechStack techs={projectTechnologies} />
-          <Certificates idx="08 — Credentials" />
+          <Certificates idx="07 — Credentials" />
         </div>
 
         {/* --------------------------------------------------- 09 · closing */}
         <section className="lab4-section lab4-cta" id="contact">
           <span className="lab4-coord" data-rv>
-            09 — CONTACT
+            08 — CONTACT
           </span>
           <h2 data-rv data-rv-d="1">
             พร้อมเริ่มโปรเจกต์

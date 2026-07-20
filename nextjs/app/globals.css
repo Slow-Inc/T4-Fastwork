@@ -1650,6 +1650,11 @@ footer {
   align-items: center;
   gap: 7px;
 }
+/* linkToFilter mode: the <li> is a bare wrapper (the chip classes live on the
+   anchor) — display:contents keeps the flex row unchanged */
+.chip-link-item {
+  display: contents;
+}
 .tech-ico {
   width: 14px;
   height: 14px;
