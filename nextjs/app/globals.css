@@ -6784,6 +6784,42 @@ footer {
   .lab4-svc .scale { grid-column: 2; }
 }
 
+/* --- 02 · selected work — lab4-native Swiss proof rows (home) --- */
+.lab4-works { border-top: 1px solid var(--l4-line-soft); }
+.lab4-work {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1.35fr) minmax(200px, 0.55fr) 40px;
+  gap: 10px 24px;
+  align-items: center;
+  padding: clamp(18px, 2.4vh, 26px) clamp(4px, 1vw, 14px);
+  border-bottom: 1px solid var(--l4-line-soft);
+  transition: background 0.3s;
+}
+.lab4-work:hover { background: var(--l4-raised); }
+.lab4-work .no { font-family: var(--mono); font-size: 11px; color: var(--l4-signal); letter-spacing: 0.1em; align-self: start; padding-top: 5px; }
+.lab4-work .body { display: block; min-width: 0; }
+.lab4-work .t { display: block; font-family: var(--disp); font-weight: 700; font-size: clamp(1.05rem, 1.8vw, 1.35rem); letter-spacing: -0.015em; }
+.lab4-work .d { display: block; margin-top: 6px; font-size: 0.9rem; line-height: 1.6; color: var(--l4-ink-soft); }
+.lab4-work .meta { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; color: var(--l4-ink-faint); text-transform: uppercase; text-align: right; }
+.lab4-work .arw { color: var(--l4-signal); transition: transform 0.25s; }
+.lab4-work:hover .arw { transform: translateX(4px); }
+.lab4-works-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  color: var(--l4-ink-soft);
+}
+.lab4-works-all .arw { color: var(--l4-signal); }
+.lab4-works-all:hover { color: var(--l4-signal); }
+@media (max-width: 767px) {
+  .lab4-work { grid-template-columns: 40px minmax(0, 1fr) 24px; }
+  .lab4-work .meta { display: none; }
+}
+
 /* --- 04 · closing CTA --- */
 .lab4-cta { position: relative; display: grid; gap: 22px; justify-items: start; }
 .lab4-cta h2 { font-size: clamp(2.3rem, 5.4vw, 4.4rem); line-height: 1.06; }
@@ -6851,6 +6887,23 @@ footer {
 }
 /* embedded site sections keep their own inner rhythm inside the shell */
 .lab4 .lab4-embed .section { padding: clamp(76px, 11vh, 140px) 0; }
+/* the AI greeting popup lives OUTSIDE the .lab4 div (root layout), so the
+   dark-token bridge can't reach it — follow the shell theme via :has(),
+   remapping the site tokens for the popup subtree so its text/buttons flip
+   with it (it used to pop as a req1 paper card on the dark canvas) */
+body:has(.lab4[data-lab4-theme='dark']) .ai-greeting {
+  --paper: #0f1115;
+  --paper-deep: #14171c;
+  --ink: #f1f1ea;
+  --muted: #b9b7ae;
+  --faint: #8a887f;
+  --line: rgba(255, 255, 255, 0.12);
+  --line-soft: rgba(255, 255, 255, 0.07);
+  background: rgba(15, 17, 21, 0.92);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--ink);
+  box-shadow: 0 18px 44px -20px rgba(0, 0, 0, 0.6);
+}
 @media (max-width: 899px) {
   .lab4-cta-dock { display: none; }
 }

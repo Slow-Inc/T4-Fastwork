@@ -139,12 +139,17 @@ test("home carries the §14.3 business sections that the prototype omits", async
   // production nav (the one the dev chose to keep), not the lab4 glass nav
   await expect(page.locator(".site-nav")).toHaveCount(1);
   await expect(page.locator(".lab4-nav")).toHaveCount(0);
-  // the real sections lab4 has no business carrying
+  // the product parts that moved in (lab4-first, dev directive): SDLC + team
+  // + the tech marquee — and the lab4-NATIVE work rows (real project doors)
   await expect(page.locator("#sdlc .sdlc-row")).toHaveCount(6);
   await expect(page.locator(".team-dir-item")).toHaveCount(6);
   await expect(page.locator("#tech .tech-chip").first()).toBeVisible();
-  await expect(page.locator(".crow").first()).toBeVisible();
-  await expect(page.locator("#featured .carousel-slide").first()).toBeVisible();
+  const workRows = page.locator("#work .lab4-work");
+  await expect(workRows.first()).toBeVisible();
+  await expect(workRows.first()).toHaveAttribute("href", /^\/projects\/.+/);
+  // the req1 carousel + home certificates are deliberately GONE (live on /about)
+  await expect(page.locator("#featured")).toHaveCount(0);
+  await expect(page.locator(".crow")).toHaveCount(0);
 
   await page.goto("/lab4", { waitUntil: "networkidle" });
   await expect(page.locator(".lab4-nav")).toHaveCount(1);

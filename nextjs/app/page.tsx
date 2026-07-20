@@ -1,13 +1,12 @@
+import Link from "next/link";
 import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
 import { ChatButton } from "@/components/site/chat-button";
 import { RevealObserver } from "@/components/site/reveal-observer";
 import { SmoothScroll } from "@/components/site/smooth-scroll";
-import { FeaturedCarousel } from "@/components/site/featured-carousel";
 import { SdlcSection } from "@/components/site/sdlc-section";
 import { TeamSection } from "@/components/site/team-section";
 import { TeamTechSection } from "@/components/site/team-tech-section";
-import { Certificates } from "@/components/site/certificates";
 import { KineticMarquee } from "@/components/site/lab/kinetic-marquee";
 import { Lab4Fx } from "@/components/site/lab4/lab4-fx";
 import { Lab4ThemeToggle } from "@/components/site/lab4/lab4-theme-toggle";
@@ -28,11 +27,13 @@ import { orderByRank } from "@/lib/project-rank";
 const THEME_INIT = `(function(){var el=document.currentScript.closest('.lab4');var t;try{t=localStorage.getItem('lab4-theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}el.dataset.lab4Theme=t})()`;
 
 /**
- * Live home — the /lab4 v3 prototype graduated wholesale (dev directive,
- * ADR 0011 + issue #110): kinetic-marquee hero with the T4 Bot storytelling
- * zones, Swiss sections, dual dark/light theme. The §14.3 business sections
- * (proof of work, SDLC, team, tech stack, certificates) stay — they render
- * inside the shell and flip themes via the dark-token bridge in globals.css.
+ * Live home = the /lab4 composition, lab4-first (dev directive 2026-07-20,
+ * ADR 0011 + issue #110): the prototype IS the page, and only the essential
+ * product parts move in — SiteNav (dev keeps its design), the team tech
+ * marquee (#tech filter contract), SDLC + Team (§14.3 + tested), and
+ * SiteFooter's utility links under the wordmark band. Proof-of-work is a
+ * lab4-NATIVE Swiss row list (not the req1 carousel), certificates live on
+ * /about (the trust strip carries the count).
  */
 export default async function Home() {
   const [rank, stats] = await Promise.all([getProjectRankMap(), getSiteStats()]);
@@ -42,6 +43,8 @@ export default async function Home() {
     { n: String(stats.projects), unit: "+", label: "โปรเจกต์ที่ส่งมอบ" },
     { n: String(stats.certs), unit: "", label: "ใบรับรองของทีม" },
   ];
+  // top-ranked proof for the Swiss work rows (AI display-rank, ADR 0008)
+  const work = orderByRank(filterProjects({ featured: true }), rank).slice(0, 5);
   return (
     <div className="lab4 lab4-home" suppressHydrationWarning>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
@@ -152,15 +155,40 @@ export default async function Home() {
         </section>
 
         {/* ------------------------------------------------ 02 · proof of work */}
-        {/* FeaturedCarousel renders its OWN section head — don't wrap it in a
-            second lab4-sec-head or the page shows two stacked headers with
-            clashing index numbers. */}
-        <div className="lab4-embed">
-          <FeaturedCarousel
-            eyebrow="02 — Selected work"
-            projects={orderByRank(filterProjects({ featured: true }), rank)}
-          />
-        </div>
+        {/* ------------------------------------------ 02 · proof of work
+            lab4-NATIVE Swiss rows (replaces the req1 carousel): rank-ordered
+            real projects, each row a door into its case study (§14.3) */}
+        <section className="lab4-section" id="work">
+          <header className="lab4-sec-head">
+            <span className="lab4-coord" data-rv>
+              02 — SELECTED WORK
+            </span>
+            <h2 data-rv data-rv-d="1">
+              หลักฐานผลงาน
+              <span className="soft"> ที่ส่งมอบจริง</span>
+            </h2>
+          </header>
+          <div className="lab4-works" data-rv data-rv-d="2">
+            {work.map((p, i) => (
+              <Link key={p.slug} href={`/projects/${p.slug}`} className="lab4-work">
+                <span className="no">{String(i + 1).padStart(2, "0")}</span>
+                <span className="body">
+                  <span className="t">{p.title}</span>
+                  <span className="d">{p.description}</span>
+                </span>
+                <span className="meta">
+                  {p.category} · {p.year}
+                </span>
+                <span className="arw" aria-hidden>
+                  →
+                </span>
+              </Link>
+            ))}
+          </div>
+          <Link className="lab4-works-all" href="/projects" data-rv>
+            ดูผลงานทั้งหมด <span className="arw">→</span>
+          </Link>
+        </section>
 
         {/* ------------------------------------------- 03 · system schematic */}
         <section className="lab4-section" id="how">
@@ -223,16 +251,18 @@ export default async function Home() {
 
         {/* --------------------- 05-08 · standards + people (site sections,
             themed via the dark-token bridge; §14.3 requires them on Home) */}
+        {/* 05-06 · the two product sections that stay (§14.3 + e2e contract):
+            SDLC + the real team roster — both already speak the hairline/mono
+            language; certificates live on /about (trust strip has the count) */}
         <div className="lab4-embed">
           <SdlcSection />
           <TeamSection idx="06 — Team" />
-          <Certificates idx="07 — Credentials" />
         </div>
 
         {/* --------------------------------------------------- 09 · closing */}
         <section className="lab4-section lab4-cta" id="contact">
           <span className="lab4-coord" data-rv>
-            08 — CONTACT
+            07 — CONTACT
           </span>
           <h2 data-rv data-rv-d="1">
             พร้อมเริ่มโปรเจกต์
