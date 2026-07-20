@@ -3,6 +3,23 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## 🚧 2026-07-20 (later) — v3 home SWAPPED WHOLESALE (`e8a65e6`); other pages next
+
+Dev clarified: lift the /lab4 home onto production entirely + redesign the other
+pages. DONE on-branch: home = v3 composition (dual theme via dark-token BRIDGE
+remapping the 8 site tokens; marquee hero + 5 robot zones incl. Fastwork-button
+perch; §14.3 sections kept inside the shell — SDLC/team/tech/certs/featured;
+shared content `content/home-v3.ts`). Expression eyes rebuilt: baked eyes ERASED
+from the GLB textures (t4bot-v3-noeyes.blend, 288KB, `?v=3` cache-bust), canvas
+eyes at UV-measured positions; the "red dot" was the signal pointLight's visor
+reflection (light now hugs the chest, tight falloff). site 52/52 + lab4 4/4 e2e.
+**NEXT (in #110): redesign the OTHER production pages** (projects, about, blog,
+faq, contact, chat, team/[slug]) in the v3 language — per-page passes; then
+retire orphaned home-only components (hero.tsx, cta-section.tsx, metric-band,
+solution-selector, service-list, process-schematic, team-tech-section,
+count-up-observer). Prod build not yet run (dev server holds .next) — run
+`bun run build` before the PR.
+
 ## 🚧 2026-07-20 — T4 Bot graduated to the live home (ADR 0011); v3 site-wide rollout phased
 
 Branch `prototype/labs-grade-hero` (NOT merged — dev must OK on localhost first).
