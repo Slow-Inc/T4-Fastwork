@@ -6546,14 +6546,43 @@ footer {
 }
 
 /* --- kinetic marquee = THE display headline (ChainGPT-labs structure) --- */
+/* fix2: the carousel is Blueprint-BOUNDED, not full-bleed. It used to break out
+   to 100vw while the nav, hero copy, robot stage, stats, section heads and the
+   footer wordmark all aligned to the centred shell — so it read as an ad ticker
+   bolted onto the page instead of kinetic typography inside the grid.
+   Anatomy per fix2: shell (aligns) → window (clips + masks) → track (moves).
+   The track still runs past the boundaries; only the window is constrained. */
 .lab4-marquee {
+  --l4-mq-mask: 40px;
   position: relative;
-  left: calc(50% - 50vw);
-  width: 100vw;
   z-index: 1; /* above the blueprint field, below the robot canvas (z:2) */
   pointer-events: none;
   border-block: 1px solid var(--l4-line-soft);
+  /* the two vertical hairlines ARE the boundary — the same token the rest of
+     the blueprint draws with, given local emphasis while the carousel shows */
+  border-inline: 1px solid var(--l4-line);
   padding-block: clamp(6px, 1.6vh, 18px);
+  /* entry/exit mask lives on the window, never on the viewport edge */
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 var(--l4-mq-mask),
+    #000 calc(100% - var(--l4-mq-mask)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 var(--l4-mq-mask),
+    #000 calc(100% - var(--l4-mq-mask)),
+    transparent 100%
+  );
+}
+@media (max-width: 700px) { .lab4-marquee { --l4-mq-mask: 24px; } }
+/* short landscape: the H1 and an action must stay reachable without scrolling */
+@media (max-height: 560px) and (orientation: landscape) {
+  .lab4-marquee { padding-block: 2px; }
+  .lab4 .kinetic-marquee-item { font-size: clamp(1.8rem, 5vw, 3rem); }
 }
 /* solid ink at full presence — the h1 below drops to mono/utility scale so
    only ONE display-scale element owns the viewport (req3 §14.0) */
@@ -7172,3 +7201,22 @@ body:has(.lab4[data-lab4-theme='dark']) .ai-greeting {
   padding: 0 6px;
 }
 @media (prefers-reduced-motion: reduce) { .lab4-stage-hint { transition: none; } }
+
+/* fix2 "Initial State": the loop translates by exactly -50% (two identical
+   copies), so shifting BOTH ends by the mask width keeps the loop seamless
+   while moving first paint clear of the exit fade — the opening phrase is
+   fully opaque on frame one instead of starting inside the gradient. */
+.lab4 .kinetic-marquee-track {
+  animation-name: lab4-marquee-bounded;
+}
+@keyframes lab4-marquee-bounded {
+  from { transform: translateX(var(--l4-mq-mask, 40px)); }
+  to { transform: translateX(calc(-50% + var(--l4-mq-mask, 40px))); }
+}
+/* reduced motion: hold that same readable first frame, don't snap to 0 */
+@media (prefers-reduced-motion: reduce) {
+  .lab4 .kinetic-marquee-track {
+    animation: none;
+    transform: translateX(var(--l4-mq-mask, 40px));
+  }
+}
