@@ -64,7 +64,10 @@ function toWorld(cx: number, cy: number, viewport: { w: number; h: number }) {
   };
 }
 
-function readZoneTarget(el: HTMLElement, viewport: { w: number; h: number }): ZoneTarget & { dist: number } {
+function readZoneTarget(
+  el: HTMLElement,
+  viewport: { w: number; h: number },
+): ZoneTarget & { dist: number; hidden: boolean } {
   const r = el.getBoundingClientRect();
   const cx = r.left + r.width / 2;
   const cy = r.top + r.height / 2;

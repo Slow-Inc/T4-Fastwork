@@ -22,6 +22,7 @@ const PAGES = [
   "/terms",
   "/team/xenodev",
   "/team/slowgers",
+  "/legacy-2",
 ];
 
 /** Fail the test if the page logs a console error or throws. */
@@ -218,8 +219,11 @@ test("experience + project-count claims are accurate everywhere (7 years, 21+ pr
   }
 });
 
-test("homepage also shows the SDLC section", async ({ page }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+// The live home is now the /lab4 composition rendered verbatim (dev directive
+// 2026-07-20), which deliberately carries none of the req1 product sections.
+// They live on the /legacy-2 backup, so these contracts follow them there.
+test("the legacy home backup still shows the SDLC section", async ({ page }) => {
+  await page.goto("/legacy-2", { waitUntil: "networkidle" });
   const section = page.locator("#sdlc");
   await expect(
     section.getByRole("heading", { name: "SDLC ที่เราใช้จริง" }),
@@ -228,7 +232,7 @@ test("homepage also shows the SDLC section", async ({ page }) => {
 });
 
 test("SDLC rows have a hover micro-transition", async ({ page }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/legacy-2", { waitUntil: "networkidle" });
   const row = page.locator("#sdlc .sdlc-row").first();
 
   const transition = await row.evaluate(
@@ -253,7 +257,8 @@ test("SDLC rows have a hover micro-transition", async ({ page }) => {
 test("navbar keeps its frosted-glass backdrop blur", async ({ page }) => {
   // The build (Lightning CSS) can drop the standard `backdrop-filter` when a
   // `-webkit-` copy is hand-written alongside it, leaving Chrome with no blur.
-  await page.goto("/", { waitUntil: "networkidle" });
+  // (checked on /about — the home now renders the lab4 shell with its own nav)
+  await page.goto("/about", { waitUntil: "networkidle" });
   const bf = await page.evaluate(
     () => getComputedStyle(document.querySelector(".site-nav")!).backdropFilter,
   );
@@ -412,14 +417,16 @@ test('project detail "ask AI about this project" opens the floating widget groun
   expect((requestBody?.message as string) ?? "").toContain("MangaDock");
 });
 
-test("home shows the team directory and a filterable tech-stack — spec P8 / §4.1.8", async ({
+test("the legacy home backup keeps the team directory and filterable tech-stack — spec P8 / §4.1.8", async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  await page.goto("/", { waitUntil: "networkidle" });
+  // moved off "/" with the lab4 swap; #team also lives on /about, but #tech's
+  // filter contract only survives here until it is rebuilt in the v3 language
+  await page.goto("/legacy-2", { waitUntil: "networkidle" });
 
-  // The team is visible on the home page (credibility — real people).
+  // The team is visible on the page (credibility — real people).
   await expect(page.locator("#team")).toBeVisible();
   await expect(
     page
@@ -867,7 +874,8 @@ test("clicking a tracked CTA navigates without console errors", async ({
   page,
 }) => {
   const errors = trackErrors(page);
-  await page.goto("/", { waitUntil: "networkidle" });
+  // from /about — the home's lab4 nav links to in-page anchors, not routes
+  await page.goto("/about", { waitUntil: "networkidle" });
   await page
     .locator("nav")
     .first()
@@ -918,8 +926,11 @@ test("home credentials open in the same lightbox as team, and it is dismissable"
   expect(errors, "console errors on /about credentials").toEqual([]);
 });
 
+// The floating chat FAB is a per-page component. The live home now renders the
+// lab4 shell (which offers its own /chat entry points instead), so these three
+// journeys start from /about, where the FAB still ships.
 test("the floating AI chat panel animates open", async ({ page }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/about", { waitUntil: "networkidle" });
   await page.getByRole("button", { name: /Ask T4 AI/i }).click();
   const panel = page.locator(".chat-panel");
   await expect(panel).toBeVisible();
@@ -930,7 +941,7 @@ test("the floating AI chat panel animates open", async ({ page }) => {
 test("the floating chat keeps its conversation when closed and reopened", async ({
   page,
 }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/about", { waitUntil: "networkidle" });
   await page.getByRole("button", { name: /Ask T4 AI/i }).click();
 
   const panel = page.locator(".chat-panel");
@@ -954,11 +965,11 @@ test("the floating chat keeps its conversation when closed and reopened", async 
 test("the floating popup and the /chat page share one conversation (#31)", async ({
   page,
 }) => {
-  // three networkidle page-loads in one journey — the v3 home also boots the
-  // robot stage, so give this the slow-test budget instead of racing 30s
+  // three networkidle page-loads in one journey — give this the slow-test
+  // budget instead of racing 30s
   test.slow();
   // Type a message in the floating popup...
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/about", { waitUntil: "networkidle" });
   await page.getByRole("button", { name: /Ask T4 AI/i }).click();
   const panel = page.locator(".chat-panel");
   await expect(panel).toBeVisible();
@@ -977,7 +988,7 @@ test("the floating popup and the /chat page share one conversation (#31)", async
 
   // ...and the /chat page writes back to the same shared conversation, so
   // returning to the popup still shows the history (symmetric persistence).
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/about", { waitUntil: "networkidle" });
   await page.getByRole("button", { name: /Ask T4 AI/i }).click();
   await expect(
     page.locator(".chat-panel").getByText("BANANA456"),
