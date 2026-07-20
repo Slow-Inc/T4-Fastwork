@@ -6276,10 +6276,16 @@ footer {
   --l4-raised: #eceae2;
   --l4-panel: #fbfaf7;
   --l4-ink: #131311;
-  --l4-ink-soft: #6b6862;
-  --l4-ink-faint: #9a968d;
-  --l4-signal: #e8461b;
-  --l4-signal-soft: rgba(232, 70, 27, 0.45);
+  /* WCAG AA on --l4-canvas #f4f2ed, measured: 16.63 / 6.96 / 4.52.
+     `faint` was 2.64 and failed for small text; `soft` moved down with it so
+     the three-step ink hierarchy survives the fix. */
+  --l4-ink-soft: #565249;
+  --l4-ink-faint: #736e66;
+  /* was #e8461b: 3.53 as small text on canvas AND 3.95 for white-on-orange in
+     the primary CTA — both failed. #c4380f reads as the same brand orange and
+     measures 4.79 on canvas / 5.36 with white. */
+  --l4-signal: #c4380f;
+  --l4-signal-soft: rgba(196, 56, 15, 0.45);
   --l4-blue: rgba(19, 42, 56, 0.1);
   --l4-blue-minor: rgba(19, 42, 56, 0.045);
   --l4-glass: rgba(244, 242, 237, 0.62);
@@ -6471,21 +6477,25 @@ footer {
 .lab4-h1 {
   font-family: var(--disp);
   font-weight: 700;
-  font-size: clamp(1.35rem, 1.9vw, 1.8rem);
-  line-height: 1.4;
-  letter-spacing: -0.015em;
+  /* fix1: the semantic H1 must outrank the decorative marquee, and mobile must
+     start at 30px+. Thai needs a looser headline leading than Latin. */
+  font-size: clamp(1.95rem, 3.6vw, 3.25rem);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
   margin: 0;
-  max-width: 24ch;
+  max-width: 20ch;
   text-wrap: balance;
 }
 .lab4-h1 em { font-style: normal; color: var(--l4-signal); }
 .lab4-lead {
   margin: 0;
-  max-width: 44ch;
-  font-family: var(--mono);
-  font-size: clamp(0.8rem, 0.95vw, 0.9rem);
-  line-height: 1.9;
-  letter-spacing: 0.01em;
+  max-width: 46ch;
+  /* fix1: primary body >= 16px, Thai line-height 1.65-1.8. Mono at 12.8px was
+     the least readable text on the page — body font, real size. */
+  font-family: var(--font-thai), var(--body);
+  font-size: clamp(1rem, 1.1vw, 1.0625rem);
+  line-height: 1.75;
+  letter-spacing: 0;
   color: var(--l4-ink-soft);
 }
 .lab4-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
@@ -6547,10 +6557,13 @@ footer {
 }
 /* solid ink at full presence — the h1 below drops to mono/utility scale so
    only ONE display-scale element owns the viewport (req3 §14.0) */
+/* fix1: the marquee is background texture, not the headline. It keeps the
+   kinetic band as brand rhythm while the H1 above owns the viewport. */
 .lab4 .kinetic-marquee-item {
   color: var(--l4-ink);
-  font-size: clamp(4.5rem, 15vw, 12.5rem);
-  line-height: 0.92;
+  opacity: 0.13;
+  font-size: clamp(2.6rem, 8vw, 6.5rem);
+  line-height: 0.95;
 }
 
 /* --- hero stage: the robot's home cell in the table band --- */
@@ -6625,7 +6638,7 @@ footer {
   .lab4-sec-head.with-dock { grid-template-columns: 1fr; }
   .lab4-how-dock, .lab4-svc-dock { display: none; }
 }
-.lab4-sec-head h2, .lab4-cta h2 {
+.lab4-sec-head h1, .lab4-sec-head h2, .lab4-cta h2 {
   font-family: var(--disp);
   font-weight: 700;
   font-size: clamp(1.8rem, 3.6vw, 3rem);
@@ -6960,3 +6973,202 @@ body:has(.lab4[data-lab4-theme='dark']) .ai-greeting {
   .lab4-node .trace i { animation: none; }
   .lab4 .kinetic-marquee-track { animation: none; }
 }
+
+/* ============================================================================
+   v3 shell (requirement3 §14) — the chrome every page shares. Extracted from
+   the home so 13 pages don't each carry a copy of the hydration-sensitive
+   theme script. See components/site/v3/v3-shell.tsx.
+   ========================================================================== */
+
+/* §14.5 — blueprint loudness is a per-page decision, not a constant. `visible`
+   is the home/catalog treatment (the grid is part of the story); `quiet` fades
+   it to a texture so credibility and reading pages stay calm. `invisible`
+   renders no field element at all. */
+.lab4-field[data-blueprint='quiet'] {
+  opacity: 0.45;
+  -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 20%, transparent 80%);
+  mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 20%, transparent 80%);
+}
+
+/* fix1: theme + bot are ONE compact control rail, not two floating chips, and
+   every control clears the 44x44 minimum hit area. */
+.lab4-theme-float {
+  display: inline-flex;
+  gap: 0;
+  border: 1px solid var(--l4-line);
+  border-radius: var(--l4-r-sm);
+  background: var(--l4-glass);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+.lab4-theme-float > button { border: 0; border-radius: 0; }
+.lab4-theme-float > button + button { border-left: 1px solid var(--l4-line); }
+.lab4-theme-float .lab4-theme-btn,
+.lab4-theme-float .lab4-bot-btn { min-height: 44px; padding: 0 14px; }
+.lab4-bot-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  padding: 9px 12px;
+  border-radius: var(--l4-r-sm);
+  border: 1px solid var(--l4-line);
+  background: transparent;
+  color: var(--l4-ink);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.lab4-bot-btn:hover { border-color: var(--l4-signal); color: var(--l4-signal); }
+.lab4-bot-btn[aria-pressed='true'] { color: var(--l4-ink-faint); }
+.lab4-bot-btn .ic { font-size: 13px; line-height: 1; }
+
+/* the static footer robot — same geometry as the live stage's footer dock so
+   the character lands in the same place whether or not WebGL ran */
+.v3-foot-bot {
+  position: absolute;
+  top: clamp(-140px, -12vw, -60px);
+  right: clamp(4px, 6vw, 120px);
+  width: clamp(110px, 14vw, 210px);
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+/* belt-and-braces: no flash of robot before hydration removes it */
+.lab4[data-lab4-bot='off'] .v3-foot-bot,
+.lab4[data-lab4-bot='off'] .lab4-stagefx { display: none; }
+
+/* annoyance rule 4 — on mobile the robot is footer-only, and small enough to
+   stay out of the reading path */
+@media (max-width: 700px) {
+  .v3-foot-bot { width: 84px; top: -52px; right: 8px; }
+}
+
+/* --- v3 reading column (§14.3: 45–75ch measure) — legal + long-form ------- */
+.v3-read { padding: clamp(96px, 12vh, 150px) 0 clamp(60px, 8vh, 110px); }
+.v3-read-head { margin: 22px 0 40px; border-bottom: 1px solid var(--l4-line); padding-bottom: 26px; }
+.v3-read-head h1 {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  margin: 14px 0 0;
+  color: var(--l4-ink);
+}
+.v3-read-meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; color: var(--l4-ink-faint); margin-top: 14px; }
+.v3-read-body { max-width: 68ch; }
+.v3-read-body p { margin: 0 0 1.5em; line-height: 1.8; color: var(--l4-ink-soft); }
+
+/* --- v3 Swiss row list — the site's default "list of things" treatment ---- */
+.v3-rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--l4-line); }
+.v3-row {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 18px;
+  align-items: baseline;
+  padding: 20px 4px;
+  border-bottom: 1px solid var(--l4-line-soft);
+  transition: padding-left 0.25s, border-color 0.25s;
+}
+.v3-row:hover { padding-left: 14px; border-color: var(--l4-signal); }
+.v3-row .no { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--l4-signal); }
+.v3-row .t { font-family: var(--disp); font-weight: 600; font-size: clamp(1rem, 1.8vw, 1.25rem); color: var(--l4-ink); }
+.v3-row .d { font-family: var(--mono); font-size: 12px; line-height: 1.7; color: var(--l4-ink-faint); }
+@media (max-width: 700px) {
+  .v3-row { grid-template-columns: 34px minmax(0, 1fr); }
+  .v3-row .d { grid-column: 2; }
+}
+
+/* --- 404 -------------------------------------------------------------------
+   The robot is the visual lead here (it is the whole point of the page), so it
+   gets real scale rather than the footer's peek. */
+.v3-404 {
+  min-height: 72vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr);
+  gap: clamp(24px, 5vw, 70px);
+  align-items: center;
+  padding: clamp(100px, 14vh, 170px) 0 clamp(60px, 8vh, 110px);
+}
+.v3-404-copy h1 {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(2.2rem, 6vw, 4.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  margin: 16px 0 18px;
+  color: var(--l4-ink);
+}
+.v3-404-copy h1 .soft { color: var(--l4-ink-faint); }
+.v3-404-bot { width: 100%; max-width: 380px; height: auto; justify-self: center; }
+@media (max-width: 860px) {
+  .v3-404 { grid-template-columns: 1fr; text-align: left; }
+  .v3-404-bot { max-width: 220px; justify-self: start; order: -1; }
+}
+
+/* --- fix1 P0.5: touch targets -----------------------------------------------
+   Visual size stays compact; the hit area is expanded with padding so every
+   primary control clears 44x44 (WCAG 2.5.5 / Apple HIG). */
+.lab4 .lab4-btn { min-height: 44px; display: inline-flex; align-items: center; }
+.lab4-reset-btn, .lab4 .site-nav a, .lab4 .site-nav button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.lab4 footer .footer-links a { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* fix1 Accessibility: skip link — first tab stop, invisible until focused */
+.v3-skip {
+  position: absolute;
+  left: 12px;
+  top: -100px;
+  z-index: 200;
+  padding: 12px 18px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  background: var(--l4-signal);
+  color: #fff;
+  border-radius: var(--l4-r-sm);
+  transition: top 0.18s ease;
+}
+.v3-skip:focus-visible { top: 12px; }
+
+/* fix1: quiet interaction hint under the hero stage — revealed on pointer
+   intent (hover/focus within the stage) instead of shouting an instruction. */
+.lab4-stage-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--l4-ink-faint);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+.lab4-stage:hover .lab4-stage-hint,
+.lab4-stage:focus-within .lab4-stage-hint { opacity: 1; }
+.lab4-stage-hint .lab4-reset {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--l4-signal);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  min-height: 44px;
+  padding: 0 6px;
+}
+@media (prefers-reduced-motion: reduce) { .lab4-stage-hint { transition: none; } }

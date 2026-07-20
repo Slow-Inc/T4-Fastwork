@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { pageAlternates } from '@/lib/seo';
-import { SiteNav } from '@/components/site/site-nav';
-import { SiteFooter } from '@/components/site/site-footer';
+import { V3Shell } from '@/components/site/v3/v3-shell';
 import { Breadcrumb } from '@/components/site/breadcrumb';
 
 export const metadata: Metadata = {
@@ -10,18 +9,26 @@ export const metadata: Metadata = {
   alternates: pageAlternates('/privacy'),
 };
 
+/**
+ * Legal page — §14.5 blueprint **invisible**, §14.4 restraint: no reveal
+ * animation, no robot in the reading path. The copy is deliberately NOT marked
+ * `.rv`: legal text must never depend on an IntersectionObserver having run
+ * (this page shipped invisible at `opacity: 0` for exactly that reason).
+ */
 export default function PrivacyPage() {
   return (
-    <>
-      <SiteNav />
-      <div className="wrap">
-        <section className="section section-page blog-article">
-          <Breadcrumb items={[{ label: 'หน้าแรก', href: '/' }, { label: 'นโยบายความเป็นส่วนตัว' }]} />
-          <div className="page-head rv">
-            <div className="t-idx">Privacy</div>
+    <V3Shell blueprint="invisible">
+      <main className="lab4-shell">
+        <section className="v3-read">
+          <Breadcrumb
+            items={[{ label: 'หน้าแรก', href: '/' }, { label: 'นโยบายความเป็นส่วนตัว' }]}
+          />
+          <header className="v3-read-head">
+            <span className="lab4-coord">LEGAL — PRIVACY</span>
             <h1>นโยบายความเป็นส่วนตัว</h1>
-          </div>
-          <div className="blog-body rv">
+            <p className="v3-read-meta">ปรับปรุงล่าสุด 2026 · สอดคล้องกับ PDPA</p>
+          </header>
+          <div className="v3-read-body">
             <p>
               T4 Labs เก็บข้อมูลเท่าที่จำเป็นต่อการติดต่อและให้บริการเท่านั้น
               (เช่น ชื่อ อีเมล และรายละเอียดโจทย์ที่คุณส่งผ่านฟอร์มติดต่อหรือผู้ช่วย AI)
@@ -37,8 +44,7 @@ export default function PrivacyPage() {
             </p>
           </div>
         </section>
-        <SiteFooter />
-      </div>
-    </>
+      </main>
+    </V3Shell>
   );
 }

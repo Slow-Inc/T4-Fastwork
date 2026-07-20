@@ -1,7 +1,5 @@
-import { SiteNav } from '@/components/site/site-nav';
+import { V3Shell } from '@/components/site/v3/v3-shell';
 import { Lab4RobotStageLazy } from '@/components/site/lab4/lab4-robot-stage-lazy';
-import { Lab4Fx } from '@/components/site/lab4/lab4-fx';
-import { Lab4ThemeToggle } from '@/components/site/lab4/lab4-theme-toggle';
 import { Lab4ResetButton } from '@/components/site/lab4/lab4-reset-button';
 import { Lab4SolutionSelector } from '@/components/site/lab4/lab4-solution-selector';
 import { Lab4Schematic } from '@/components/site/lab4/lab4-schematic';
@@ -9,11 +7,6 @@ import { Lab4Services } from '@/components/site/lab4/lab4-services';
 import { KineticMarquee } from '@/components/site/lab/kinetic-marquee';
 import { SOLUTIONS, STACK, PROCESS, SERVICES } from '@/content/home-v3';
 import { getSiteStats } from '@/lib/site-stats';
-
-// runs synchronously while the .lab4 div is parsed, so the first paint is
-// already in the right theme; the attribute lives on the div (not <html>)
-// and the div suppresses the expected server/client attribute difference
-const THEME_INIT = `(function(){var el=document.currentScript.closest('.lab4');var t;try{t=localStorage.getItem('lab4-theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}el.dataset.lab4Theme=t})()`;
 
 /**
  * The /lab4 v3 composition — the single source for BOTH the live home
@@ -37,21 +30,7 @@ export async function Lab4Home() {
     { n: String(stats.certs), unit: '', label: 'ใบรับรองของทีม' },
   ];
   return (
-    <div className="lab4" suppressHydrationWarning>
-      <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
-
-      {/* blueprint field — visible at the hero, fading to quiet below (§14.5) */}
-      <div className="lab4-field" aria-hidden />
-
-      {/* the production nav replaces the lab4 glass bar wholesale (dev
-          directive 2026-07-20) — it owns search / locale / the real routes,
-          and themes with the shell via the dark-token bridge. The dual-theme
-          switch keeps its own floating slot beside it, unchanged (§14.7). */}
-      <SiteNav />
-      <div className="lab4-theme-float">
-        <Lab4ThemeToggle />
-      </div>
-
+    <V3Shell blueprint="visible" robot="live">
       <main className="lab4-shell">
         {/* ------------------------------------------------ 00 · hero thesis
             Storytelling zone 1, ChainGPT-labs structure: the kinetic band IS
@@ -70,21 +49,33 @@ export async function Lab4Home() {
                 <i aria-hidden />
                 00 — POSITIONING
               </span>
+              {/* fix1 "Recommended Positioning": the old headline promised
+                  unlimited scope ("อยากมีเว็บแบบไหน เราสร้างได้"). This states
+                  range + engineering standard + the ability to grow with the
+                  customer, which is what a partner claims. */}
               <h1 className="lab4-h1" data-rv data-rv-d="1">
-                อยากมีเว็บแบบไหน เรา<em>สร้างได้</em> — ตั้งแต่หน้าเดียว
-                ถึงระดับ product
+                ผลิตภัณฑ์ดิจิทัลที่<em>โตต่อได้</em>
+                <br />
+                ตั้งแต่เว็บแรก ถึงระบบที่ธุรกิจใช้ทุกวัน
               </h1>
               <p className="lab4-lead" data-rv data-rv-d="2">
-                เว็บร้านค้า, SaaS, Web Application, AI Product —
-                มาตรฐานวิศวกรรมเดียวกันทุกสเกล คุยกับ dev โดยตรง
+                เราออกแบบและสร้างเว็บไซต์ แอปพลิเคชัน และผลิตภัณฑ์ AI
+                ด้วยมาตรฐานวิศวกรรมเดียวกันทุกสเกล — คุยกับ dev โดยตรง
                 ไม่ต้องรู้ศัพท์เทคนิค
               </p>
+              {/* fix1 CTA hierarchy: ONE primary pointing at the real
+                  transaction channel, one visibly subordinate secondary */}
               <div className="lab4-actions" data-rv data-rv-d="3">
-                <a className="lab4-btn solid" href="#contact">
-                  ติดต่อ / จ้างงาน <span className="arw">→</span>
+                <a
+                  className="lab4-btn solid"
+                  href="https://fastwork.co"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  จ้างผ่าน Fastwork <span className="arw">→</span>
                 </a>
                 <a className="lab4-btn ghost" href="/chat">
-                  คุยกับ AI
+                  ประเมินงบกับ AI
                 </a>
               </div>
             </div>
@@ -94,27 +85,37 @@ export async function Lab4Home() {
               className="lab4-stage"
               data-l4-zone="hero"
               data-l4-grab
-              data-l4-scale="0.8"
+              data-l4-scale="0.62"
             >
               <div className="lab4-scene-fallback" aria-hidden />
+              {/* fix1: "DRAG TO ROTATE" shouted an instruction nobody asked
+                  for. The hint is quiet and only surfaces on pointer intent. */}
+              <p className="lab4-stage-hint">
+                ลากเพื่อหมุนโมเดล
+                <Lab4ResetButton />
+              </p>
             </div>
 
+            {/* fix1 P0.3: the meta column used to publish prototype telemetry
+                (model file size, "R3F", "zone travel", "dual theme") — debug
+                output on a page whose job is to read as a serious engineering
+                partner. It now carries what a client actually needs to know
+                before hiring: how the engagement works. */}
             <div className="lab4-hero-cell meta">
               <div className="lab4-meta-block" data-rv>
-                <span className="k">Brand character</span>
+                <span className="k">ทีม</span>
                 <span className="v">
                   <i className="dot" />
-                  T4 Bot v2 · 305 KB
+                  Bangkok, TH · Full-stack + AI
                 </span>
               </div>
               <div className="lab4-meta-block" data-rv data-rv-d="2">
-                <span className="k">Interaction</span>
-                <span className="v">DRAG TO ROTATE</span>
-                <Lab4ResetButton />
+                <span className="k">การทำงาน</span>
+                <span className="v">คุยกับ dev โดยตรง</span>
               </div>
               <div className="lab4-meta-block grow" data-rv data-rv-d="3">
-                <span className="k">Render</span>
-                <span className="v">R3F · zone travel · dual theme</span>
+                <span className="k">การจ้างงาน</span>
+                <span className="v">ผ่าน Fastwork · คุ้มครองทั้งสองฝั่ง</span>
               </div>
             </div>
           </div>
@@ -261,35 +262,7 @@ export async function Lab4Home() {
         </section>
       </main>
 
-      {/* Oversized Brand Wordmark footer — storytelling zone 3: the robot
-          peeks over the wordmark to wave goodbye (§14.10) */}
-      <footer className="lab4-footer">
-        <div className="lab4-shell">
-          <div className="lab4-wordmark-wrap">
-            <div className="lab4-wordmark" aria-hidden>
-              T4 LABS
-            </div>
-            <div
-              className="lab4-foot-dock"
-              data-l4-zone="footer"
-              data-l4-scale="0.9"
-              data-l4-yaw="0.25"
-              data-l4-pitch="0.18"
-              aria-hidden
-            />
-          </div>
-          <div className="lab4-foot-row">
-            <span className="lab4-foot-brand">T4 Labs</span>
-            <span className="lab4-foot-meta">
-              LAB4 — REQUIREMENT3 §14 · ROBOT STORYTELLING × DUAL THEME · INTERNAL
-              PROTOTYPE
-            </span>
-          </div>
-        </div>
-      </footer>
-
-      <Lab4Fx />
       <Lab4RobotStageLazy />
-    </div>
+    </V3Shell>
   );
 }

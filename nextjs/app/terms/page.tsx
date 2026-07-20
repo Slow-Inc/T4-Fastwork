@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { pageAlternates } from '@/lib/seo';
-import { SiteNav } from '@/components/site/site-nav';
-import { SiteFooter } from '@/components/site/site-footer';
+import { V3Shell } from '@/components/site/v3/v3-shell';
 import { Breadcrumb } from '@/components/site/breadcrumb';
 
 export const metadata: Metadata = {
@@ -10,18 +9,21 @@ export const metadata: Metadata = {
   alternates: pageAlternates('/terms'),
 };
 
+/** Legal page — see the note in `app/privacy/page.tsx` (same treatment). */
 export default function TermsPage() {
   return (
-    <>
-      <SiteNav />
-      <div className="wrap">
-        <section className="section section-page blog-article">
-          <Breadcrumb items={[{ label: 'หน้าแรก', href: '/' }, { label: 'ข้อกำหนดการใช้งาน' }]} />
-          <div className="page-head rv">
-            <div className="t-idx">Terms</div>
+    <V3Shell blueprint="invisible">
+      <main className="lab4-shell">
+        <section className="v3-read">
+          <Breadcrumb
+            items={[{ label: 'หน้าแรก', href: '/' }, { label: 'ข้อกำหนดการใช้งาน' }]}
+          />
+          <header className="v3-read-head">
+            <span className="lab4-coord">LEGAL — TERMS</span>
             <h1>ข้อกำหนดการใช้งาน</h1>
-          </div>
-          <div className="blog-body rv">
+            <p className="v3-read-meta">ปรับปรุงล่าสุด 2026</p>
+          </header>
+          <div className="v3-read-body">
             <p>
               เนื้อหา ผลงาน และการประเมินบนเว็บไซต์นี้ใช้เพื่อการนำเสนอบริการ
               การจ้างงานจริงและการชำระเงินดำเนินการผ่าน Fastwork ซึ่งมีระบบคุ้มครอง
@@ -38,8 +40,7 @@ export default function TermsPage() {
             </p>
           </div>
         </section>
-        <SiteFooter />
-      </div>
-    </>
+      </main>
+    </V3Shell>
   );
 }

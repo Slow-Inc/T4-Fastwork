@@ -1,9 +1,6 @@
 import type { Metadata } from 'next';
 import { pageAlternates } from '@/lib/seo';
-import { SiteNav } from '@/components/site/site-nav';
-import { SiteFooter } from '@/components/site/site-footer';
-import { ChatButton } from '@/components/site/chat-button';
-import { RevealObserver } from '@/components/site/reveal-observer';
+import { V3Shell } from '@/components/site/v3/v3-shell';
 import { Breadcrumb } from '@/components/site/breadcrumb';
 
 export const metadata: Metadata = {
@@ -12,43 +9,49 @@ export const metadata: Metadata = {
   alternates: pageAlternates('/bw'),
 };
 
+/**
+ * §14.16 forbids decorative filler, and a grid of bare logos-as-text is exactly
+ * that. Each partner now states the job it does in our stack — the same
+ * information density as the home's schematic, and it answers the question a
+ * visitor actually has ("what do they use it for?").
+ */
 const partners = [
-  'Supabase',
-  'Vercel',
-  'Cloudflare',
-  'NVIDIA',
-  'OpenAI',
-  'Fastwork',
-  'PostgreSQL',
-  'Next.js',
+  { name: 'Supabase', role: 'Postgres · Auth · Storage · pgvector' },
+  { name: 'Vercel', role: 'Deploy · edge network · preview builds' },
+  { name: 'Cloudflare', role: 'DNS · CDN · bot protection' },
+  { name: 'NVIDIA', role: 'GPU inference สำหรับงาน AI' },
+  { name: 'OpenAI', role: 'LLM gateway สำหรับผู้ช่วย AI + RAG' },
+  { name: 'Fastwork', role: 'สัญญาจ้าง + ระบบชำระเงินที่คุ้มครองสองฝั่ง' },
+  { name: 'PostgreSQL', role: 'ฐานข้อมูลหลักของทุกโปรเจกต์' },
+  { name: 'Next.js', role: 'App Router · SSR/ISR · React 19' },
 ];
 
 export default function PartnersPage() {
   return (
-    <>
-      <SiteNav />
-      <div className="wrap">
-        <section className="section section-page">
+    <V3Shell blueprint="quiet">
+      <main className="lab4-shell">
+        <section className="lab4-section">
           <Breadcrumb items={[{ label: 'หน้าแรก', href: '/' }, { label: 'พันธมิตร' }]} />
-          <div className="page-head rv">
-            <div className="t-idx">Partners</div>
-            <h1>พันธมิตรและเทคโนโลยี</h1>
-            <p className="page-lead">
-              เครื่องมือและแพลตฟอร์มที่เราไว้ใจและใช้ส่งมอบงานจริงให้ลูกค้า
-            </p>
-          </div>
-          <div className="partner-grid rv">
-            {partners.map((p) => (
-              <div key={p} className="partner-cell">
-                {p}
-              </div>
+          <header className="lab4-sec-head">
+            <span className="lab4-coord" data-rv>
+              00 — PARTNERS
+            </span>
+            <h1 data-rv data-rv-d="1">
+              เครื่องมือที่เราไว้ใจ
+              <span className="soft"> และใช้ส่งมอบงานจริง</span>
+            </h1>
+          </header>
+          <ul className="v3-rows" data-rv data-rv-d="2">
+            {partners.map((p, i) => (
+              <li key={p.name} className="v3-row">
+                <span className="no">{String(i + 1).padStart(2, '0')}</span>
+                <span className="t">{p.name}</span>
+                <span className="d">{p.role}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
-        <SiteFooter />
-      </div>
-      <ChatButton />
-      <RevealObserver />
-    </>
+      </main>
+    </V3Shell>
   );
 }

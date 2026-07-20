@@ -40,6 +40,8 @@ test("home renders the /lab4 composition byte-identically", async ({ page }) => 
 test("the v3 shell uses the production nav with the theme switch beside it", async ({
   page,
 }) => {
+  // two networkidle loads, each booting the robot stage, plus theme round-trips
+  test.slow();
   for (const path of ["/", "/lab4"]) {
     await page.goto(path, { waitUntil: "networkidle" });
     await expect(page.locator(".site-nav"), path).toHaveCount(1);
