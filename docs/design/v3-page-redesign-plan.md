@@ -65,28 +65,99 @@ one implementation.
 This is a real decision, not decoration: it stops every page from shouting and
 gives long-form reading pages the calm §14.4 demands.
 
-### 2.2 Robot policy (§14.2.1 + §14.10) — the constraint people get wrong
+### 2.2 The T4 Bot presence system (§14.2.1 + §14.10)
 
-§14.10 is explicit: **the 3D robot in the footer is Home-only**; other pages use
-a static render. §14.2.1 adds: the robot may appear at *micro* level elsewhere
-(icon, cursor hint, empty state) but must never be a full 3D scene in every
-section, and it must always have a job.
+**Dev directive (2026-07-20):** the robot is the site's approachability gimmick
+and should appear on **every page** — but must never become the thing users want
+to get rid of. Those two goals are only compatible with an explicit budget, so
+this section is a *system*, not a placement list.
 
-So:
+§14.10 still binds the expensive part: **the live 3D robot is Home-only**
+(every other page would otherwise pay for WebGL). Presence everywhere is
+achieved with weight tiers, not with more canvases.
 
-| Page | Robot |
-|---|---|
-| `/` | full WebGL stage, 5 zones (shipped) |
-| `/chat` | **the avatar** — identity strip + empty state (§5.4 says it is the same character). Static render or one small canvas; this is the strongest on-brand use left |
-| `/projects` | static, **empty-state only** ("ไม่พบผลงาน" → robot shrug) |
-| `/projects/[slug]` | static, beside the "ถามรายละเอียดผลงานนี้กับ AI" CTA |
-| `/contact` | static, beside the form (receptionist read) |
-| everything else | wordmark-footer static render only |
+#### Weight tiers
 
-**Prerequisite deliverable:** 3 static robot renders (neutral / point / shrug),
-transparent PNG @2x, rendered from `prototypes/t4bot/t4bot-v3-noeyes.blend` with
-the same lighting rig as the web stage, parked in `public/brand/`. Cheap to
-produce (Blender MCP is wired) and it unblocks 6 pages.
+| Tier | What it is | Cost | Where |
+|---|---|---|---|
+| **A — Live** | the WebGL stage, zone travel, cursor-follow, expressions | high | `/` only |
+| **B — Avatar** | one small canvas or animated sprite, expressions but no travel | medium | `/chat` only (§5.4: same character as the assistant) |
+| **C — Static** | a transparent PNG render in a chosen pose | ~15 KB | most pages |
+| **D — Micro** | SVG/emoji-scale mark: bullet, cursor hint, loading spinner, favicon | ~0 | anywhere |
+
+#### The five annoyance rules (these are the point)
+
+1. **Reactor, never initiator.** The robot responds to something the user
+   already did — hover, scroll into a zone, empty search, form success. It never
+   interrupts unprompted. The single exception is the greeting popup, already
+   capped at once per session and dismissible.
+2. **One robot per viewport.** Never two instances visible at once, on any page.
+3. **Dormancy.** After ~20 s with no pointer or scroll input, the robot settles
+   into a still pose — float and blink stop until the user interacts again. This
+   is what kills the "something is always wiggling in the corner" feeling.
+   Under `prefers-reduced-motion` it starts dormant.
+4. **Out of the reading path.** Never overlaps body text, never enters the tab
+   order (`aria-hidden`, `pointer-events: none` except its own drag zone), never
+   covers a CTA. On long-form pages (blog article, legal, FAQ answers) it is
+   present **only in the footer**. On mobile it drops to footer-only everywhere.
+5. **An escape hatch.** A "ซ่อนหุ่น / hide the bot" preference beside the theme
+   toggle, persisted in localStorage. Cheap to build, and the existence of an
+   off switch is what makes a mascot feel respectful rather than imposed.
+
+Plus the §14.2.1 rule that predates all of this: **the robot must have a job
+wherever it appears** — pointing, explaining, guiding, greeting, reacting. A
+robot with no function is slop by the spec's own definition (§14.16).
+
+#### Presence map — every page, with the robot's job
+
+| Page | Tier | Job / trigger |
+|---|---|---|
+| `/` | A | zone travel: hero drag → schematic pointing → services perch → CTA perch → footer peek *(shipped)* |
+| `/chat` | B | **the assistant's face** — identity strip, empty state, and a thinking pose while streaming |
+| `/projects` | C + D | static guide beside the filter bar; **shrug** in the "ไม่พบผลงาน" empty state (D: rank badge mark) |
+| `/projects/[slug]` | C | **point** beside "ถามรายละเอียดผลงานนี้กับ AI" — the robot IS the thing you'd be asking |
+| `/contact` | C | **wave** beside the form ("someone is here"); switches to **happy** on submit success |
+| `/about` | C | **wave** at the top of the team block — introducing the humans, not upstaging them |
+| `/team/[slug]` | footer only | the page belongs to a real person (§14.12); the robot stays out of it |
+| `/pricing-guide` | C | **point** at the recommended tier |
+| `/faq` | C | beside the closing "ไปถาม AI" CTA — the same character that answers |
+| `/blog` index | C | **shrug** in the empty search state only |
+| `/blog/[slug]` | footer only | reading column stays sacred; end-of-article CTA may carry a **D** mark |
+| `/recommend/[type]` | C | **point** in the hero, at the solution's proof |
+| `/privacy`, `/terms` | footer only | never be cute on legal pages |
+| `/bw` | footer only | — |
+| `/member`, `/admin` | D only | utility surfaces; a mark in the empty state at most |
+| **404 / error** | C | **shrug** — the single best mascot moment on any site |
+| **loading states** | D | the robot head as the spinner, replacing the generic one |
+
+Footer presence is universal: the static robot peeking over the oversized
+wordmark appears on every page, which is what actually delivers "อยู่ทุกที่"
+without a single extra canvas.
+
+#### Prerequisite deliverable — ✅ SHIPPED 2026-07-20
+
+Six static renders in `public/brand/`, **~15 KB each** (512², transparent WebP):
+`t4bot-idle` · `t4bot-point` · `t4bot-wave` · `t4bot-shrug` · `t4bot-happy` ·
+`t4bot-thinking`. Source: `prototypes/t4bot/t4bot-poses.blend`.
+
+Build notes for whoever re-renders them:
+- The GLB's baked eyes were erased for the live canvas-eye system, so the poses
+  blend adds **emissive eye geometry** at the measured positions (x ±0.195,
+  y 0.607, z −0.527 head-local) with per-mood shapes — rect / narrow / wide
+  disc / ∩ arc — the same four the canvas draws, so static and live faces match.
+- Eye emission must stay **low strength (~2.2) with a saturated colour**; high
+  strength clips to cream through the tone curve. View transform:
+  **Khronos PBR Neutral** (it is the tone mapper designed to match glTF/web
+  output, so the renders sit next to the live stage without a colour jump).
+- The signal light must sit **below the chest with a tight radius**, or it
+  reflects in the glossy visor and reads as a third eye — the same bug that hit
+  the live stage.
+- All six share **one camera framing**, computed from the rest pose plus
+  headroom, so swapping poses on the page never makes the robot jump.
+- ⚠️ The exported objects are in **`rotation_mode = 'QUATERNION'`** — setting
+  `rotation_euler` silently does nothing. Set `rotation_mode = 'XYZ'` first, and
+  call `bpy.context.view_layer.update()` before `render()` or you render the
+  previous pose.
 
 ### 2.3 The Home/About duplication now has to be resolved
 
