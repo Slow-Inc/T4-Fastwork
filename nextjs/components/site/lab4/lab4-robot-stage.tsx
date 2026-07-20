@@ -30,7 +30,7 @@ import type { Group } from 'three';
  * real content instead of floating idle.
  */
 // ?v busts stale caches when the asset is re-authored (same public URL)
-const MODEL = '/lab4/t4bot-v3.glb';
+const MODEL = '/lab4/t4bot-v4.glb';
 useGLTF.preload(MODEL);
 
 const SIGNAL_DARK = '#ff6846';
@@ -90,33 +90,83 @@ function readZoneTarget(
 
 /* ------------------------------------------------------------ expressions */
 /**
- * The face is a transparent canvas-textured plane riding on the Head node
+ * The face is a canvas-textured plane riding on the Head node, sitting just
+ * BEHIND the visor glass so its light reads through the transmission
  * (§14.2.1: "แสดงอารมณ์ผ่านไฟตา/แสง signal ไม่ใช่ใบหน้าการ์ตูน").
  *
- * The model KEEPS its baked dot-matrix eyes (t4bot-v3.glb). An earlier pass
- * erased them so the canvas could own the face, but that erasure left visible
- * artefacts — a red smear on the visor and a dark speck on one arm — and the
- * hand-drawn eyes read cheaper than the baked LED grid. So the rule now is:
+ * v4 ships a clean model — no baked eyes, no baked rim — so the canvas owns the
+ * whole face outright: no masking, no erasing, no artefacts. Resting neutral is
+ * lit eyes, not a blank.
  *
- *   neutral + not blinking  → the canvas draws NOTHING; the baked eyes show
- *   any expression or blink → the canvas masks the baked eyes and draws the mood
+ * The eyes are a real LED DOT-MATRIX: a grid of round cells, only some lit per
+ * mood, drawn on a black field so the unlit cells read as a dark panel through
+ * the glass. This is what the reference render shows and what reads as a
+ * screen rather than a cartoon face.
  *
- * The mask is a soft dark patch sitting between the LEDs and the glass, so the
- * visor's own reflection still renders over it.
- *
- * Geometry measured from the emissive texture's eye clusters mapped back to
- * Head-local space on the v3 mesh: centres x ±0.196, height 0.628, LED depth
- * 0.527, visor glass at 0.552. The plane (0.6×0.3) sits at z 0.535 — inside the
- * glass, just proud of the LEDs.
+ * Geometry measured on the v4 mesh in Head-local space: visor centre
+ * x -0.008, height 0.518, front glass at z(local-y) 0.512, near-square
+ * 0.80×0.79. The plane sits at y 0.518, z 0.47 — behind the 0.512 glass.
  */
-const FACE_W = 256;
-const FACE_H = 128;
-const FACE_PLANE_W = 0.6;
-const FACE_PLANE_H = 0.3;
-const FACE_POS = { x: 0, y: 0.628, z: 0.535 };
-const EYE_X = 0.325; // ±offset, fraction of canvas W  (0.195 / 0.6)
-const EYE_W = 0.05; // half-width fraction of W        (~0.048·1.25 / 0.6 / 2)
-const EYE_H = 0.077; // half-height fraction of H      (~0.037·1.25 / 0.3 / 2)
+const FACE_W = 320;
+const FACE_H = 320;
+const FACE_PLANE_W = 0.66;
+const FACE_PLANE_H = 0.66;
+// just in FRONT of the glass front (0.512): three.js transmission renders in a
+// separate pass that doesn't composite an additive plane sitting behind it, so
+// the LED panel reads as the on-glass display instead of an under-glass layer
+const FACE_POS = { x: -0.008, y: 0.518, z: 0.53 };
+
+// dot-matrix layout: each eye is an EYE_COLS×EYE_ROWS grid of LED cells
+const EYE_COLS = 5;
+const EYE_ROWS = 7;
+const CELL = 15; // px pitch between LED centres
+const DOT = 9; // lit LED diameter
+const EYE_GAP = 42; // px between the two eyes' inner edges
+const AMBER = '255, 176, 56';
+
+/** Per-mood lit-cell mask over the 5×7 grid (row-major, 1 = lit). */
+const EYE_SHAPES: Record<Mood, number[][]> = {
+  // full rounded block — the resting "open" eye
+  neutral: [
+    [0, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 0],
+  ],
+  // narrowed to the middle bands — attentive
+  focus: [
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+  ],
+  // ∩ upward arc — smiling
+  happy: [
+    [0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 0],
+    [1, 1, 0, 1, 1],
+    [1, 0, 0, 0, 1],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+  ],
+  // wide-open hollow ring — surprised
+  wow: [
+    [0, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1],
+    [1, 1, 0, 1, 1],
+    [1, 1, 0, 1, 1],
+    [1, 1, 0, 1, 1],
+    [1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 0],
+  ],
+};
 
 function drawFace(
   ctx: CanvasRenderingContext2D,
@@ -129,93 +179,38 @@ function drawFace(
   const H = FACE_H;
   ctx.clearRect(0, 0, W, H);
 
-  // Resting face = the model's own baked dot-matrix eyes. Drawing nothing is
-  // the whole point: anything we paint here is worse than the bake.
-  if (mood === 'neutral' && !blink) return;
+  const gridW = EYE_COLS * CELL;
+  const gridH = EYE_ROWS * CELL;
+  const gaze = { x: lookX * 10, y: lookY * 8 }; // LED panel shifts with gaze
+  const cy = H * 0.5 + gaze.y;
+  // the two eyes flank the centre with EYE_GAP between their inner edges
+  const leftX = W * 0.5 - EYE_GAP / 2 - gridW + gaze.x;
+  const rightX = W * 0.5 + EYE_GAP / 2 + gaze.x;
 
-  const cxL = W * 0.5 - W * EYE_X + lookX * W * 0.02;
-  const cxR = W * 0.5 + W * EYE_X + lookX * W * 0.02;
-  const cy = H * 0.5 + lookY * H * 0.08;
-  const ew = W * EYE_W;
-  const eh = H * EYE_H;
+  const shape = EYE_SHAPES[mood];
 
-  // Mask the baked LEDs before drawing a different expression over them.
-  //
-  // Two small circles per eye were not enough: the baked dot-matrix eye is
-  // TALLER than it is wide (~16×21px on this canvas) while the drawn shapes are
-  // wider and shorter, so the bake's top and bottom edges survived the mask and
-  // a blink never looked closed. A band across the whole eye row covers them
-  // regardless of small positional error, and is also what a closing lid
-  // physically looks like. Feathered vertically so it dissolves into the panel
-  // rather than reading as a rectangle stuck on the glass.
-  // The baked LEDs are fixed in the texture, so the mask must be anchored to the
-  // canvas centre — NOT to `cy`, which carries the gaze offset. Following the
-  // gaze slid the band off the bake and left a row of LEDs showing above or
-  // below it, which is exactly what a half-closed blink looked like.
-  const maskCy = H * 0.5;
-  const bandH = eh * 9;
-  const grad = ctx.createLinearGradient(0, maskCy - bandH / 2, 0, maskCy + bandH / 2);
-  grad.addColorStop(0, 'rgba(6, 6, 8, 0)');
-  grad.addColorStop(0.12, 'rgba(6, 6, 8, 1)');
-  grad.addColorStop(0.88, 'rgba(6, 6, 8, 1)');
-  grad.addColorStop(1, 'rgba(6, 6, 8, 0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(
-    W * 0.5 - W * EYE_X - ew * 4,
-    maskCy - bandH / 2,
-    W * EYE_X * 2 + ew * 8,
-    bandH,
-  );
-
-  ctx.fillStyle = '#ffb238';
-  ctx.strokeStyle = '#ffb238';
-  ctx.shadowColor = 'rgba(255, 160, 60, 0.9)';
-  ctx.shadowBlur = 12;
-
-  const eye = (cx: number) => {
-    if (blink && mood !== 'wow') {
-      // lids down — a thin warm bar
-      ctx.beginPath();
-      ctx.roundRect(cx - ew, cy - eh * 0.25, ew * 2, eh * 0.5, eh * 0.25);
-      ctx.fill();
-      return;
-    }
-    switch (mood) {
-      case 'happy': {
-        // ∩-curved smiling eyes
-        ctx.lineWidth = eh * 0.8;
-        ctx.lineCap = 'round';
+  const drawEye = (originX: number) => {
+    for (let r = 0; r < EYE_ROWS; r++) {
+      for (let c = 0; c < EYE_COLS; c++) {
+        let lit = shape[r][c] === 1;
+        // a blink collapses the lit rows to the middle two
+        if (blink && mood !== 'wow') lit = r >= 3 && r <= 3 && shape[3][c] === 1;
+        if (!lit) continue;
+        const x = originX + c * CELL + CELL / 2;
+        const y = cy - gridH / 2 + r * CELL + CELL / 2;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, DOT);
+        g.addColorStop(0, `rgba(${AMBER}, 1)`);
+        g.addColorStop(0.55, `rgba(${AMBER}, 0.95)`);
+        g.addColorStop(1, `rgba(${AMBER}, 0)`);
+        ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.arc(cx, cy + eh * 0.5, ew * 1.05, Math.PI * 1.12, Math.PI * 1.88);
-        ctx.stroke();
-        break;
-      }
-      case 'focus': {
-        // narrowed, attentive
-        ctx.beginPath();
-        ctx.roundRect(cx - ew * 1.1, cy - eh * 0.6, ew * 2.2, eh * 1.2, ew * 0.3);
-        ctx.fill();
-        break;
-      }
-      case 'wow': {
-        // wide-open rings
-        ctx.lineWidth = eh * 0.55;
-        ctx.beginPath();
-        ctx.arc(cx, cy, ew * 1.15, 0, Math.PI * 2);
-        ctx.stroke();
-        break;
-      }
-      default: {
-        // neutral — the baked pixel-eyes' own measured proportions
-        ctx.beginPath();
-        ctx.roundRect(cx - ew, cy - eh, ew * 2, eh * 2, ew * 0.35);
+        ctx.arc(x, y, DOT, 0, Math.PI * 2);
         ctx.fill();
       }
     }
   };
-  eye(cxL);
-  eye(cxR);
-  ctx.shadowBlur = 0;
+  drawEye(leftX);
+  drawEye(rightX);
 }
 
 /** pick the element the robot should present: hovered wins, else the
@@ -288,11 +283,19 @@ function RobotTraveller({ light }: { light: boolean }) {
     tex.colorSpace = THREE.SRGBColorSpace;
     const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(FACE_PLANE_W, FACE_PLANE_H),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, toneMapped: false }),
+      // additive so the LEDs read as EMITTED light through the smoked glass,
+      // and Bloom picks them up; unlit cells are transparent, not black
+      new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
+        toneMapped: false,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }),
     );
-    // measured from the baked eyes' UVs (see the constants above) — the
-    // canvas eyes land exactly where the model's erased eyes were
+    // sits behind the visor glass (FACE_POS measured on the v4 mesh)
     mesh.position.set(FACE_POS.x, FACE_POS.y, FACE_POS.z);
+    mesh.renderOrder = 2;
     head.add(mesh);
     face.current = { ctx, tex, key: '', nextBlink: 2.5, blinkUntil: 0 };
     return () => {
@@ -312,17 +315,37 @@ function RobotTraveller({ light }: { light: boolean }) {
   // frame so the seat tracks scroll/resize)
   const perchEl = useRef<{ sel: string; el: HTMLElement | null }>({ sel: '', el: null });
 
-  // signal-orange emissive boost: Meshy bakes the eyes/ring/emblem near-cream,
-  // tinting the emissive factor warms them into the brand accent + lets Bloom
-  // pick them up (same recipe as the lab3 reactor core)
+  // v4 ships real named materials (no baked lighting), so we drive them
+  // directly instead of the old texture-tint hack:
+  //  · RimLight — geometry ring round the visor; push emissive so Bloom blooms
+  //    it and it reads as an actual light source, not a painted stripe
+  //  · Visor    — smoked glass with KHR transmission; three.js needs the
+  //    transmission material explicitly told it is see-through + not tone-mapped
+  //    so the LED plane behind it reads through
   useMemo(() => {
     scene.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      if (mat?.emissiveMap) {
-        mat.emissive.setRGB(1.0, 0.55, 0.28);
-        mat.emissiveIntensity = 2.6;
+      const mat = mesh.material as THREE.MeshPhysicalMaterial;
+      if (!mat) return;
+      if (mat.name === 'RimLight') {
+        mat.emissive.setRGB(1.0, 0.42, 0.18);
+        mat.emissiveIntensity = 5.5;
+        mat.toneMapped = false; // let the core blow to white for a real glow
+      } else if (mat.name === 'Visor') {
+        // dark glossy glass. NOT transmission: the LED panel renders in front of
+        // the glass, so transmission would only force an expensive per-frame
+        // scene pass (it tipped the robot-stage pages toward the e2e timeout)
+        // for no visual gain. A near-black clearcoat reads as the same smoked
+        // glass at a fraction of the cost.
+        mat.transmission = 0;
+        mat.transparent = false;
+        mat.color.setRGB(0.015, 0.015, 0.02);
+        mat.metalness = 0.0;
+        mat.roughness = 0.08;
+        mat.clearcoat = 1.0;
+        mat.clearcoatRoughness = 0.06;
+        mat.envMapIntensity = 1.3;
       }
     });
   }, [scene]);
