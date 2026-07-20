@@ -35,6 +35,32 @@ test("home renders the /lab4 composition byte-identically", async ({ page }) => 
   expect(home).toContain('data-l4-zone="contact"');
 });
 
+// The one sanctioned change to the prototype's composition: the production nav
+// replaced the lab4 glass bar on BOTH routes, and the theme switch survived it.
+test("the v3 shell uses the production nav with the theme switch beside it", async ({
+  page,
+}) => {
+  for (const path of ["/", "/lab4"]) {
+    await page.goto(path, { waitUntil: "networkidle" });
+    await expect(page.locator(".site-nav"), path).toHaveCount(1);
+    await expect(page.locator(".lab4-nav"), path).toHaveCount(0);
+    // real routes, not the prototype's in-page anchors
+    await expect(
+      page.locator(".site-nav").getByRole("link", { name: /ผลงาน/ }),
+    ).toHaveAttribute("href", /\/projects/);
+    // and the dual-theme toggle still flips the shell
+    await expect(page.locator(".lab4-theme-float .lab4-theme-btn")).toBeVisible();
+    const before = await page
+      .locator(".lab4")
+      .getAttribute("data-lab4-theme");
+    await page.locator(".lab4-theme-btn").click();
+    await expect(page.locator(".lab4")).not.toHaveAttribute(
+      "data-lab4-theme",
+      before!,
+    );
+  }
+});
+
 // The client-side surface matches too — same robot zones, same tokens — after
 // hydration and the robot stage settle.
 test("home and /lab4 expose the identical robot zone choreography", async ({

@@ -219,6 +219,23 @@ test("experience + project-count claims are accurate everywhere (7 years, 21+ pr
   }
 });
 
+// The home's trust strip must read the live counts, not the prototype's
+// placeholder constants (which understated the team as 5 ปี / 7 certs).
+test("home trust strip shows the live team stats, not prototype placeholders", async ({
+  page,
+}) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  const strip = page.locator(".lab4-trust");
+  await expect(strip.locator("dt").first()).toHaveText("7ปี");
+  await expect(strip.locator("dd").first()).toHaveText("ประสบการณ์ทีม");
+  // the certificate count is the real roster count, comfortably above the
+  // prototype's hard-coded 7
+  const certs = Number(
+    (await strip.locator("div").nth(2).locator("dt").innerText()).trim(),
+  );
+  expect(certs).toBeGreaterThan(10);
+});
+
 // The live home is now the /lab4 composition rendered verbatim (dev directive
 // 2026-07-20), which deliberately carries none of the req1 product sections.
 // They live on the /legacy-2 backup, so these contracts follow them there.
@@ -257,8 +274,7 @@ test("SDLC rows have a hover micro-transition", async ({ page }) => {
 test("navbar keeps its frosted-glass backdrop blur", async ({ page }) => {
   // The build (Lightning CSS) can drop the standard `backdrop-filter` when a
   // `-webkit-` copy is hand-written alongside it, leaving Chrome with no blur.
-  // (checked on /about — the home now renders the lab4 shell with its own nav)
-  await page.goto("/about", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "networkidle" });
   const bf = await page.evaluate(
     () => getComputedStyle(document.querySelector(".site-nav")!).backdropFilter,
   );
@@ -874,8 +890,7 @@ test("clicking a tracked CTA navigates without console errors", async ({
   page,
 }) => {
   const errors = trackErrors(page);
-  // from /about — the home's lab4 nav links to in-page anchors, not routes
-  await page.goto("/about", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "networkidle" });
   await page
     .locator("nav")
     .first()

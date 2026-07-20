@@ -46,9 +46,9 @@ test("/lab4: hero renders on the dark canvas for dark-scheme users without error
   // kinetic marquee band scrolls behind the robot (/lab v1 motif)
   await expect(page.locator(".lab4-marquee .kinetic-marquee-track")).toBeVisible();
 
-  // glass nav with CTA + theme switch
-  await expect(page.locator(".lab4-nav")).toBeVisible();
-  await expect(page.locator(".lab4-nav-cta")).toBeVisible();
+  // production nav (it replaced the prototype's glass bar, dev directive
+  // 2026-07-20) + the theme switch in its own floating slot
+  await expect(page.locator(".site-nav")).toBeVisible();
   await expect(page.locator(".lab4-theme-btn")).toBeVisible();
 
   expect(errors, "console errors on /lab4").toEqual([]);

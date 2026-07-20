@@ -1,3 +1,4 @@
+import { SiteNav } from '@/components/site/site-nav';
 import { Lab4RobotStageLazy } from '@/components/site/lab4/lab4-robot-stage-lazy';
 import { Lab4Fx } from '@/components/site/lab4/lab4-fx';
 import { Lab4ThemeToggle } from '@/components/site/lab4/lab4-theme-toggle';
@@ -6,28 +7,35 @@ import { Lab4SolutionSelector } from '@/components/site/lab4/lab4-solution-selec
 import { Lab4Schematic } from '@/components/site/lab4/lab4-schematic';
 import { Lab4Services } from '@/components/site/lab4/lab4-services';
 import { KineticMarquee } from '@/components/site/lab/kinetic-marquee';
-import { SOLUTIONS, STACK, PROCESS, SERVICES, TRUST } from '@/content/home-v3';
+import { SOLUTIONS, STACK, PROCESS, SERVICES } from '@/content/home-v3';
+import { getSiteStats } from '@/lib/site-stats';
 
 // runs synchronously while the .lab4 div is parsed, so the first paint is
 // already in the right theme; the attribute lives on the div (not <html>)
 // and the div suppresses the expected server/client attribute difference
 const THEME_INIT = `(function(){var el=document.currentScript.closest('.lab4');var t;try{t=localStorage.getItem('lab4-theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}el.dataset.lab4Theme=t})()`;
 
-const NAV = [
-  { label: 'โจทย์', href: '#solutions' },
-  { label: 'How we build', href: '#how' },
-  { label: 'บริการ', href: '#services' },
-  { label: 'ติดต่อ', href: '#contact' },
-];
-
 /**
- * The /lab4 v3 composition, verbatim — now the single source for BOTH the live
- * home (`app/page.tsx`) and `/lab4` (dev directive 2026-07-20: "ใช้ lab4 เป็นหน้า
- * home แบบห้ามแก้อะไรทั้งนั้น"). Rendering one component from both routes is what
- * makes them pixel-identical by construction; the previous home lives on
- * /legacy-2. Do not fork this file per route — change it and both move together.
+ * The /lab4 v3 composition — the single source for BOTH the live home
+ * (`app/page.tsx`) and `/lab4` (dev directive 2026-07-20: "ใช้ lab4 เป็นหน้า home").
+ * Rendering one component from both routes is what makes them identical by
+ * construction; the previous home lives on /legacy-2. Do not fork this file per
+ * route — change it and both move together.
+ *
+ * The only sanctioned change to the prototype's composition is its chrome: the
+ * production `SiteNav` replaced the lab4 glass bar (the prototype's anchor-only
+ * nav was a dead end on a live home), with the theme switch kept beside it.
  */
-export function Lab4Home() {
+export async function Lab4Home() {
+  // the trust strip is a load-bearing claim, so it reads the live counts (the
+  // prototype's TRUST constant is a placeholder that understated the team:
+  // 5 ปี / 7 certs vs the real 7 / 24)
+  const stats = await getSiteStats();
+  const trust = [
+    { n: String(stats.years), unit: 'ปี', label: 'ประสบการณ์ทีม' },
+    { n: String(stats.projects), unit: '+', label: 'โปรเจกต์ที่ส่งมอบ' },
+    { n: String(stats.certs), unit: '', label: 'ใบรับรองของทีม' },
+  ];
   return (
     <div className="lab4" suppressHydrationWarning>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
@@ -35,27 +43,14 @@ export function Lab4Home() {
       {/* blueprint field — visible at the hero, fading to quiet below (§14.5) */}
       <div className="lab4-field" aria-hidden />
 
-      {/* floating liquid-glass nav with the dual-theme switch (§14.6, §14.7) */}
-      <nav className="lab4-nav lab4-glass" aria-label="Lab4">
-        <span className="lab4-brand">
-          <i aria-hidden />
-          T4 Labs
-          <em>LAB4 · V3 PROTOTYPE</em>
-        </span>
-        <div className="lab4-nav-links">
-          {NAV.map((n) => (
-            <a key={n.href} href={n.href}>
-              {n.label}
-            </a>
-          ))}
-        </div>
-        <div className="lab4-nav-tools">
-          <Lab4ThemeToggle />
-          <a className="lab4-nav-cta" href="#contact">
-            ติดต่อเรา
-          </a>
-        </div>
-      </nav>
+      {/* the production nav replaces the lab4 glass bar wholesale (dev
+          directive 2026-07-20) — it owns search / locale / the real routes,
+          and themes with the shell via the dark-token bridge. The dual-theme
+          switch keeps its own floating slot beside it, unchanged (§14.7). */}
+      <SiteNav />
+      <div className="lab4-theme-float">
+        <Lab4ThemeToggle />
+      </div>
 
       <main className="lab4-shell">
         {/* ------------------------------------------------ 00 · hero thesis
@@ -126,7 +121,7 @@ export function Lab4Home() {
 
           {/* trust strip — the ChainGPT partners-row slot, filled with proof */}
           <dl className="lab4-trust" data-rv>
-            {TRUST.map((t) => (
+            {trust.map((t) => (
               <div key={t.label}>
                 <dt>
                   {t.n}
