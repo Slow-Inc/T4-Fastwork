@@ -1,6 +1,25 @@
 # Open-Work Ledger
 
 Single source of open work (tracked + untracked). Newest/most-active on top.
+
+## 🚧 2026-07-21 — T4 Bot v4 model shipped on the live stage (`2856500`+`a46e7a0`+`ccbb5e2`)
+
+Dev delivered a clean re-model (`t4botv4.glb`, no baked eyes/rim). Now live at
+`public/lab4/t4bot-v4.glb` (290 KB): LED dot-matrix eyes (canvas, per-mood +
+blink + gaze), real emissive rim light hugging the curved bezel, dark
+clearcoat visor. Full Blender-MCP pipeline (natural-gap split, crease-protected
+decimation 234k→58k, custom-normal-clear + smooth relax for premium surface,
+UV-region Visor material, shell-band RimLight) documented in memory
+[[lab4-v3-robot-storytelling]] under "T4 BOT v4". Verified in-browser (eyes +
+rim + blink screenshots, 0 errors, 281 fps); 334 unit pass; e2e 77 pass / 2
+pre-existing `/lab` preloader flakes (unrelated). **Perf win:** dropped visor
+transmission for clearcoat — transmission's per-frame scene pass was tipping the
+robot-stage pages toward the e2e timeout.
+**AFK batch remainder (not started, low-priority polish):** a faint stray
+orange speck sits at the visor bottom-centre on the front view (likely one rim
+face on an inner edge) — cosmetic, note for a future pass. The other queued
+v3-rollout work (issue #110 other pages, fix1 P1–P3 proof sections) is
+unchanged below.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
 ## 🚧 2026-07-20 (final) — home is LAB4-FIRST (`854077a`); embed-everything reverted
