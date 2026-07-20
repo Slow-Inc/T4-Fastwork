@@ -30,7 +30,7 @@ import type { Group } from 'three';
  * real content instead of floating idle.
  */
 // ?v busts stale caches when the asset is re-authored (same public URL)
-const MODEL = '/lab4/t4bot.glb?v=3';
+const MODEL = '/lab4/t4bot-v3.glb';
 useGLTF.preload(MODEL);
 
 const SIGNAL_DARK = '#ff6846';
@@ -91,20 +91,29 @@ function readZoneTarget(
 /* ------------------------------------------------------------ expressions */
 /**
  * The face is a transparent canvas-textured plane riding on the Head node
- * (§14.2.1: "แสดงอารมณ์ผ่านไฟตา/แสง signal ไม่ใช่ใบหน้าการ์ตูน"). The GLB's
- * baked eyes are ERASED from its baseColor+emissive textures (Blender pass,
- * prototypes/t4bot/t4bot-v3-noeyes.blend), so only the canvas eyes exist —
- * no backing patch, no double eyes. Geometry measured from the baked eyes'
- * emissive UVs in Head-local space: eye centres x ±0.195, height y 0.607,
- * visor front z 0.524, eye ≈ 0.048×0.037 — the plane (0.6×0.3 at y 0.607,
- * z 0.535) maps those to the canvas fractions below, so the drawn eyes sit
- * exactly where the baked ones were.
+ * (§14.2.1: "แสดงอารมณ์ผ่านไฟตา/แสง signal ไม่ใช่ใบหน้าการ์ตูน").
+ *
+ * The model KEEPS its baked dot-matrix eyes (t4bot-v3.glb). An earlier pass
+ * erased them so the canvas could own the face, but that erasure left visible
+ * artefacts — a red smear on the visor and a dark speck on one arm — and the
+ * hand-drawn eyes read cheaper than the baked LED grid. So the rule now is:
+ *
+ *   neutral + not blinking  → the canvas draws NOTHING; the baked eyes show
+ *   any expression or blink → the canvas masks the baked eyes and draws the mood
+ *
+ * The mask is a soft dark patch sitting between the LEDs and the glass, so the
+ * visor's own reflection still renders over it.
+ *
+ * Geometry measured from the emissive texture's eye clusters mapped back to
+ * Head-local space on the v3 mesh: centres x ±0.196, height 0.628, LED depth
+ * 0.527, visor glass at 0.552. The plane (0.6×0.3) sits at z 0.535 — inside the
+ * glass, just proud of the LEDs.
  */
 const FACE_W = 256;
 const FACE_H = 128;
 const FACE_PLANE_W = 0.6;
 const FACE_PLANE_H = 0.3;
-const FACE_POS = { x: 0, y: 0.607, z: 0.535 };
+const FACE_POS = { x: 0, y: 0.628, z: 0.535 };
 const EYE_X = 0.325; // ±offset, fraction of canvas W  (0.195 / 0.6)
 const EYE_W = 0.05; // half-width fraction of W        (~0.048·1.25 / 0.6 / 2)
 const EYE_H = 0.077; // half-height fraction of H      (~0.037·1.25 / 0.3 / 2)
@@ -120,11 +129,33 @@ function drawFace(
   const H = FACE_H;
   ctx.clearRect(0, 0, W, H);
 
+  // Resting face = the model's own baked dot-matrix eyes. Drawing nothing is
+  // the whole point: anything we paint here is worse than the bake.
+  if (mood === 'neutral' && !blink) return;
+
   const cxL = W * 0.5 - W * EYE_X + lookX * W * 0.02;
   const cxR = W * 0.5 + W * EYE_X + lookX * W * 0.02;
   const cy = H * 0.5 + lookY * H * 0.08;
   const ew = W * EYE_W;
   const eh = H * EYE_H;
+
+  // Mask the baked LEDs before drawing a different expression over them, with a
+  // feathered edge so it dissolves into the dark panel instead of reading as a
+  // rectangle stuck on the glass.
+  const mask = (cx: number) => {
+    const r = Math.max(ew, eh) * 3.2;
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, 'rgba(6, 6, 8, 1)');
+    g.addColorStop(0.6, 'rgba(6, 6, 8, 0.96)');
+    g.addColorStop(1, 'rgba(6, 6, 8, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  // the baked eyes never move, so mask their fixed position, not the gaze offset
+  mask(W * 0.5 - W * EYE_X);
+  mask(W * 0.5 + W * EYE_X);
 
   ctx.fillStyle = '#ffb238';
   ctx.strokeStyle = '#ffb238';
