@@ -9,7 +9,7 @@ Branch `prototype/labs-grade-hero` (NOT merged — dev must OK on localhost firs
 Shipped on-branch: /lab4 pointing+perch+expression systems; **live home** now runs
 the T4 Bot stage (hero drag zone + CTA perch, replacing the old metal hero-scene —
 files deleted). Full suite verified. Remaining v3 rollout (dev asked for "ทั้ง
-Website") — each 🔴 untracked, needs its own pass:
+Website") is tracked in **issue #110** — phases below, each its own pass:
 
 - **Full-site dual dark/light theme (§14.7)** 🔴 — root tokens are only ~8 vars but
   ~6.8k CSS lines carry hardcoded light values; needs an audit + `[data-t4-theme]`
