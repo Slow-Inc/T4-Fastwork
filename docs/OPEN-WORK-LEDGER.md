@@ -3,6 +3,18 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## 🚧 2026-07-20 (final) — home is LAB4-FIRST (`854077a`); embed-everything reverted
+
+After the req1-leftovers audit the dev pivoted: home = the lab4 composition with
+an ALLOWLIST of product parts (SiteNav — dev keeps its design · tech marquee
+`#tech` · SDLC + Team · SiteFooter row under the wordmark band). REMOVED:
+req1 FeaturedCarousel + home Certificates (on /about; trust strip has the
+count). NEW: `#work` lab4-native Swiss proof rows (rank-ordered, doors to
+/projects/[slug]). Greeting popup follows the theme via body:has() remap.
+Footer band pixel-matches lab4 (`.lab4-footer` display:flex — lab4 had it by
+accident from the global footer{} rule). Numbering 00→07. e2e 60/60 incl. the
+home↔lab4 parity suite. Sections below describe the earlier shapes.
+
 ## 🚧 2026-07-20 (later) — v3 home SWAPPED WHOLESALE (`e8a65e6`); other pages next
 
 Dev clarified: lift the /lab4 home onto production entirely + redesign the other
