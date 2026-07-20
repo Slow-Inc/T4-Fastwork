@@ -339,7 +339,14 @@ function RobotTraveller({ light }: { light: boolean }) {
     if (!g) return;
     const t = state.clock.elapsedTime;
 
-    const zones = zonesRef.current;
+    // markers can be re-rendered out from under us (locale switch, HMR) —
+    // refresh the cache whenever a cached node left the document
+    let zones = zonesRef.current;
+    if (!zones.length || zones.some((el) => !el.isConnected)) {
+      zonesRef.current = zones = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-l4-zone]'),
+      );
+    }
     if (!zones.length) return;
 
     // chase the marker nearest the viewport centre — the damped pursuit IS
@@ -350,12 +357,14 @@ function RobotTraveller({ light }: { light: boolean }) {
       if (zt.hidden) continue; // display:none dock must never win the chase
       if (!target || zt.dist < target.dist) target = zt;
     }
+    // every marker hidden (e.g. mobile) → keep the robot off-stage entirely
+    g.visible = !!target;
     if (!target) return;
 
     // perch zones sit ON a real element: the robot lands on the target's top
     // edge and tracks it through scroll/resize (เกาะ text / เกาะปุ่ม)
     if (target.perch) {
-      if (perchEl.current.sel !== target.perch) {
+      if (perchEl.current.sel !== target.perch || !perchEl.current.el?.isConnected) {
         perchEl.current = {
           sel: target.perch,
           el: document.querySelector<HTMLElement>(target.perch),
@@ -382,7 +391,10 @@ function RobotTraveller({ light }: { light: boolean }) {
     // responds to CONTENT: hovered candidate wins, else nearest the centre)
     let aim: HTMLElement | null = null;
     if (target.point) {
-      if (pointEls.current.sel !== target.point) {
+      if (
+        pointEls.current.sel !== target.point ||
+        pointEls.current.els.some((el) => !el.isConnected)
+      ) {
         pointEls.current = {
           sel: target.point,
           els: Array.from(document.querySelectorAll<HTMLElement>(target.point)),
@@ -510,17 +522,28 @@ export function Lab4RobotStage() {
   });
   const [light, setLight] = useState(false);
 
-  // follow .lab4[data-lab4-theme] so scene light derives from the active
-  // theme tokens (§14.7 dual-theme rule)
+  // follow [data-lab4-theme] so scene light derives from the active theme
+  // tokens (§14.7 dual-theme rule); pages without a themed shell (the live
+  // site is light editorial) run the light rig
   useEffect(() => {
-    const el = document.querySelector<HTMLElement>('.lab4');
-    if (!el) return;
+    const el = document.querySelector<HTMLElement>('[data-lab4-theme]');
+    if (!el) {
+      setLight(true);
+      return;
+    }
     const read = () => setLight(el.dataset.lab4Theme === 'light');
     read();
     const mo = new MutationObserver(read);
     mo.observe(el, { attributes: true, attributeFilter: ['data-lab4-theme'] });
     return () => mo.disconnect();
   }, []);
+
+  // let page CSS hide its static poster while the live stage is running
+  useEffect(() => {
+    if (!webgl) return;
+    document.body.classList.add('l4-stage-live');
+    return () => document.body.classList.remove('l4-stage-live');
+  }, [webgl]);
 
   // flag the root so CSS can show the hero poster fallback (§14.2.1)
   useEffect(() => {

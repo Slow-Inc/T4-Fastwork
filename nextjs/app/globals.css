@@ -292,9 +292,10 @@ header {
   position: relative;
   z-index: 1; /* hero content sits above the 3D scene */
 }
-/* 3D signature (components/site/hero-scene.tsx) — abstract metal form, upper-right,
-   behind the headline. Purely decorative: pointer-events off, hidden on small
-   screens, and a static CSS orb stands in before mount / without WebGL. */
+/* 3D signature — the T4 Bot's hero zone marker (graduated from /lab4,
+   requirement3 §14.2.1), upper-right of the hero. Drag-to-rotate works on
+   this box ([data-l4-grab]); hidden on small screens, and a static CSS orb
+   stands in before the stage mounts / without WebGL. */
 .hero-scene {
   position: absolute;
   top: 104px; /* clear of the fixed nav (~76px) */
@@ -302,7 +303,10 @@ header {
   width: min(40vw, 480px);
   height: 340px;
   z-index: 0;
-  pointer-events: none;
+  cursor: grab;
+}
+.hero-scene.grabbing {
+  cursor: grabbing;
 }
 .hero-scene-fallback {
   width: 78%;
@@ -317,9 +321,31 @@ header {
   );
   opacity: 0.5;
   filter: blur(3px);
+  transition: opacity 0.5s;
+}
+/* the live robot stage replaces the poster orb */
+.l4-stage-live .hero-scene-fallback {
+  opacity: 0;
 }
 @media (max-width: 900px) {
   .hero-scene {
+    display: none;
+  }
+}
+/* closing-CTA dock — the robot perches on the CTA button (marker only) */
+.cta {
+  position: relative;
+}
+.cta-dock {
+  position: absolute;
+  top: -10px;
+  right: 12%;
+  width: 150px;
+  height: 150px;
+  pointer-events: none;
+}
+@media (max-width: 900px) {
+  .cta-dock {
     display: none;
   }
 }
@@ -6789,8 +6815,9 @@ footer {
 }
 .lab4-ai-chip .arw { color: var(--l4-signal); transition: transform 0.2s; }
 .lab4-ai-chip:hover .arw { transform: translateX(4px); }
-/* what the robot is pointing at right now (class set by the r3f stage) */
-.lab4 .l4-aim { outline: 1px dashed var(--l4-signal); outline-offset: 6px; }
+/* what the robot is pointing at right now (class set by the r3f stage) —
+   unscoped: the stage also runs on the live site outside .lab4 */
+.l4-aim { outline: 1px dashed var(--l4-signal, #e8461b); outline-offset: 6px; }
 @media (max-width: 899px) {
   .lab4-cta-dock { display: none; }
 }

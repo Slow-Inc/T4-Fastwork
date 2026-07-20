@@ -21,6 +21,7 @@ import { ChatButton } from "@/components/site/chat-button";
 import { RevealObserver } from "@/components/site/reveal-observer";
 import { CountUpObserver } from "@/components/site/count-up-observer";
 import { SmoothScroll } from "@/components/site/smooth-scroll";
+import { Lab4RobotStageLazy } from "@/components/site/lab4/lab4-robot-stage-lazy";
 
 export default async function Home() {
   // AI display-rank (B5) orders the featured + selected work; content stays static.
@@ -52,6 +53,10 @@ export default async function Home() {
       <RevealObserver />
       <CountUpObserver />
       <SmoothScroll />
+      {/* T4 Bot — the brand character graduated from the /lab4 prototype
+          (requirement3 §14.2.1): one fixed stage, chasing the page's
+          [data-l4-zone] markers (hero → closing CTA). */}
+      <Lab4RobotStageLazy />
     </>
   );
 }

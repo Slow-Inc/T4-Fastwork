@@ -16,3 +16,4 @@ edit-to-reverse). See `docs/agents/domain.md` and the `t4-engineering-records` s
 | [0008](0008-ai-display-ranking-order-not-content.md) | AI display-ranking: content keeps its source; only display ORDER comes from a persisted `ai_rank` | Accepted | 2026-07-15 |
 | [0009](0009-github-sourced-ai-authored-case-studies.md) | GitHub-sourced, AI-authored native case studies: kill the static catalog; project → per-audience posts; map-reduce generation on MD change | Accepted (design) | 2026-07-17 |
 | [0010](0010-case-study-extract-cache-column.md) | Map-reduce extract cache lives in a single `project_documents.extract jsonb` column (implements ADR 0009 D2) | Accepted | 2026-07-18 |
+| [0011](0011-t4bot-graduates-to-live-site.md) | T4 Bot (v3 art direction) graduates from /lab4 to the live home — marker-driven stage replaces the metal hero; full-site dual theme phased separately | Accepted | 2026-07-20 |

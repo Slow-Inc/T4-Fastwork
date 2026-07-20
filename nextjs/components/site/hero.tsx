@@ -3,7 +3,6 @@
 import type { ReactNode } from 'react';
 import { MetricBand } from './metric-band';
 import { TrackedLink } from './tracked-link';
-import { HeroSceneLazy } from './hero-scene-lazy';
 import { useT } from '@/i18n/locale-context';
 import type { Metric } from '@/content/site';
 
@@ -90,10 +89,13 @@ export function Hero({
   };
   // The 3D signature lives on the Hero wrapper (not the pure, unit-tested
   // HeroView) so it stays out of the presentational contract + its tests.
+  // The old abstract-metal HeroScene graduated to the T4 Bot (requirement3
+  // §14.2.1): this div is now the robot's hero zone marker — the fixed
+  // full-viewport stage (mounted by app/page.tsx) chases these markers.
   return (
     <div className="hero-shell">
-      <div className="hero-scene">
-        <HeroSceneLazy />
+      <div className="hero-scene" data-l4-zone="hero" data-l4-grab data-l4-scale="0.78">
+        <div className="hero-scene-fallback" aria-hidden />
       </div>
       <HeroView {...copy} />
     </div>

@@ -3,6 +3,26 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## 🚧 2026-07-20 — T4 Bot graduated to the live home (ADR 0011); v3 site-wide rollout phased
+
+Branch `prototype/labs-grade-hero` (NOT merged — dev must OK on localhost first).
+Shipped on-branch: /lab4 pointing+perch+expression systems; **live home** now runs
+the T4 Bot stage (hero drag zone + CTA perch, replacing the old metal hero-scene —
+files deleted). Full suite verified. Remaining v3 rollout (dev asked for "ทั้ง
+Website") — each 🔴 untracked, needs its own pass:
+
+- **Full-site dual dark/light theme (§14.7)** 🔴 — root tokens are only ~8 vars but
+  ~6.8k CSS lines carry hardcoded light values; needs an audit + `[data-t4-theme]`
+  wrapper (reuse the lab4 div-attr pattern — NOT on `<html>`, hydration). Biggest
+  single piece of the rollout.
+- **Robot = AI avatar site-wide (§5.4)** 🔴 — greeting popup, ChatButton, /chat
+  identity strip should use the T4 Bot face (static render asset or micro-canvas).
+- **More storytelling zones on home** 🔴 — schematic/process + services sections
+  (markers exist in lab4 form; port `data-l4-point` targets to home's sections),
+  wordmark-footer peek (needs the oversized wordmark treatment on SiteFooter first).
+- **/lab4 flourishes not yet ported** 🔴 — kinetic marquee band, blueprint field,
+  glass nav, oversized footer wordmark. Port deliberately, per §14.4 restraint.
+
 ## ✅ 2026-07-18 (AFK) — home "labs-grade" redesign shipped (#108/#109, `59dbbad`)
 
 - **Context:** dev wants the home to feel premium/"wow" like ChainGPT labs+www (same
