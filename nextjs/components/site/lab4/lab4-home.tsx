@@ -30,7 +30,7 @@ export async function Lab4Home() {
     { n: String(stats.certs), unit: '', label: 'ใบรับรองของทีม' },
   ];
   return (
-    <V3Shell blueprint="visible" robot="live">
+    <V3Shell blueprint="visible" robot="live" siteFooter={false} defaultTheme="light">
       <main className="lab4-shell">
         {/* ------------------------------------------------ 00 · hero thesis
             Storytelling zone 1, ChainGPT-labs structure: the kinetic band IS
@@ -225,7 +225,12 @@ export async function Lab4Home() {
             <br />
             แล้วหรือยัง?
           </h2>
-          <div className="lab4-actions" data-rv data-rv-d="2">
+          {/* z-index:3 lifts the buttons ABOVE the fixed robot canvas (z:2, the
+              §14.2.1 seam layer) so the live robot travelling to the contact zone
+              sits BEHIND the Fastwork button and plays with it — peeking over and
+              pointing at the AI button (dev directive 2026-07-21: "model ที่เลื่อน
+              ลงมาที่ปุ่ม อยู่ด้านหลัง Button แบบเล่นกับปุ่ม"). */}
+          <div className="lab4-actions lab4-actions-front" data-rv data-rv-d="2">
             <a
               className="lab4-btn solid"
               href="https://fastwork.co"
@@ -241,8 +246,9 @@ export async function Lab4Home() {
           <p className="lab4-cta-note" data-rv data-rv-d="3">
             ตอบไว · คุยกับ dev โดยตรง · ชำระผ่าน Fastwork ปลอดภัย
           </p>
-          {/* zone marker 4 — the robot lands ON the Fastwork button (the
-              money path) and points at the AI button: "or just ask me" */}
+          {/* zone marker 4 — the live robot slides down and perches at the
+              Fastwork button, rendered BEHIND it (buttons raised to z:3), and
+              points at the AI button: "or just ask me" */}
           <div
             className="lab4-cta-dock"
             data-l4-zone="contact"

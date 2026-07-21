@@ -95,16 +95,31 @@ test("/lab4 long page: sections, /chat door in the schematic, wordmark footer", 
   // oversized wordmark footer with the robot dock zone marker
   await expect(page.locator(".lab4-wordmark")).toHaveText("T4 LABS");
   await expect(page.locator('.lab4-foot-dock[data-l4-zone="footer"]')).toHaveCount(1);
+  // the lab4 prototype never carried the production repeated-menu <SiteFooter>,
+  // and moving lab4 to Home must not add one back (dev 2026-07-21: "Lab4 ถูก
+  // เปลี่ยนไปตอนโยกเป็น Home"). Only a slim legal strip (© + Privacy + Terms) is
+  // allowed under the wordmark — never the nav menu.
+  await expect(page.locator(".footer-links")).toHaveCount(0);
+  await expect(page.locator("footer.lab4-legal .lab4-legal-links a")).toHaveCount(2);
 
-  // storytelling zone markers (§14.2.1 set + the dev-requested contact zone
-  // where the robot perches as the AI avatar): hero → how → services →
-  // contact → footer; pointing zones carry a data-l4-point selector
+  // live storytelling zone markers (§14.2.1) + the contact zone: hero → how →
+  // services → contact → footer; pointing zones carry a data-l4-point selector
   await expect(page.locator('.lab4-svc-dock[data-l4-zone="services"]')).toHaveCount(1);
   await expect(page.locator('.lab4-cta-dock[data-l4-zone="contact"]')).toHaveCount(1);
   await expect(page.locator("[data-l4-zone]")).toHaveCount(5);
   await expect(page.locator("[data-l4-point]")).toHaveCount(3);
   // perch zones: the robot sits ON the services headline + the Fastwork button
   await expect(page.locator("[data-l4-perch]")).toHaveCount(2);
+  // the robot travels to contact and renders BEHIND the Fastwork button: the CTA
+  // buttons are raised above the fixed robot canvas (dev 2026-07-21: "model ที่
+  // เลื่อนลงมาที่ปุ่ม อยู่ด้านหลัง Button แบบเล่นกับปุ่ม")
+  const zStage = await page
+    .locator(".lab4-stagefx")
+    .evaluate((el) => Number(getComputedStyle(el).zIndex));
+  const zButtons = await page
+    .locator(".lab4-actions-front")
+    .evaluate((el) => Number(getComputedStyle(el).zIndex));
+  expect(zButtons).toBeGreaterThan(zStage);
 
   // the AI-avatar invite chip is a real door into /chat
   await expect(page.locator('a.lab4-ai-chip[href="/chat"]')).toHaveCount(1);

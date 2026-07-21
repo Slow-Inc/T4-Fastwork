@@ -6866,8 +6866,8 @@ footer {
 .lab4-cta { position: relative; display: grid; gap: 22px; justify-items: start; }
 .lab4-cta h2 { font-size: clamp(2.3rem, 5.4vw, 4.4rem); line-height: 1.06; }
 .lab4-cta-note { margin: 0; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--l4-ink-faint); }
-/* the robot perches on the headline's shoulder and points down at the
-   buttons (zone marker only — the canvas draws the robot) */
+/* the robot perches on the Fastwork button and points down at the AI button
+   (zone marker only — the fixed canvas draws the robot). */
 .lab4-cta-dock {
   position: absolute;
   top: clamp(48px, 9vh, 96px);
@@ -6875,6 +6875,14 @@ footer {
   width: clamp(120px, 15vw, 180px);
   height: clamp(120px, 15vw, 180px);
   pointer-events: none;
+}
+/* lift the CTA buttons ABOVE the fixed robot canvas (z:2, the §14.2.1 seam
+   layer) so the robot travelling to the contact zone renders BEHIND the button
+   and plays with it — same "raise into the root context" trick the hero chips
+   use (see .lab4-shell). */
+.lab4-actions-front { position: relative; z-index: 3; }
+@media (max-width: 899px) {
+  .lab4-cta-dock { display: none; } /* the robot skips contact on small screens */
 }
 /* AI-avatar invite — same character as /chat (§14.2.1) */
 .lab4-ai-chip {
@@ -6915,10 +6923,12 @@ footer {
   --line: rgba(255, 255, 255, 0.12);
   --line-soft: rgba(255, 255, 255, 0.07);
 }
+/* dark navbar mirrors light-mode's quiet treatment: a barely-there edge and a
+   faint shadow instead of a lit-glass card — no glowing border/lift ("no lights"). */
 .lab4[data-lab4-theme='dark'] .site-nav {
   background: rgba(15, 17, 21, 0.72);
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
 }
 /* theme switch floats under the site nav on the home shell */
 .lab4-theme-float {
@@ -6945,9 +6955,6 @@ body:has(.lab4[data-lab4-theme='dark']) .ai-greeting {
   border-color: rgba(255, 255, 255, 0.14);
   color: var(--ink);
   box-shadow: 0 18px 44px -20px rgba(0, 0, 0, 0.6);
-}
-@media (max-width: 899px) {
-  .lab4-cta-dock { display: none; }
 }
 
 /* --- Oversized Brand Wordmark footer + robot peek dock (§14.10) --- */
@@ -6988,6 +6995,39 @@ body:has(.lab4[data-lab4-theme='dark']) .ai-greeting {
 }
 .lab4-foot-brand { font-family: var(--disp); font-weight: 700; letter-spacing: -0.02em; }
 .lab4-foot-meta { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; color: var(--l4-ink-faint); }
+
+/* slim legal strip — the home/lab4's only footer text (§14.10 wordmark is the
+   footer proper). Deliberately NOT the repeated nav menu. */
+/* display:block overrides the global `footer{display:flex}` (which would shrink
+   the shell child to a centred flex item) so the strip spans the shell width;
+   padding:0 drops the global `footer{padding}` (sized for the full SiteFooter)
+   so the slim strip isn't left with a tall empty band — its own compact padding
+   lives on .lab4-legal-row */
+.lab4-legal { display: block; padding: 0; position: relative; z-index: 1; border-top: 1px solid var(--l4-line-soft); }
+.lab4-legal-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 16px 0 26px;
+}
+.lab4-legal-copy {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--l4-ink-faint);
+}
+.lab4-legal-links { display: inline-flex; gap: 20px; }
+.lab4-legal-links a {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--l4-ink-soft);
+  transition: color 0.2s;
+}
+.lab4-legal-links a:hover { color: var(--l4-signal); }
 
 /* --- reveal micro-motion (meso tier, §14.9) --- */
 .lab4 [data-rv] { opacity: 0; transform: translateY(16px); transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.2, 0.7, 0.2, 1); }

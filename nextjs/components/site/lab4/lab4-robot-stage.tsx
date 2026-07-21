@@ -476,8 +476,18 @@ function RobotTraveller({ light }: { light: boolean }) {
     const followW = reduced ? 0 : 1;
     const yawTarget = target.yaw + drag.current.yaw;
     const pitchTarget = target.pitch;
-    let headYaw = clamp(state.pointer.x * 0.55, -0.55, 0.55) * followW;
-    let headPitch = clamp(-state.pointer.y * 0.28, -0.28, 0.28) * followW;
+    // look toward the ACTUAL cursor, measured from where the robot currently is
+    // (its world position on the z=0 plane) — not a viewport-centred guess. A
+    // robot parked off-centre (the footer peek sits far right) used to under-turn
+    // for a cursor on the opposite side because pointer.x is centre-relative;
+    // atan2 of the real delta makes it face the pointer wherever it stands.
+    const curX = (state.pointer.x * 0.5 + 0.5) * size.width;
+    const curY = (-state.pointer.y * 0.5 + 0.5) * size.height;
+    const cur = toWorld(curX, curY, { w: size.width, h: size.height });
+    let headYaw =
+      clamp(Math.atan2(cur.x - g.position.x, 3.6), -0.7, 0.7) * followW;
+    let headPitch =
+      clamp(-Math.atan2(cur.y - g.position.y, 3.6), -0.42, 0.42) * followW;
     let lean = 0;
     // arm rest pose = a slight idle sway so the pods never look frozen
     let armLGoal = reduced ? 0 : Math.sin(t * 1.3) * 0.05;

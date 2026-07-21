@@ -7,6 +7,7 @@ import { Lab4Fx } from '@/components/site/lab4/lab4-fx';
 import { Lab4ThemeToggle } from '@/components/site/lab4/lab4-theme-toggle';
 import { BotToggle } from '@/components/site/v3/bot-toggle';
 import { FootBot } from '@/components/site/v3/foot-bot';
+import { FootLegal } from '@/components/site/v3/foot-legal';
 
 /**
  * The v3 page shell (requirement3 §14) — extracted from the home so every page
@@ -21,7 +22,11 @@ import { FootBot } from '@/components/site/v3/foot-bot';
 // runs synchronously while the .lab4 div is parsed, so the first paint is
 // already in the right theme; the attribute lives on the div (not <html>)
 // and the div suppresses the expected server/client attribute difference
-export const THEME_INIT = `(function(){var el=document.currentScript.closest('.lab4');var t,b;try{t=localStorage.getItem('lab4-theme');b=localStorage.getItem('lab4-bot')}catch(e){}if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}el.dataset.lab4Theme=t;el.dataset.lab4Bot=b==='off'?'off':'on'})()`;
+// Resolution order: a saved choice always wins, then the page's own
+// data-default-theme ('light'|'dark' pins it; 'system'/absent = OS preference).
+// Home pins 'light' so it opens as the warm earth-tone Swiss surface (the
+// "Swiss Calm Thesis" direction) rather than the dramatic dark.
+export const THEME_INIT = `(function(){var el=document.currentScript.closest('.lab4');var t,b;try{t=localStorage.getItem('lab4-theme');b=localStorage.getItem('lab4-bot')}catch(e){}if(t!=='light'&&t!=='dark'){var d=el.getAttribute('data-default-theme')||'system';t=(d==='light'||d==='dark')?d:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}el.dataset.lab4Theme=t;el.dataset.lab4Bot=b==='off'?'off':'on'})()`;
 
 /** §14.5: how loud the blueprint grid is — a real per-page decision. */
 export type Blueprint = 'visible' | 'quiet' | 'invisible';
@@ -37,15 +42,27 @@ export function V3Shell({
   robot = 'static',
   children,
   chat = true,
+  siteFooter = true,
+  defaultTheme = 'system',
 }: {
   blueprint?: Blueprint;
   robot?: ShellRobot;
   children: React.ReactNode;
   /** /chat suppresses the floating panel — it IS the chat. */
   chat?: boolean;
+  /** First-visit theme when nothing is saved: 'light'|'dark' pins it,
+   *  'system' follows the OS. Home pins 'light' (Swiss Calm Thesis). */
+  defaultTheme?: 'light' | 'dark' | 'system';
+  /**
+   * The home IS the /lab4 composition "ห้ามแก้อะไรทั้งนั้น" — its only footer is
+   * the §14.10 oversized wordmark band (rendered above). The prototype never had
+   * the production menu/legal `<SiteFooter>`; content pages that need a real
+   * sitemap keep it (default), the home opts out to stay identical to lab4.
+   */
+  siteFooter?: boolean;
 }) {
   return (
-    <div className="lab4" suppressHydrationWarning>
+    <div className="lab4" data-default-theme={defaultTheme} suppressHydrationWarning>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
 
       {blueprint !== 'invisible' && (
@@ -89,7 +106,9 @@ export function V3Shell({
           </div>
         </div>
       </div>
-      <SiteFooter />
+      {/* content pages get the full sitemap footer; the home/lab4 keeps only a
+          slim legal strip under the wordmark (no repeated nav menu) */}
+      {siteFooter ? <SiteFooter /> : <FootLegal />}
 
       {chat && <ChatButton />}
       {/* two reveal systems, deliberately: `data-rv` is the v3 language
