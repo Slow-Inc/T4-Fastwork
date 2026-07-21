@@ -8,6 +8,7 @@
  * tunable in one place; `CurateService` wires them to a durable store.
  */
 import { GITHUB_ORG } from './github.config';
+import { mapRepoMetadata } from './github-case-study';
 
 /** Subset of a GitHub repo object the curation rules read. */
 export interface CurateRepo {
@@ -21,6 +22,8 @@ export interface CurateRepo {
   stargazers_count: number;
   pushed_at: string;
   topics?: string[];
+  /** GitHub list JSON exposes the project site as `homepage` (may be scheme-less). */
+  homepage?: string | null;
 }
 
 /** A draft `projects` row synthesised from a repo (all content fields auto). */
@@ -32,6 +35,8 @@ export interface DraftProject {
   ghOwner: string;
   ghRepo: string;
   ghHtmlUrl: string;
+  /** Normalized `homepage` → `projects.live_url` (null when the repo has none). */
+  liveUrl: string | null;
   ownerType: 'team' | 'personal';
   ownerLogin: string;
   titleOwner: 'auto';
@@ -99,6 +104,7 @@ export function repoToDraftProject(repo: CurateRepo): DraftProject {
     ghOwner: repo.owner.login,
     ghRepo: repo.name,
     ghHtmlUrl: repo.html_url,
+    liveUrl: mapRepoMetadata({ homepageUrl: repo.homepage }).liveUrl,
     ownerType: deriveOwnerType(repo.owner.login),
     ownerLogin: repo.owner.login,
     titleOwner: 'auto',

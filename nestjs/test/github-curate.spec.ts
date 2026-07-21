@@ -95,6 +95,20 @@ describe('repoToDraftProject', () => {
     expect(d.slug).toBe('my-cool-app');
     expect(d.ownerType).toBe('personal');
   });
+
+  it('maps repo.homepage to live_url (scheme normalized), else null', () => {
+    // GitHub's list JSON exposes the site as `homepage` (may be scheme-less).
+    expect(
+      repoToDraftProject(repo({ homepage: 'demo.example.com' })).liveUrl,
+    ).toBe('https://demo.example.com');
+    expect(
+      repoToDraftProject(repo({ homepage: 'https://x.dev' })).liveUrl,
+    ).toBe('https://x.dev');
+    // absent / null / blank homepage → no live_url (stays a draft with none)
+    expect(repoToDraftProject(repo()).liveUrl).toBeNull();
+    expect(repoToDraftProject(repo({ homepage: null })).liveUrl).toBeNull();
+    expect(repoToDraftProject(repo({ homepage: '   ' })).liveUrl).toBeNull();
+  });
 });
 
 describe('CurateService.curate', () => {
@@ -117,7 +131,10 @@ describe('CurateService.curate', () => {
 
     const r = await svc.curate([
       repo({ name: 'mangadock' }), // eligible but already tracked → skip
-      repo({ name: 'newproj', html_url: 'https://github.com/Slow-Inc/newproj' }),
+      repo({
+        name: 'newproj',
+        html_url: 'https://github.com/Slow-Inc/newproj',
+      }),
       repo({ name: 'test' }), // ineligible → skip
     ]);
 
