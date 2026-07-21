@@ -4,7 +4,6 @@ import { Lab4ResetButton } from '@/components/site/lab4/lab4-reset-button';
 import { Lab4SolutionSelector } from '@/components/site/lab4/lab4-solution-selector';
 import { Lab4Schematic } from '@/components/site/lab4/lab4-schematic';
 import { Lab4Services } from '@/components/site/lab4/lab4-services';
-import { KineticMarquee } from '@/components/site/lab/kinetic-marquee';
 import { SOLUTIONS, STACK, PROCESS, SERVICES } from '@/content/home-v3';
 import { getSiteStats } from '@/lib/site-stats';
 
@@ -24,11 +23,6 @@ export async function Lab4Home() {
   // prototype's TRUST constant is a placeholder that understated the team:
   // 5 ปี / 7 certs vs the real 7 / 24)
   const stats = await getSiteStats();
-  const trust = [
-    { n: String(stats.years), unit: 'ปี', label: 'ประสบการณ์ทีม' },
-    { n: String(stats.projects), unit: '+', label: 'โปรเจกต์ที่ส่งมอบ' },
-    { n: String(stats.certs), unit: '', label: 'ใบรับรองของทีม' },
-  ];
   return (
     <V3Shell blueprint="visible" robot="live" siteFooter={false} defaultTheme="light">
       <main className="lab4-shell">
@@ -37,101 +31,83 @@ export async function Lab4Home() {
             the only display-scale type (one dominant per viewport, §14.0);
             below it a Swiss table band — mono copy · robot · meta cells —
             closed by a full-width trust strip. */}
+        {/* ------------------------------------------------ 00 · hero thesis
+            "Swiss Calm Thesis" (docs/design/2026-07-22-…-northstar): the ONE
+            bold move is the robot doing a JOB — translating a non-technical
+            client's plain-language brief into scope / budget / next-steps.
+            No kinetic marquee, no numbered eyebrow, no hero-metric strip. */}
         <section className="lab4-hero">
-          {/* display headline = the marquee itself; decorative (real h1 below) */}
-          <div className="lab4-marquee">
-            <KineticMarquee text="BUILDING TOMORROW —" />
-          </div>
-
           <div className="lab4-hero-grid">
             <div className="lab4-hero-cell copy">
-              <span className="lab4-coord" data-rv>
-                <i aria-hidden />
-                00 — POSITIONING
-              </span>
-              {/* fix1 "Recommended Positioning": the old headline promised
-                  unlimited scope ("อยากมีเว็บแบบไหน เราสร้างได้"). This states
-                  range + engineering standard + the ability to grow with the
-                  customer, which is what a partner claims. */}
-              <h1 className="lab4-h1" data-rv data-rv-d="1">
-                ผลิตภัณฑ์ดิจิทัลที่<em>โตต่อได้</em>
+              <h1 className="lab4-h1" data-rv>
+                ไม่ต้องพูดภาษาคอม
                 <br />
-                ตั้งแต่เว็บแรก ถึงระบบที่ธุรกิจใช้ทุกวัน
+                ก็สร้าง<em>ของจริง</em>ได้
               </h1>
-              <p className="lab4-lead" data-rv data-rv-d="2">
-                เราออกแบบและสร้างเว็บไซต์ แอปพลิเคชัน และผลิตภัณฑ์ AI
-                ด้วยมาตรฐานวิศวกรรมเดียวกันทุกสเกล — คุยกับ dev โดยตรง
-                ไม่ต้องรู้ศัพท์เทคนิค
+              <p className="lab4-lead" data-rv data-rv-d="1">
+                เล่าเป้าหมายด้วยคำของคุณ — เราแปลงให้เป็นขอบเขตงาน งบประมาณ
+                และแผนสร้างเว็บไซต์หรือแอปที่เข้าใจง่าย
               </p>
-              {/* fix1 CTA hierarchy: ONE primary pointing at the real
-                  transaction channel, one visibly subordinate secondary */}
-              <div className="lab4-actions" data-rv data-rv-d="3">
+              {/* CTA hierarchy (clink 2026-07-22): the AI estimate is the
+                  low-friction first step that matches the "tell us in your
+                  words" thesis; Fastwork is the trusted transaction path. */}
+              <div className="lab4-actions" data-rv data-rv-d="2">
+                <a className="lab4-btn solid" href="/chat">
+                  ประเมินงานกับ AI <span className="arw">→</span>
+                </a>
                 <a
-                  className="lab4-btn solid"
+                  className="lab4-btn ghost"
                   href="https://fastwork.co"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  จ้างผ่าน Fastwork <span className="arw">→</span>
-                </a>
-                <a className="lab4-btn ghost" href="/chat">
-                  ประเมินงบกับ AI
+                  ดูโปรไฟล์ Fastwork <span className="arw">↗</span>
                 </a>
               </div>
-            </div>
-
-            {/* zone marker 1 — the robot's home cell; grab = drag-to-rotate */}
-            <div
-              className="lab4-stage"
-              data-l4-zone="hero"
-              data-l4-grab
-              data-l4-scale="0.62"
-            >
-              <div className="lab4-scene-fallback" aria-hidden />
-              {/* fix1: "DRAG TO ROTATE" shouted an instruction nobody asked
-                  for. The hint is quiet and only surfaces on pointer intent. */}
-              <p className="lab4-stage-hint">
-                ลากเพื่อหมุนโมเดล
-                <Lab4ResetButton />
+              <p className="lab4-scope" data-rv data-rv-d="3">
+                เว็บไซต์ · แอปพลิเคชัน · AI Product
               </p>
             </div>
 
-            {/* fix1 P0.3: the meta column used to publish prototype telemetry
-                (model file size, "R3F", "zone travel", "dual theme") — debug
-                output on a page whose job is to read as a serious engineering
-                partner. It now carries what a client actually needs to know
-                before hiring: how the engagement works. */}
-            <div className="lab4-hero-cell meta">
-              <div className="lab4-meta-block" data-rv>
-                <span className="k">ทีม</span>
-                <span className="v">
-                  <i className="dot" />
-                  Bangkok, TH · Full-stack + AI
-                </span>
+            {/* the robot's workbench: client brief → robot (it translates) →
+                the output the client gets. The robot lives in the hero zone
+                marker; the surrounding DOM gives it its job. */}
+            <div className="lab4-workbench">
+              <div className="lab4-brief" data-rv>
+                <span className="lab4-brief-k">โจทย์จากลูกค้า</span>
+                <p>“อยากมีเว็บรับจองร้าน ใช้ง่าย ลูกค้าจองเองได้”</p>
               </div>
-              <div className="lab4-meta-block" data-rv data-rv-d="2">
-                <span className="k">การทำงาน</span>
-                <span className="v">คุยกับ dev โดยตรง</span>
+              <div
+                className="lab4-stage"
+                data-l4-zone="hero"
+                data-l4-grab
+                data-l4-scale="0.6"
+              >
+                <div className="lab4-scene-fallback" aria-hidden />
+                <p className="lab4-stage-hint">
+                  ลากเพื่อหมุนโมเดล
+                  <Lab4ResetButton />
+                </p>
               </div>
-              <div className="lab4-meta-block grow" data-rv data-rv-d="3">
-                <span className="k">การจ้างงาน</span>
-                <span className="v">ผ่าน Fastwork · คุ้มครองทั้งสองฝั่ง</span>
+              <div className="lab4-output" data-rv data-rv-d="2">
+                <span className="lab4-output-k">สิ่งที่คุณจะได้หลังเล่าโจทย์</span>
+                <ul>
+                  <li>ขอบเขตงาน</li>
+                  <li>ช่วงงบประมาณ</li>
+                  <li>ขั้นตอนถัดไป</li>
+                </ul>
               </div>
             </div>
           </div>
 
-          {/* trust strip — the ChainGPT partners-row slot, filled with proof */}
-          <dl className="lab4-trust" data-rv>
-            {trust.map((t) => (
-              <div key={t.label}>
-                <dt>
-                  {t.n}
-                  <em>{t.unit}</em>
-                </dt>
-                <dd>{t.label}</dd>
-              </div>
-            ))}
-          </dl>
+          {/* proof — one restrained line at body scale, not a hero-metric strip */}
+          <p className="lab4-proof" data-rv>
+            ทำงานจริง {stats.years} ปี · ส่งมอบ {stats.projects}+ โปรเจกต์ ·
+            ใบรับรองทีม {stats.certs} รายการ —{' '}
+            <a href="/projects">
+              ดูผลงานที่ตรวจสอบได้ <span className="arw">→</span>
+            </a>
+          </p>
         </section>
 
         {/* ---------------------------------------------- 01 · solution index */}

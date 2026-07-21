@@ -6463,7 +6463,8 @@ footer {
   border-bottom: 1px solid var(--l4-line-soft);
 }
 @media (min-width: 1000px) {
-  .lab4-hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.25fr) minmax(0, 0.7fr); }
+  /* Swiss Calm Thesis: two columns — the thesis copy, and the robot workbench */
+  .lab4-hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.95fr); }
   .lab4-hero-grid > * + * { border-left: 1px solid var(--l4-line-soft); }
 }
 .lab4-hero-cell.copy {
@@ -6473,17 +6474,16 @@ footer {
   justify-items: start;
   padding: clamp(24px, 4vh, 48px) clamp(4px, 1.6vw, 28px) clamp(24px, 4vh, 48px) 0;
 }
-/* utility-scale h1 — the marquee owns the display tier (§14.0) */
+/* display-tier h1 — with the marquee gone, the Thai thesis IS the display type
+   (Swiss Calm Thesis). Thai renders in IBM Plex Sans Thai; cap ≤6rem. */
 .lab4-h1 {
-  font-family: var(--disp);
+  font-family: var(--font-thai), var(--disp), sans-serif;
   font-weight: 700;
-  /* fix1: the semantic H1 must outrank the decorative marquee, and mobile must
-     start at 30px+. Thai needs a looser headline leading than Latin. */
-  font-size: clamp(1.95rem, 3.6vw, 3.25rem);
-  line-height: 1.3;
+  font-size: clamp(2.4rem, 6vw, 5.5rem);
+  line-height: 1.14;
   letter-spacing: -0.02em;
   margin: 0;
-  max-width: 20ch;
+  max-width: 14ch;
   text-wrap: balance;
 }
 .lab4-h1 em { font-style: normal; color: var(--l4-signal); }
@@ -6499,6 +6499,81 @@ footer {
   color: var(--l4-ink-soft);
 }
 .lab4-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+/* plain scope line under the CTAs — not an eyebrow, not a numbered marker */
+.lab4-scope {
+  margin: 4px 0 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--l4-ink-faint);
+}
+
+/* --- the robot's workbench: client brief → robot (translates) → output --- */
+.lab4-workbench {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-content: center;
+  padding: clamp(24px, 4vh, 48px) 0 clamp(24px, 4vh, 48px) clamp(16px, 2vw, 36px);
+}
+.lab4-workbench .lab4-stage { min-height: clamp(190px, 28vh, 300px); }
+.lab4-brief,
+.lab4-output {
+  border: 1px solid var(--l4-line);
+  border-radius: var(--l4-r-md);
+  background: var(--l4-raised);
+  padding: 14px 16px;
+}
+.lab4-brief-k,
+.lab4-output-k {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--l4-ink-faint);
+  margin-bottom: 7px;
+}
+.lab4-brief p {
+  margin: 0;
+  font-family: var(--font-thai), var(--body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--l4-ink);
+}
+.lab4-output ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+.lab4-output li {
+  position: relative;
+  padding-left: 16px;
+  font-family: var(--font-thai), var(--body);
+  font-size: 14px;
+  color: var(--l4-ink-soft);
+}
+.lab4-output li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  background: var(--l4-signal);
+}
+
+/* proof — one restrained body-scale line, never a hero-metric strip */
+.lab4-proof {
+  position: relative;
+  z-index: 3;
+  margin: 0;
+  padding: 18px 0 26px;
+  font-family: var(--font-thai), var(--body);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--l4-ink-soft);
+}
+.lab4-proof a { color: var(--l4-ink); text-decoration: underline; text-underline-offset: 3px; }
+.lab4-proof a:hover { color: var(--l4-signal); }
 .lab4-btn {
   font-family: var(--mono);
   font-size: 13px;
