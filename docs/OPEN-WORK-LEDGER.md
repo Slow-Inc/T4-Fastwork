@@ -29,9 +29,20 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
   member_certificates`; (2) **Supabase-branch JWT verify** (needs `confirm_cost` + seeded members);
   (3) app cleanup: remove the now-vestigial approvals-queue + member-admin-toggle UI + reconcile
   the member self-service draft flow.
-- **NEXT (Slice B, ingestion):** wire `CurateService` (no caller today) → draft `projects` from
-  cached members+org repos; `homepageUrl→live_url`; reconcile `member_projects` from live
-  `github_snapshots`. The real "pull each person + all their repos" goal. See [[showcase-system-already-built]].
+- **Slice B (ingestion) — B1–B3 DONE (`b9fab85`, `40dbbe3`, pushed):** the inert `CurateService`
+  (no caller before) is now wired end-to-end. B1 threads repo `homepage → projects.live_url` via
+  the previously-unused `mapRepoMetadata`. B2 `PgProjectDraftStore` (Drizzle pooler, idempotent
+  insert). B3 `POST /github/curate` — secret-guarded (`x-refresh-secret`), **dry-run by default**
+  (reports would-be draft slugs), `apply:true` persists; reads org + every `GITHUB_MEMBERS` repo
+  snapshot → `collectReposFromSnapshots` → `CurateService`. `GithubCurateModule` in AppModule. 250
+  nestjs tests pass, build green. This is the real "pull each person + all their repos → showcase"
+  path. See [[showcase-system-already-built]].
+- **Slice B — B4 PARKED (its own increment):** reconcile `member_projects` from live
+  `github_snapshots` so each member selects their REAL repos — needs a `(member_id, name|url)`
+  **unique-constraint migration** + an upsert that PRESERVES human-owned `selected`/`sort_order`
+  (mirror the auto-owned guard in `pg-generate.store.ts`), resolving the member row by
+  `github_login`. Distinct from the org/team project curation above. Then downstream: `project_documents`
+  ingest → case studies (#81) → RAG → rank cron.
 
 ## ✅ 2026-07-18 (AFK) — home "labs-grade" redesign shipped (#108/#109, `59dbbad`)
 
