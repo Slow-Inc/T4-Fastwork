@@ -3,6 +3,36 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## 🔴 2026-07-22 (AFK) — FLAT AUTHZ Slice A done + reviewed (branch `feat/flat-authz-repo-ingestion`)
+
+- **Decision (dev, 2026-07-22):** every linked team member = full admin; edits everyone's
+  content + publishes directly; **no member/admin split, no approvals**. Rationale: single-admin
+  is a recovery single-point-of-failure; everyone-admin is more resilient for a small trusted
+  team. Accepted with security review. Reverses ADR 0007's member/admin split → an ADR is
+  warranted once verified on a branch (see [[member-cms-built-2026-07]]).
+- **SHIPPED to branch (`84aae1b`, pushed; NOT applied to prod):**
+  - `0023` (keystone, prior session): `is_app_admin()` drops the `and is_admin` gate → any
+    linked member passes every existing admin RLS policy + RPC. Flattens the public content
+    tables (0016), blog_posts (0012), project M2M (0017) with no further change.
+  - `0024`: the 3 member-owned tables still own-row scoped — `members` / `member_projects` /
+    `member_certificates` get team-wide `is_app_admin()` ROW policies; `member_certificates.status`
+    granted for direct publish, guarded by a new two-state CHECK. **Grants gate columns, policies
+    gate rows** — identity cols (auth_user_id/github_user_id/is_admin/slug/handle/role) stay
+    unwritable via the untouched column grants; `members` INSERT/DELETE stays backend-only (the
+    allowlist boundary). `member_id` is content-routing (cross-member cert = sanctioned).
+  - App gate `lib/admin-access.ts`: linked member (any `members` row) ⇒ admin, mirroring 0023.
+- **Verify:** lint + tsc clean (only `.next` typegen noise); **codex adversarial security review**
+  — all findings adjudicated (member_id=content not identity; app_admins=intended break-glass;
+  status already NOT NULL). Turnkey JWT-sim SQL embedded in 0023+0024.
+- **PARKED (🔴 boundary/cost — for the human):** (1) **prod-apply of 0023+0024** = irreversible
+  authz boundary → human deploys after review, preflight `select distinct status from
+  member_certificates`; (2) **Supabase-branch JWT verify** (needs `confirm_cost` + seeded members);
+  (3) app cleanup: remove the now-vestigial approvals-queue + member-admin-toggle UI + reconcile
+  the member self-service draft flow.
+- **NEXT (Slice B, ingestion):** wire `CurateService` (no caller today) → draft `projects` from
+  cached members+org repos; `homepageUrl→live_url`; reconcile `member_projects` from live
+  `github_snapshots`. The real "pull each person + all their repos" goal. See [[showcase-system-already-built]].
+
 ## ✅ 2026-07-18 (AFK) — home "labs-grade" redesign shipped (#108/#109, `59dbbad`)
 
 - **Context:** dev wants the home to feel premium/"wow" like ChainGPT labs+www (same
