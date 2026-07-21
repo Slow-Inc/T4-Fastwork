@@ -3,6 +3,7 @@ import {
   isEligibleRepo,
   deriveOwnerType,
   repoToDraftProject,
+  toCurateRepo,
   CurateService,
   type CurateRepo,
   type ProjectDraftStore,
@@ -108,6 +109,39 @@ describe('repoToDraftProject', () => {
     expect(repoToDraftProject(repo()).liveUrl).toBeNull();
     expect(repoToDraftProject(repo({ homepage: null })).liveUrl).toBeNull();
     expect(repoToDraftProject(repo({ homepage: '   ' })).liveUrl).toBeNull();
+  });
+});
+
+describe('toCurateRepo', () => {
+  it('projects a raw GitHub repo object, threading homepage + ignoring extras', () => {
+    const r = toCurateRepo({
+      name: 'newproj',
+      owner: { login: 'xenodeve', id: 42 },
+      html_url: 'https://github.com/xenodeve/newproj',
+      description: 'x',
+      fork: false,
+      archived: false,
+      private: false,
+      stargazers_count: 2,
+      pushed_at: '2026-06-01T00:00:00Z',
+      topics: ['ai', 7],
+      homepage: 'x.dev',
+      watchers: 99, // extra field ignored
+    });
+    expect(r?.name).toBe('newproj');
+    expect(r?.owner.login).toBe('xenodeve');
+    expect(r?.homepage).toBe('x.dev');
+    expect(r?.topics).toEqual(['ai']); // non-string topic dropped
+  });
+
+  it('returns null for a malformed / non-repo value (never throws)', () => {
+    expect(toCurateRepo({ name: 'x' })).toBeNull(); // no owner/html_url/pushed_at
+    expect(
+      toCurateRepo({ name: 'x', owner: {}, html_url: 'u', pushed_at: 'p' }),
+    ).toBeNull();
+    expect(toCurateRepo(null)).toBeNull();
+    expect(toCurateRepo('nope')).toBeNull();
+    expect(toCurateRepo(undefined)).toBeNull();
   });
 });
 
