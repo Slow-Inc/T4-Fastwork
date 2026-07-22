@@ -1,11 +1,12 @@
 import type { MetadataRoute } from 'next';
-import { projects } from '@/content/catalog';
+import { getAllProjects } from '@/lib/projects-repo';
 import { blogPosts } from '@/content/blog';
 import { solutionSlugs } from '@/content/solution-detail';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://t4labs.dev';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const projects = await getAllProjects();
   const staticPaths = [
     '',
     '/projects',

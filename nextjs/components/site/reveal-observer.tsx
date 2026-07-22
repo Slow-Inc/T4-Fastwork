@@ -13,6 +13,9 @@ export function RevealObserver() {
       els.forEach((el) => el.classList.add('in'));
       return;
     }
+    // threshold 0 (any edge touching the viewport), NOT a ratio: a ratio like
+    // 0.14 is unsatisfiable for any `.rv` taller than ~7× the viewport (e.g. the
+    // /projects grid at 54 cards ≈ 7900px), so it would stay opacity:0 forever.
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
@@ -22,7 +25,7 @@ export function RevealObserver() {
           }
         }
       },
-      { threshold: 0.14 },
+      { threshold: 0 },
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();

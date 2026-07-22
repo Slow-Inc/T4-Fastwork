@@ -7,8 +7,7 @@ import { FloatingChatProvider } from '@/components/site/floating-chat-context';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { ProjectDetailContent } from '@/components/pages/project-detail-content';
 import { LiveSnapshot } from '@/components/site/live-snapshot';
-import { projects } from '@/content/catalog';
-import { getProjectBySlug } from '@/lib/projects-repo';
+import { getAllProjects, getProjectBySlug } from '@/lib/projects-repo';
 import { getRepoDetail } from '@/lib/github';
 import { keysForRepo } from '@/lib/live-snapshot';
 import { team } from '@/content/site';
@@ -19,8 +18,9 @@ const roster = team.map((m) => ({ slug: m.slug, githubUrl: m.githubUrl }));
 
 type Params = Promise<{ slug: string }>;
 
-// Prerender the curated catalog; CMS-added slugs render on demand (dynamicParams).
-export function generateStaticParams() {
+// Prerender the published DB projects; new slugs render on demand (dynamicParams).
+export async function generateStaticParams() {
+  const projects = await getAllProjects();
   return projects.map((p) => ({ slug: p.slug }));
 }
 

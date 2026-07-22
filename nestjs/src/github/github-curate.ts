@@ -8,6 +8,7 @@
  * tunable in one place; `CurateService` wires them to a durable store.
  */
 import { GITHUB_ORG } from './github.config';
+import { mapRepoMetadata } from './github-case-study';
 
 /** Subset of a GitHub repo object the curation rules read. */
 export interface CurateRepo {
@@ -21,6 +22,8 @@ export interface CurateRepo {
   stargazers_count: number;
   pushed_at: string;
   topics?: string[];
+  /** GitHub list JSON exposes the project site as `homepage` (may be scheme-less). */
+  homepage?: string | null;
 }
 
 /** A draft `projects` row synthesised from a repo (all content fields auto). */
@@ -32,6 +35,8 @@ export interface DraftProject {
   ghOwner: string;
   ghRepo: string;
   ghHtmlUrl: string;
+  /** Normalized `homepage` → `projects.live_url` (null when the repo has none). */
+  liveUrl: string | null;
   ownerType: 'team' | 'personal';
   ownerLogin: string;
   titleOwner: 'auto';
@@ -81,6 +86,43 @@ export function deriveOwnerType(login: string): 'team' | 'personal' {
   return login === GITHUB_ORG ? 'team' : 'personal';
 }
 
+/**
+ * Defensively project one raw GitHub REST repo object (as cached verbatim in
+ * `github_snapshots`) to a `CurateRepo`. Returns null for a malformed/non-repo
+ * value so a single bad cache entry can never crash a curate run. `homepage`
+ * (the project site) is threaded through for the live_url mapping.
+ */
+export function toCurateRepo(raw: unknown): CurateRepo | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const owner = r.owner as { login?: unknown } | undefined;
+  if (
+    typeof r.name !== 'string' ||
+    typeof r.html_url !== 'string' ||
+    typeof r.pushed_at !== 'string' ||
+    !owner ||
+    typeof owner.login !== 'string'
+  ) {
+    return null;
+  }
+  return {
+    name: r.name,
+    owner: { login: owner.login },
+    html_url: r.html_url,
+    description: typeof r.description === 'string' ? r.description : null,
+    fork: Boolean(r.fork),
+    archived: Boolean(r.archived),
+    private: Boolean(r.private),
+    stargazers_count:
+      typeof r.stargazers_count === 'number' ? r.stargazers_count : 0,
+    pushed_at: r.pushed_at,
+    topics: Array.isArray(r.topics)
+      ? r.topics.filter((t): t is string => typeof t === 'string')
+      : undefined,
+    homepage: typeof r.homepage === 'string' ? r.homepage : null,
+  };
+}
+
 export function slugify(name: string): string {
   return name
     .trim()
@@ -99,6 +141,7 @@ export function repoToDraftProject(repo: CurateRepo): DraftProject {
     ghOwner: repo.owner.login,
     ghRepo: repo.name,
     ghHtmlUrl: repo.html_url,
+    liveUrl: mapRepoMetadata({ homepageUrl: repo.homepage }).liveUrl,
     ownerType: deriveOwnerType(repo.owner.login),
     ownerLogin: repo.owner.login,
     titleOwner: 'auto',

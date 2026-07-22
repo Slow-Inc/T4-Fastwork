@@ -1,21 +1,19 @@
 import Link from 'next/link';
-import { getProject } from '@/content/catalog';
 import { services } from '@/content/services';
 
 export type CardData =
-  | { kind: 'project'; slug: string }
+  | { kind: 'project'; slug: string; title?: string }
   | { kind: 'service'; id: string };
 
-/** Renders a project/service card injected mid-stream (docs/api/chat.md). */
+/** Renders a project/service card injected mid-stream (docs/api/chat.md). Projects
+ * are DB-only, so a client-rendered card labels itself from the marker's own
+ * title/slug (no static catalog lookup); the link always resolves to the DB detail. */
 export function InlineCard({ card }: { card: CardData }) {
   if (card.kind === 'project') {
-    const p = getProject(card.slug);
-    if (!p) return null;
     return (
-      <Link href={`/projects/${p.slug}`} className="chat-card">
+      <Link href={`/projects/${card.slug}`} className="chat-card">
         <span className="t-meta">ผลงาน</span>
-        <strong>{p.title}</strong>
-        <span className="chat-card-desc">{p.description}</span>
+        <strong>{card.title ?? card.slug}</strong>
       </Link>
     );
   }

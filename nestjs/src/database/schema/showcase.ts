@@ -13,6 +13,7 @@ import {
   varchar,
   date,
   timestamp,
+  jsonb,
   primaryKey,
   unique,
 } from 'drizzle-orm/pg-core';
@@ -57,6 +58,9 @@ export const projectDocuments = pgTable(
     blobSha: text('blob_sha').notNull(),
     contentHash: text('content_hash'),
     markdown: text('markdown'),
+    // Cached map-stage FileExtract (ADR 0010, migration 0022); reused iff its
+    // stored blobSha matches the row's current blob_sha, else re-mapped.
+    extract: jsonb('extract'),
     lastSeenCommit: text('last_seen_commit'),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
     updatedAt: timestamp('updated_at', { withTimezone: true })

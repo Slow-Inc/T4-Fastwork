@@ -1,5 +1,5 @@
-# Obsidian vault (personal notes, not part of the codebase)
-/Obsidian-Fastwork/
+# Shared engineering knowledge is committed; only personal Obsidian UI state is local.
+/Obsidian-Fastwork/.obsidian/
 
 # env files (secrets) — anywhere in the monorepo
 .env

@@ -13,7 +13,6 @@ const NAV = [
   { href: '/admin/faqs', label: 'FAQ' },
   { href: '/admin/certificates', label: 'ใบรับรอง' },
   { href: '/admin/members', label: 'ทีม/สมาชิก' },
-  { href: '/admin/approvals', label: 'อนุมัติ' },
   { href: '/admin/taxonomy', label: 'หมวด/แท็ก' },
   { href: '/admin/leads', label: 'Leads' },
   { href: '/admin/conversations', label: 'แชท AI' },

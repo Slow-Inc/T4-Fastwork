@@ -214,7 +214,15 @@ test("experience + project-count claims are accurate everywhere (7 years, 21+ pr
     expect(bodyText, `${path} should not claim 500 projects`).not.toContain(
       "500",
     );
-    expect(bodyText, `${path} should claim 21+ projects`).toContain("21+");
+    // The project count is DYNAMIC (getSiteStats over the DB — member + team
+    // projects), not a hardcoded "21+": assert the largest "N+" claim on the page
+    // is a real count of at least 21 (years is "7+"), so it grows with the DB and
+    // a collapse to 0/empty still fails.
+    const counts = [...bodyText.matchAll(/(\d+)\+/g)].map((m) => Number(m[1]));
+    expect(
+      Math.max(0, ...counts),
+      `${path} should claim a real (dynamic) project count ≥ 21`,
+    ).toBeGreaterThanOrEqual(21);
   }
 });
 
@@ -434,6 +442,101 @@ test("home shows the team directory and a filterable tech-stack — spec P8 / §
   await expect(chip).toBeVisible();
   await expect(chip).toHaveAttribute("href", /\/projects\?tech=/);
   expect(errors).toEqual([]);
+});
+
+test("the /projects showcase is DB-only — retired mockups don't leak, real projects do", async ({
+  page,
+}) => {
+  // The static catalog was retired (dev decision 2026-07-23): /projects mirrors the
+  // published DB rows (admin-editable) only. The old curated mockups must be gone,
+  // a former-mockup slug now 404s, and a real DB project still resolves.
+  await page.goto("/projects", { waitUntil: "networkidle" });
+  const slugs = await page.$$eval(".pcard a.pcard-shot", (as) =>
+    as.map((a) => (a.getAttribute("href") ?? "").split("/").pop()),
+  );
+  for (const mockup of [
+    "listingthai",
+    "powernics",
+    "ghost-maps",
+    "clinic-flow",
+    "stockpilot",
+    "docai-extract",
+    "eduportal",
+  ]) {
+    expect(slugs, `mockup ${mockup} must not leak into the DB-only list`).not.toContain(
+      mockup,
+    );
+  }
+  // A real, DB-backed project is present and its detail resolves.
+  expect(slugs, "the real flagship should be in the DB list").toContain("mangadock");
+  const ok = await page.goto("/projects/mangadock", { waitUntil: "networkidle" });
+  expect(ok?.status(), "mangadock detail should resolve").toBeLessThan(400);
+  await expect(page.locator("h1").first()).toBeVisible();
+
+  // A retired mockup slug is no longer in the DB → its detail 404s.
+  const gone = await page.goto("/projects/listingthai", { waitUntil: "networkidle" });
+  expect(gone?.status(), "a retired mockup slug should 404").toBe(404);
+});
+
+test("the /projects grid reveals even when it is many cards tall (reveal not ratio-gated)", async ({
+  page,
+}) => {
+  // Regression: the section-reveal used a 14%-of-element IntersectionObserver
+  // threshold. That ratio is unsatisfiable for any `.rv` taller than ~7× the
+  // viewport, so once DB-only ingestion grew the grid to ~54 cards (≈8000px) it
+  // stayed opacity:0 forever — the page showed the count but a blank grid.
+  await page.goto("/projects", { waitUntil: "networkidle" });
+
+  const grid = page.locator(".pgrid");
+  await expect(grid).toBeVisible();
+  // The grid must be genuinely tall here — otherwise this test wouldn't exercise
+  // the bug (a short grid satisfies any ratio threshold and can't regress).
+  const gridH = (await grid.boundingBox())!.height;
+  const vpH = page.viewportSize()!.height;
+  expect(
+    gridH,
+    "grid isn't tall enough to exercise the ratio-threshold bug",
+  ).toBeGreaterThan(vpH * 2);
+  // The reveal must have fired: the grid settles to opacity 1 (not stuck hidden).
+  await expect(grid).toHaveCSS("opacity", "1", { timeout: 3000 });
+  // And the first card is actually painted.
+  await expect(page.locator(".pcard").first()).toBeVisible();
+});
+
+test("every project card bottom-aligns its 'ดูรายละเอียด' action row (missing desc/tags)", async ({
+  page,
+}) => {
+  // Cards with no description/tags (e.g. a bare GitHub repo) used to float their
+  // action row up under the title while richer rowmates pushed theirs to the
+  // bottom — a ragged row. The fix: .pcard-body flex:1 + .pcard-actions
+  // margin-top:auto, so the action row sits at the card bottom regardless of copy.
+  await page.goto("/projects", { waitUntil: "networkidle" });
+  await expect(page.locator(".pcard").first()).toBeVisible();
+
+  const check = await page.evaluate(() => {
+    const bodyGrow = getComputedStyle(
+      document.querySelector(".pcard-body")!,
+    ).flexGrow;
+    // For every card the action row must hug the bottom: the gap to the card
+    // bottom is just the body's bottom padding (~20px), never the tall empty
+    // space a top-anchored action row would leave on a short card.
+    const maxGap = Math.max(
+      ...[...document.querySelectorAll(".pcard")].map((c) => {
+        const cardB = c.getBoundingClientRect().bottom;
+        const actB = c
+          .querySelector(".pcard-actions")!
+          .getBoundingClientRect().bottom;
+        return cardB - actB;
+      }),
+    );
+    return { bodyGrow, maxGap: Math.round(maxGap) };
+  });
+
+  expect(check.bodyGrow, ".pcard-body must grow to fill the card").toBe("1");
+  expect(
+    check.maxGap,
+    "an action row is not bottom-anchored (ragged card)",
+  ).toBeLessThanOrEqual(32);
 });
 
 test("project detail shows an owner chip (team/personal) — spec P6", async ({
@@ -979,17 +1082,14 @@ test("the floating popup and the /chat page share one conversation (#31)", async
   ).toBeVisible();
 });
 
-test("member area redirects to GitHub login when signed out (#53)", async ({
+test("admin member-edit requires auth — redirects to admin login when signed out (flat authz)", async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  // Not signed in → the member area bounces to the login page.
-  await page.goto("/member", { waitUntil: "networkidle" });
-  await expect(page).toHaveURL(/\/member\/login$/);
-  await expect(
-    page.getByRole("button", { name: /เข้าสู่ระบบด้วย GitHub/ }),
-  ).toBeVisible();
-  await expect(page.locator("h1")).toBeVisible();
+  // Flat authz folded the member area into /admin; the per-member edit page is an
+  // admin route, so a signed-out visitor bounces to the admin login.
+  await page.goto("/admin/members/1/edit", { waitUntil: "networkidle" });
+  await expect(page).toHaveURL(/\/admin\/login$/);
   expect(errors).toEqual([]);
 });

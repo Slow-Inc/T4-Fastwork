@@ -13,9 +13,14 @@ export default async function AdminProjects() {
     <div className="admin-page">
       <div className="admin-page-head">
         <h1>ผลงาน</h1>
-        <Link href="/admin/projects/new" className="btn">
-          + เพิ่มผลงาน
-        </Link>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link href="/admin/projects/from-members" className="btn ghost">
+            นำเข้าจาก repo สมาชิก
+          </Link>
+          <Link href="/admin/projects/new" className="btn">
+            + เพิ่มผลงาน
+          </Link>
+        </div>
       </div>
       {projects && projects.length > 0 ? (
         <div className="admin-table-wrap">

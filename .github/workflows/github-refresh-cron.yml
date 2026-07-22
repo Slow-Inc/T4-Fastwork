@@ -49,3 +49,43 @@ jobs:
             2*) exit 0 ;;
             *) echo "::error::refresh failed with HTTP $code"; exit 1 ;;
           esac
+
+      # After a successful refresh, chain the showcase pipeline (Phase 1 automation):
+      # cached snapshots -> draft projects (curate) -> member repo choices (sync) ->
+      # AI display order (rank). All secret-guarded, apply-mode, and FAIL-SOFT — a
+      # downstream endpoint hiccup warns but never reds the whole cron (refresh already
+      # succeeded). Each no-ops if the secret is unset. Sequential: rank after the writes.
+      - name: Curate cached repos -> draft projects
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          [ -z "$REFRESH_SECRET" ] && { echo "secret unset — skip"; exit 0; }
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" -H "Content-Type: application/json" \
+            -d '{"apply":true}' "$BACKEND_URL/github/curate")
+          echo "POST $BACKEND_URL/github/curate -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
+          case "$code" in 2*) : ;; *) echo "::warning::curate failed HTTP $code (non-blocking)" ;; esac
+
+      - name: Sync member public repos -> member_projects choices
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          [ -z "$REFRESH_SECRET" ] && { echo "secret unset — skip"; exit 0; }
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" -H "Content-Type: application/json" \
+            -d '{"apply":true}' "$BACKEND_URL/github/sync-member-projects")
+          echo "POST $BACKEND_URL/github/sync-member-projects -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
+          case "$code" in 2*) : ;; *) echo "::warning::member-sync failed HTTP $code (non-blocking)" ;; esac
+
+      - name: Refresh AI display-rank
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          [ -z "$REFRESH_SECRET" ] && { echo "secret unset — skip"; exit 0; }
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" "$BACKEND_URL/rank/refresh")
+          echo "POST $BACKEND_URL/rank/refresh -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
+          case "$code" in 2*) : ;; *) echo "::warning::rank refresh failed HTTP $code (non-blocking)" ;; esac

@@ -3,6 +3,7 @@ import {
   isEligibleRepo,
   deriveOwnerType,
   repoToDraftProject,
+  toCurateRepo,
   CurateService,
   type CurateRepo,
   type ProjectDraftStore,
@@ -95,6 +96,53 @@ describe('repoToDraftProject', () => {
     expect(d.slug).toBe('my-cool-app');
     expect(d.ownerType).toBe('personal');
   });
+
+  it('maps repo.homepage to live_url (scheme normalized), else null', () => {
+    // GitHub's list JSON exposes the site as `homepage` (may be scheme-less).
+    expect(
+      repoToDraftProject(repo({ homepage: 'demo.example.com' })).liveUrl,
+    ).toBe('https://demo.example.com');
+    expect(
+      repoToDraftProject(repo({ homepage: 'https://x.dev' })).liveUrl,
+    ).toBe('https://x.dev');
+    // absent / null / blank homepage → no live_url (stays a draft with none)
+    expect(repoToDraftProject(repo()).liveUrl).toBeNull();
+    expect(repoToDraftProject(repo({ homepage: null })).liveUrl).toBeNull();
+    expect(repoToDraftProject(repo({ homepage: '   ' })).liveUrl).toBeNull();
+  });
+});
+
+describe('toCurateRepo', () => {
+  it('projects a raw GitHub repo object, threading homepage + ignoring extras', () => {
+    const r = toCurateRepo({
+      name: 'newproj',
+      owner: { login: 'xenodeve', id: 42 },
+      html_url: 'https://github.com/xenodeve/newproj',
+      description: 'x',
+      fork: false,
+      archived: false,
+      private: false,
+      stargazers_count: 2,
+      pushed_at: '2026-06-01T00:00:00Z',
+      topics: ['ai', 7],
+      homepage: 'x.dev',
+      watchers: 99, // extra field ignored
+    });
+    expect(r?.name).toBe('newproj');
+    expect(r?.owner.login).toBe('xenodeve');
+    expect(r?.homepage).toBe('x.dev');
+    expect(r?.topics).toEqual(['ai']); // non-string topic dropped
+  });
+
+  it('returns null for a malformed / non-repo value (never throws)', () => {
+    expect(toCurateRepo({ name: 'x' })).toBeNull(); // no owner/html_url/pushed_at
+    expect(
+      toCurateRepo({ name: 'x', owner: {}, html_url: 'u', pushed_at: 'p' }),
+    ).toBeNull();
+    expect(toCurateRepo(null)).toBeNull();
+    expect(toCurateRepo('nope')).toBeNull();
+    expect(toCurateRepo(undefined)).toBeNull();
+  });
 });
 
 describe('CurateService.curate', () => {
@@ -117,7 +165,10 @@ describe('CurateService.curate', () => {
 
     const r = await svc.curate([
       repo({ name: 'mangadock' }), // eligible but already tracked → skip
-      repo({ name: 'newproj', html_url: 'https://github.com/Slow-Inc/newproj' }),
+      repo({
+        name: 'newproj',
+        html_url: 'https://github.com/Slow-Inc/newproj',
+      }),
       repo({ name: 'test' }), // ineligible → skip
     ]);
 

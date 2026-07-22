@@ -1240,6 +1240,9 @@ footer {
   flex-direction: column;
   gap: 10px;
   padding: 18px 20px 20px;
+  /* Fill the (grid-stretched) card so cards missing a desc/tags still push
+     their action row to the bottom — see .pcard-actions margin-top:auto. */
+  flex: 1;
 }
 .pcard-title {
   font-family: var(--disp);
@@ -1261,7 +1264,9 @@ footer {
 .pcard-actions {
   display: flex;
   gap: 16px;
-  margin-top: 8px;
+  /* auto (not a fixed gap) so the action row is bottom-aligned across the whole
+     row of cards regardless of how much desc/tags copy each one has. */
+  margin-top: auto;
   padding-top: 14px;
   border-top: 1px solid var(--line-soft);
 }

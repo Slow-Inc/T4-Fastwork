@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { pageAlternates } from '@/lib/seo';
 import { SiteNav } from '@/components/site/site-nav';
 import { ChatWithProjectContext } from '@/components/chat/chat-with-project-context';
+import { getProjectBySlug } from '@/lib/projects-repo';
 
 export const metadata: Metadata = {
   title: 'คุยกับผู้ช่วย AI — T4 Labs',
@@ -10,7 +11,15 @@ export const metadata: Metadata = {
   alternates: pageAlternates('/chat'),
 };
 
-export default function ChatPage() {
+export default async function ChatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ project?: string }>;
+}) {
+  // Resolve the grounded-project title server-side from the DB (DB-only) so a
+  // direct/bookmarked /chat?project=<slug> shows the real project name.
+  const { project: slug } = await searchParams;
+  const project = slug ? await getProjectBySlug(slug) : undefined;
   return (
     <>
       <SiteNav />
@@ -20,7 +29,7 @@ export default function ChatPage() {
             <span className="chat-head-idx">AI Assistant</span>
             <h1>คุยกับผู้ช่วย AI</h1>
           </div>
-          <ChatWithProjectContext />
+          <ChatWithProjectContext slug={slug} title={project?.title} />
         </section>
       </div>
     </>

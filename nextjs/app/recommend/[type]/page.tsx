@@ -6,7 +6,8 @@ import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { RecommendContent } from '@/components/pages/recommend-content';
 import { getSolutionDetail, solutionSlugs } from '@/content/solution-detail';
-import { filterProjects, projects } from '@/content/catalog';
+import { filterProjectList } from '@/content/catalog';
+import { getAllProjects } from '@/lib/projects-repo';
 import { pageAlternates } from '@/lib/seo';
 
 type Params = Promise<{ type: string }>;
@@ -32,10 +33,12 @@ export default async function RecommendPage({ params }: { params: Params }) {
   const detail = getSolutionDetail(type);
   if (!detail) notFound();
 
+  const all = await getAllProjects();
+  const featured = all.filter((p) => p.isFeatured);
   const inCategory = detail.portfolioCategory
-    ? filterProjects({ category: detail.portfolioCategory })
-    : projects.filter((p) => p.isFeatured);
-  const pool = inCategory.length > 0 ? inCategory : projects.filter((p) => p.isFeatured);
+    ? filterProjectList(all, { category: detail.portfolioCategory })
+    : featured;
+  const pool = inCategory.length > 0 ? inCategory : featured;
   const highlight = pool.slice(0, 3);
 
   return (
