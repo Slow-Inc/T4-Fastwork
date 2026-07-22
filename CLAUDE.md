@@ -45,8 +45,9 @@ task in this repo — before writing or changing code, not after.**
   commit — never merge work you have not reviewed. The `scrutinize` gate is incomplete until its
   full **English + Thai** report is posted as a PR comment with the reviewed HEAD SHA and comment URL
   recorded; if HEAD changes, rerun it and post updated evidence. Add **`security-review`** on any
-  auth / RLS / admin-write / secret / upload / webhook / untrusted-input / privileged-client change,
-  and include its findings or residual risks in the same bilingual PR evidence.
+  auth / RLS / admin-write / secret / upload / webhook / untrusted-input / external-request /
+  privileged-client change, and include its findings or residual risks in the same bilingual PR
+  evidence.
 - 🛑 **Any PRODUCTION DB write is a STOP-and-get-explicit-authz action — a separate, EARLIER
   checkpoint than the merge gate.** A migration, seed, or data change applied to the prod database
   via **any** path (Supabase MCP `execute_sql`, `supabase`/`psql` CLI, or the dashboard) requires:
