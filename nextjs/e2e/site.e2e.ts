@@ -436,6 +436,31 @@ test("home shows the team directory and a filterable tech-stack — spec P8 / §
   expect(errors).toEqual([]);
 });
 
+test("the /projects grid reveals even when it is many cards tall (reveal not ratio-gated)", async ({
+  page,
+}) => {
+  // Regression: the section-reveal used a 14%-of-element IntersectionObserver
+  // threshold. That ratio is unsatisfiable for any `.rv` taller than ~7× the
+  // viewport, so once DB-only ingestion grew the grid to ~54 cards (≈8000px) it
+  // stayed opacity:0 forever — the page showed the count but a blank grid.
+  await page.goto("/projects", { waitUntil: "networkidle" });
+
+  const grid = page.locator(".pgrid");
+  await expect(grid).toBeVisible();
+  // The grid must be genuinely tall here — otherwise this test wouldn't exercise
+  // the bug (a short grid satisfies any ratio threshold and can't regress).
+  const gridH = (await grid.boundingBox())!.height;
+  const vpH = page.viewportSize()!.height;
+  expect(
+    gridH,
+    "grid isn't tall enough to exercise the ratio-threshold bug",
+  ).toBeGreaterThan(vpH * 2);
+  // The reveal must have fired: the grid settles to opacity 1 (not stuck hidden).
+  await expect(grid).toHaveCSS("opacity", "1", { timeout: 3000 });
+  // And the first card is actually painted.
+  await expect(page.locator(".pcard").first()).toBeVisible();
+});
+
 test("project detail shows an owner chip (team/personal) — spec P6", async ({
   page,
 }) => {
