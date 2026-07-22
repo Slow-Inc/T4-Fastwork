@@ -98,6 +98,9 @@ describe('CaseStudySimpleController', () => {
 
   it('is fail-soft: one project throwing does not abort the batch', async () => {
     process.env.GITHUB_REFRESH_SECRET = 'right';
+    // Raise the cap so both projects are processed — a throw consuming the budget
+    // is correct, but here we're asserting the batch continues past the throw.
+    process.env.CASE_STUDY_MAX_PER_RUN = '5';
     const projects: CaseStudyProject[] = [
       { id: 1, slug: 'boom', ghOwner: 'o', ghRepo: 'r', readmeSha: 'old', description: null },
       { id: 2, slug: 'ok', ghOwner: 'o', ghRepo: 'r', readmeSha: 'old', description: null },
@@ -118,5 +121,6 @@ describe('CaseStudySimpleController', () => {
     const res = await c.run('right', { apply: true });
     expect(writes).toEqual([2]); // batch continued past the throw
     expect(res.generated).toBe(1); // only the ok one counted
+    delete process.env.CASE_STUDY_MAX_PER_RUN;
   });
 });
