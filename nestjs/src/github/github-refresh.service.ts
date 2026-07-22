@@ -34,6 +34,17 @@ export interface DetailSyncer {
   syncUserProfile(login: string): Promise<void>;
 }
 
+/** Supplies the DB-derived set of published, github-backed repos to detail-sync
+ *  (T2.4). Optional — when absent (or it throws) the refresh serves the static
+ *  `showcaseRepos` constant, so the repo-list refresh and its tests are unchanged. */
+export interface ShowcaseRepoProvider {
+  listShowcaseRepos(): Promise<{ owner: string; repo: string }[]>;
+}
+
+/** Cap on the number of repos whose detail is fetched per refresh — bounds the
+ *  sequential GitHub calls well under the secondary-rate limit. */
+const SHOWCASE_REPO_CAP = 50;
+
 export interface RefreshSummary {
   synced: string[];
   changed: string[];
@@ -54,7 +65,43 @@ export class GithubRefreshService {
       owner: string;
       repo: string;
     }[] = GITHUB_SHOWCASE_REPOS,
+    /** T2.4 — DB source for the showcase repo set. When given, its published
+     *  github-backed repos are unioned with `showcaseRepos` (the constant always
+     *  included) so detail is fetched beyond the hardcoded MangaDock. */
+    private readonly showcaseRepoProvider?: ShowcaseRepoProvider,
   ) {}
+
+  /** The effective repos to detail-sync: the static constant unioned with the
+   *  DB-derived set (deduped, constant first so MangaDock is always covered),
+   *  capped at SHOWCASE_REPO_CAP. Falls back to the constant if the DB read
+   *  fails — a provider outage never blocks the refresh (serve-stale). */
+  private async resolveShowcaseRepos(): Promise<
+    { owner: string; repo: string }[]
+  > {
+    let candidates: { owner: string; repo: string }[] = [...this.showcaseRepos];
+    if (this.showcaseRepoProvider) {
+      try {
+        candidates = [...candidates, ...(await this.showcaseRepoProvider.listShowcaseRepos())];
+      } catch {
+        // Serve-stale: a DB read failure falls back to the constant repos.
+      }
+    }
+    const seen = new Set<string>();
+    const deduped: { owner: string; repo: string }[] = [];
+    for (const r of candidates) {
+      const k = `${r.owner.toLowerCase()}/${r.repo.toLowerCase()}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      deduped.push(r);
+    }
+    if (deduped.length > SHOWCASE_REPO_CAP) {
+      console.warn(
+        `[github-refresh] showcase repo set truncated ${deduped.length} → ${SHOWCASE_REPO_CAP}`,
+      );
+      return deduped.slice(0, SHOWCASE_REPO_CAP);
+    }
+    return deduped;
+  }
 
   async refreshAll(): Promise<RefreshSummary> {
     const targets: { key: string; url: string }[] = [
@@ -93,7 +140,8 @@ export class GithubRefreshService {
           summary.failed.push(key);
         }
       }
-      for (const { owner, repo } of this.showcaseRepos) {
+      const repos = await this.resolveShowcaseRepos();
+      for (const { owner, repo } of repos) {
         const key = snapshotKey.repoContributors(owner, repo);
         try {
           await this.detail.syncRepoDetail(owner, repo);

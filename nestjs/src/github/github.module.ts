@@ -13,6 +13,7 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { DrizzleSnapshotStore } from './drizzle-snapshot.store';
+import { PgShowcaseRepoStore } from './pg-showcase-repos.store';
 import { GithubFetcher, GithubSnapshotService } from './github.service';
 import { GithubDetailService } from './github-detail.service';
 import { GithubHealService } from './github-heal.service';
@@ -32,6 +33,7 @@ import { RevalidateModule } from '../revalidate/revalidate.module';
   controllers: [GithubController, GithubWriteController],
   providers: [
     DrizzleSnapshotStore,
+    PgShowcaseRepoStore,
     {
       provide: GithubFetcher,
       useFactory: () => new GithubFetcher(globalThis.fetch),
@@ -61,8 +63,17 @@ import { RevalidateModule } from '../revalidate/revalidate.module';
       useFactory: (
         syncer: GithubSnapshotService,
         detail: GithubDetailService,
-      ) => new GithubRefreshService(syncer, undefined, undefined, detail),
-      inject: [GithubSnapshotService, GithubDetailService],
+        showcaseRepos: PgShowcaseRepoStore,
+      ) =>
+        new GithubRefreshService(
+          syncer,
+          undefined,
+          undefined,
+          detail,
+          undefined,
+          showcaseRepos,
+        ),
+      inject: [GithubSnapshotService, GithubDetailService, PgShowcaseRepoStore],
     },
     {
       provide: SnapshotOwnerRefresher,

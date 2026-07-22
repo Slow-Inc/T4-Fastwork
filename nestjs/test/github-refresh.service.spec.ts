@@ -79,6 +79,79 @@ describe('GithubRefreshService.refreshAll', () => {
     expect(r.synced).toContain('repo:Slow-Inc/MangaDock:contributors');
   });
 
+  it('unions DB-derived showcase repos with the MangaDock constant, deduped (T2.4)', async () => {
+    const syncer = recordingSyncer();
+    const detail = recordingDetail();
+    const provider = {
+      listShowcaseRepos: async () => [
+        { owner: 'Slow-Inc', repo: 'MangaDock' }, // dup of the constant → deduped
+        { owner: 'xenodeve', repo: 'foo' },
+        { owner: 'Slow-Inc', repo: 'bar' },
+      ],
+    };
+    const svc = new GithubRefreshService(
+      syncer,
+      ['xenodeve'],
+      'Slow-Inc',
+      detail,
+      [{ owner: 'Slow-Inc', repo: 'MangaDock' }],
+      provider,
+    );
+
+    await svc.refreshAll();
+
+    // constant first (MangaDock always included), then the fresh DB rows, once each
+    expect(detail.repos).toEqual([
+      'Slow-Inc/MangaDock',
+      'xenodeve/foo',
+      'Slow-Inc/bar',
+    ]);
+  });
+
+  it('falls back to the constant showcase repos when the provider throws (serve-stale, T2.4)', async () => {
+    const syncer = recordingSyncer();
+    const detail = recordingDetail();
+    const provider = {
+      listShowcaseRepos: async () => {
+        throw new Error('db down');
+      },
+    };
+    const svc = new GithubRefreshService(
+      syncer,
+      ['xenodeve'],
+      'Slow-Inc',
+      detail,
+      [{ owner: 'Slow-Inc', repo: 'MangaDock' }],
+      provider,
+    );
+
+    await svc.refreshAll();
+
+    expect(detail.repos).toEqual(['Slow-Inc/MangaDock']);
+  });
+
+  it('caps the showcase repo set at 50 to bound sequential GitHub calls (T2.4)', async () => {
+    const syncer = recordingSyncer();
+    const detail = recordingDetail();
+    const many = Array.from({ length: 60 }, (_, i) => ({
+      owner: 'Slow-Inc',
+      repo: `r${i}`,
+    }));
+    const provider = { listShowcaseRepos: async () => many };
+    const svc = new GithubRefreshService(
+      syncer,
+      [],
+      'Slow-Inc',
+      detail,
+      [],
+      provider,
+    );
+
+    await svc.refreshAll();
+
+    expect(detail.repos.length).toBe(50);
+  });
+
   it('records a profile/detail failure without aborting the batch', async () => {
     const syncer = recordingSyncer();
     const detail: DetailSyncer = {
