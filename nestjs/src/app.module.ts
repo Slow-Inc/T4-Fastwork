@@ -7,6 +7,7 @@ import { ChatModule } from './chat/chat.module';
 import { GithubModule } from './github/github.module';
 import { GithubGenerateModule } from './github/github-generate.module';
 import { GithubCurateModule } from './github/github-curate.module';
+import { GithubMemberSyncModule } from './github/github-member-sync.module';
 import { CaseStudyModule } from './github/github-case-study.module';
 import { RankModule } from './rank/rank.module';
 
@@ -24,6 +25,7 @@ import { RankModule } from './rank/rank.module';
     GithubModule,
     GithubGenerateModule,
     GithubCurateModule,
+    GithubMemberSyncModule,
     CaseStudyModule,
     RankModule,
   ],
