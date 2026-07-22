@@ -12,6 +12,19 @@ task in this repo — before writing or changing code, not after.**
   rather than working from memory of it. (Session start: also read `docs/OPEN-WORK-LEDGER.md`
   + [`Obsidian-Fastwork/Home.md`](Obsidian-Fastwork/Home.md) + the relevant domain memory before
   picking up work.)
+- 🛑 **The delivery pipeline is a HARD GATE — spelled out here so it is not missed; do NOT rely on
+  the `t4-dev-workflow` skill alone (it has been skipped too often).** Any non-trivial change flows:
+  **`grill-me` (stress-test the idea) → `to-prd` (one PRD per epic) → `to-issues` (one tracked GitHub
+  issue per deliverable) → `tdd` (red-first) → PR that references its issue.**
+  - **No code lands without a tracked GitHub issue; no PR without a referenced issue.** The PR side is
+    hook-enforced (`gh pr create` is denied with no referenced issue); *creating* the PRD/issues is
+    discipline you must do yourself.
+  - **A plan, roadmap, or ticket list in a `docs/` file is NOT a substitute for real GitHub issues.**
+    Convert each deliverable into an issue **before** implementing it — including when you work from a
+    fix-plan doc or hand tickets to another agent. Retro-fitting an issue at PR time to satisfy the hook
+    is the tell that this gate was skipped.
+  - Issue/PRD/PR bodies are **bilingual** (English + a full Thai mirror). Every deliverable maps to
+    exactly one issue you are allowed to work; close issues with stated evidence, never silently.
 - **`karpathy-guidelines`** enforces: think before coding (state assumptions, surface
   tradeoffs, don't pick silently), simplicity first, surgical changes, goal-driven execution
   with verification.
@@ -26,8 +39,21 @@ task in this repo — before writing or changing code, not after.**
   remote head is gone, prune remote refs, and safely delete the local branch after switching away.
   Never delete default/current/long-lived or unverified branches.
 - Also standing: **TDD is mandatory** and **every frontend change is verified end-to-end**
-  (`bun run e2e`) — see the ⚠️ note under Commands. Use **`scrutinize` + `security-review`**
-  on any auth / RLS / admin-write / security-sensitive change.
+  (`bun run e2e`) — see the ⚠️ note under Commands.
+- **Before merging any branch** (including one another agent produced), run **`code-review` +
+  `scrutinize` on the ACTUAL merge diff** (`git diff origin/master...HEAD`), not just the last
+  commit — never merge work you have not reviewed. Add **`security-review`** on any auth / RLS /
+  admin-write / secret / upload / webhook / untrusted-input change.
+- 🛑 **Any PRODUCTION DB write is a STOP-and-get-explicit-authz action — a separate, EARLIER
+  checkpoint than the merge gate.** A migration, seed, or data change applied to the prod database
+  via **any** path (Supabase MCP `execute_sql`, `supabase`/`psql` CLI, or the dashboard) requires:
+  (1) verify on a Supabase branch or on localhost **first**; (2) **surface the exact write and WAIT
+  for the user's explicit OK for THAT action**. "Take this over" / "keep going" / a merge-or-deploy
+  approval is **NOT** authorization for a raw prod DB write — and applying something a prior step
+  deliberately *parked* for the rules is overriding that guard, not completing it. Keep migrations
+  additive + idempotent; **never hand-edit `supabase_migrations.schema_migrations`.** ⚠️ **No hook
+  enforces this** (unlike `gh pr create/merge`, which are gated) — it is pure discipline, so the
+  guard must live here in the map, not only in an agent's private memory.
 
 Skip only for trivial, non-code conversational replies. These override default behavior; the
 user's explicit instructions still win.

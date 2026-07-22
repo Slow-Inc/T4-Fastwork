@@ -1,7 +1,15 @@
 # Open-Work Ledger
 
-- **Migration hygiene (2026-07-23):** 0023–0025 were applied out-of-band and are tracking-drifted;
-  migration 0026+ must be applied through the supported path, never by hand-editing the tracking table.
+- **🔴 Migration tracking drift (2026-07-23):** `supabase_migrations.schema_migrations` is current only
+  to **0022** (ts 20260717222128). **0023/0024/0025** (flat-authz, prior session) **and 0026/0027**
+  (faqs/services `_en` + certificates `is_featured`, this session) were all applied to prod out-of-band
+  via raw `execute_sql`, so they have **no tracking row**. Consequence: a `supabase db push` would try to
+  re-run them — 0026/0027 are `if not exists` (safe) but 0023/0024 `create policy` would ERROR.
+  **RECONCILE via the supported path only** (`supabase migration repair --status applied <ver>` — CLI at
+  `~/scoop/shims/supabase.exe`, dev logged in), NOT more raw SQL and NOT by hand-editing the table. This
+  is a prod-DB write ⇒ needs explicit authz per CLAUDE.md's prod-DB rule. Blocker before the next
+  `db push`. (Files are `NNNN_*.sql` but schema_migrations stores timestamp versions — confirm the repo's
+  exact repair mapping before running.)
 
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
