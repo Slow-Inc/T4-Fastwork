@@ -59,19 +59,21 @@ export class CaseStudySimpleController {
 
     // Bound the LLM calls per invocation so one request stays under the serverless
     // timeout (Vercel maxDuration 60s — an unbounded loop over all candidates timed
-    // out with 504). Measured on prod, one non-streaming `complete()` with the
-    // reasoning model is ~15s, so the default of 2 (~30s + the snapshot scan) leaves
-    // comfortable margin; 5 (~75s) timed out. The delta-gate makes the job idempotent
-    // + incremental — a generated project bumps `readme_sha` and is skipped next run,
-    // and each generation commits its own txn, so even a timeout persists the finished
-    // ones and the hourly cron converges. Tune up via `CASE_STUDY_MAX_PER_RUN` only if
-    // the plan's maxDuration allows. A malformed env (non-numeric → NaN) must NOT
-    // silently disable the cap (`attempted >= NaN` is always false → unbounded).
+    // out with 504). Measured on prod: one generation from a realistic ~5KB README is
+    // ~29s (a reasoning model, non-streaming), so the default of 1 (~29s + a tiny
+    // snapshot scan) fits with margin; 2 (~58s) and 5 (~75s) timed out. The delta-gate
+    // makes the job idempotent + incremental — a generated project bumps `readme_sha`
+    // and is skipped next run, and each generation commits its own txn, so even a
+    // timeout persists the finished one and the hourly cron converges. Throughput is
+    // 1/run; raising it needs a faster model / streaming / async, not a bigger cap on
+    // this 60s function — tune `CASE_STUDY_MAX_PER_RUN` up only if maxDuration grows.
+    // A malformed env (non-numeric → NaN) must NOT silently disable the cap
+    // (`attempted >= NaN` is always false → unbounded).
     const configured = Number(process.env.CASE_STUDY_MAX_PER_RUN);
     const maxPerRun =
       Number.isFinite(configured) && configured >= 1
         ? Math.floor(configured)
-        : 2;
+        : 1;
 
     const projects = await this.store.listPublishedGithubProjects();
     // Dry-run: swap in a store whose publishCaseStudy is a no-op so the pure
