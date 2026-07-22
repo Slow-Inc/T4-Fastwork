@@ -3,6 +3,31 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## 🔴 2026-07-22 (AFK) — automation audit + roadmap + Phase-1 cron wired
+
+- **Audit + plan (committed `ba6b213`):** full tech-debt sweep (codex + explore subagents) →
+  `docs/reports/2026-07-22-tech-debt-audit.md`; 5-phase remediation roadmap toward the documented
+  North Star (self-updating GitHub showcase, admin doesn't hand-maintain) →
+  `docs/reports/2026-07-22-automation-remediation-roadmap.md`. Owner decisions locked: **D-A =
+  auto-publish public repos** (reverses ADR 0009's publish-gate → new ADR pending; keeps automated
+  injection/output validation) · **D-B = full case-study pipeline** (GitHub App + map-reduce + 3-audience).
+- **AFK batch done (TDD/verify, committed):**
+  - `116701e` **Phase 1 cron-chain** — `github-refresh-cron.yml` now chains curate→member-sync→rank
+    after refresh (secret-guarded, fail-soft, no-op if secret unset). Activates on merge to master.
+  - `6ab1ec3` chores — Drizzle `project_documents.extract jsonb` (aligns migration 0022); 3 seed
+    scripts exposed in package.json. Build green.
+- **Correctly SKIPPED (not bugs):** static-fallback on members/blog/certs/site-stats — that empty→
+  static is intentional resilience (the `members` table is never empty; "always show something" is
+  desirable). Only the member-content/projects case (B4 curated-empty) was a real bug — already fixed.
+- **🛑 PARKED (needs human / boundary / big build — see roadmap):**
+  1. **Deploy the flat-authz branch + apply 0023/0024/0025** (irreversible authz boundary — human).
+     This unblocks the Phase-1 cron (endpoints must be live for the cron to call them).
+  2. Phase 2 (auto content-gen + safety validation — security boundary) · Phase 3 (kill-static repo
+     sweep — risky) · Phase 4 (GitHub App + case studies — big build).
+  3. `githubLoginFromUser` delete (auth-boundary module) · `PgGenerateStore` taxonomy M2M (data-model
+     decision) · sitemap dynamic projects (overlaps Phase 3).
+  4. Write the **D-A ADR** (auto-publish-public reverses ADR 0009).
+
 ## 🔴 2026-07-22 (AFK) — FLAT AUTHZ Slice A done + reviewed (branch `feat/flat-authz-repo-ingestion`)
 
 - **Decision (dev, 2026-07-22):** every linked team member = full admin; edits everyone's
