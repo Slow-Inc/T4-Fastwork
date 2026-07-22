@@ -4,18 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Operating defaults (mandatory)
 
-**Invoke `/using-t4` and `/karpathy-guidelines` by default at the start of every coding
+**Invoke the `using-t4` and `karpathy-guidelines` skills by default at the start of every coding
 task in this repo — before writing or changing code, not after.**
 
-- **`/using-t4`** routes the task through the T4 operating standard (memory/ledger →
+- **`using-t4`** routes the task through the T4 operating standard (memory/ledger →
   issue → PRD → issues → TDD → records → bilingual tracker → PR). It is the map; follow it
   rather than working from memory of it. (Session start: also read `docs/OPEN-WORK-LEDGER.md`
-  + the relevant memory before picking up work.)
-- **`/karpathy-guidelines`** enforces: think before coding (state assumptions, surface
+  + [`Obsidian-Fastwork/Home.md`](Obsidian-Fastwork/Home.md) + the relevant domain memory before
+  picking up work.)
+- **`karpathy-guidelines`** enforces: think before coding (state assumptions, surface
   tradeoffs, don't pick silently), simplicity first, surgical changes, goal-driven execution
   with verification.
+- **Shared engineering knowledge:** `Obsidian-Fastwork/` is the committed cross-agent knowledge
+  base. At the start of every session, read `Obsidian-Fastwork/Home.md` first, then open only the
+  linked notes relevant to the task. Do not load the whole vault blindly. Keep `Home.md` and the
+  relevant index current whenever durable knowledge is added.
 - Also standing: **TDD is mandatory** and **every frontend change is verified end-to-end**
-  (`bun run e2e`) — see the ⚠️ note under Commands. Run **`/scrutinize` + `/security-review`**
+  (`bun run e2e`) — see the ⚠️ note under Commands. Use **`scrutinize` + `security-review`**
   on any auth / RLS / admin-write / security-sensitive change.
 
 Skip only for trivial, non-code conversational replies. These override default behavior; the
@@ -28,7 +33,8 @@ Bun-workspaces monorepo (root `package.json` → `workspaces: ["nextjs","nestjs"
 - **`nextjs/`** — the Next.js frontend app (port 3000).
 - **`nestjs/`** — the Nest.js backend API (port 4100): AI chat (RAG + streaming SSE), data layer. See the AI Chatbot Backend wayfinder map, [Slow-Inc/T4-Fastwork#1](https://github.com/Slow-Inc/T4-Fastwork/issues/1).
 - **`docs/`** — agent config (`docs/agents/`) and design docs.
-- **`Obsidian-Fastwork/`** — a personal Obsidian vault (notes), not part of the codebase. Gitignored.
+- **`Obsidian-Fastwork/`** — committed cross-agent engineering knowledge. `Home.md` is its Map of
+  Content; only personal `.obsidian/` UI state is gitignored.
 
 `bun install` at the root installs both workspaces (one root `bun.lock`).
 
@@ -122,7 +128,7 @@ When touching an area, read the code + the relevant ADR (`docs/adr/`); highlight
 - **Authorization is enforced in the DB, not the app** — RLS on every content table + column
   grants + `is_app_admin()` SECURITY DEFINER (no service-role key). App-layer `assertAdmin()`
   is defense-in-depth only. **Read [ADR 0007](docs/adr/0007-db-enforced-authz-rls-is-app-admin.md)
-  before touching any auth/RLS/admin-write path**, and `/security-review` every such change.
+  before touching any auth/RLS/admin-write path**, and use `security-review` for every such change.
 - **Chat** (`app/chat`, `components/chat/**`): Open WebUI-style app-shell, streaming SSE,
   image/vision, full Markdown, a floating popup sharing the conversation.
 
@@ -140,9 +146,13 @@ core framework-agnostic — Nest.js only wires it.
 
 ## Writing conventions
 
-**GitHub issue comments and PR descriptions must be bilingual — both Thai and English.** Lead with one language and follow with the other (e.g. an **EN:** paragraph and a **TH:** paragraph, or clearly separated sections). This applies **only** to content written into the GitHub tracker (issue comments, PR descriptions). Everything else — chat replies, reports, and status updates outside GitHub — follows the user's preferred language (Thai) and is not required to be bilingual. Code, commit messages, identifiers, and inline code comments stay in English.
+**GitHub issue comments and PR descriptions must be bilingual — both Thai and English.** Lead with one language and follow with the other (e.g. an **EN:** paragraph and a **TH:** paragraph, or clearly separated sections). This applies **only** to content written into the GitHub tracker (issue comments, PR descriptions). Everything else — chat replies, reports, and status updates outside GitHub — follows the user's preferred language (Thai) and is not required to be bilingual. Repository documentation stays English unless the user explicitly requests otherwise. Code, commit messages, identifiers, and inline code comments stay in English.
 
 ## Agent skills
+
+Repository skill instructions are canonical in `.agents/skills/`. `.claude/skills/` contains
+thin discovery wrappers that forward to those files so Claude Code and other agents use the same
+workflow without maintaining duplicate bodies.
 
 ### Issue tracker
 
