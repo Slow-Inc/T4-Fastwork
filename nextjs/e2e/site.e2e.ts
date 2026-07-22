@@ -979,17 +979,14 @@ test("the floating popup and the /chat page share one conversation (#31)", async
   ).toBeVisible();
 });
 
-test("member area redirects to GitHub login when signed out (#53)", async ({
+test("admin member-edit requires auth — redirects to admin login when signed out (flat authz)", async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  // Not signed in → the member area bounces to the login page.
-  await page.goto("/member", { waitUntil: "networkidle" });
-  await expect(page).toHaveURL(/\/member\/login$/);
-  await expect(
-    page.getByRole("button", { name: /เข้าสู่ระบบด้วย GitHub/ }),
-  ).toBeVisible();
-  await expect(page.locator("h1")).toBeVisible();
+  // Flat authz folded the member area into /admin; the per-member edit page is an
+  // admin route, so a signed-out visitor bounces to the admin login.
+  await page.goto("/admin/members/1/edit", { waitUntil: "networkidle" });
+  await expect(page).toHaveURL(/\/admin\/login$/);
   expect(errors).toEqual([]);
 });

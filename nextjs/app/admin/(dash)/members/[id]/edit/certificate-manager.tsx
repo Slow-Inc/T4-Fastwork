@@ -7,11 +7,10 @@ import { ImageUpload } from '@/components/admin/image-upload';
 import type { EditableCertificate } from '@/lib/member-session';
 
 /**
- * Member certificate authoring (Epic C / C4, additive per D4). A member adds their
- * own certificates; RLS forces new rows to `status='draft'` and scopes every write to
- * their own member row (the column grant excludes `status` on UPDATE so they can never
- * self-publish). Drafts stay off the public profile until an admin approves. Assets
- * upload to the public `media` bucket (authenticated upload policy).
+ * Admin management of a member's certificates (flat authz — no approval step). An admin
+ * adds/removes certificates for the TARGET member and they publish directly
+ * (`status='published'`); RLS (0024) permits any admin to write any member's certs and
+ * grants the `status` column. Assets upload to the public `media` bucket.
  */
 export function MemberCertificateManager({
   memberId,
@@ -45,7 +44,7 @@ export function MemberCertificateManager({
       title,
       asset_webp: assetWebp || null,
       asset_pdf: assetPdf || null,
-      status: 'draft',
+      status: 'published',
     });
     setPending(false);
     if (error) {
@@ -53,7 +52,7 @@ export function MemberCertificateManager({
       return;
     }
     form.reset();
-    setMsg('เพิ่มแล้ว — รอแอดมินอนุมัติ');
+    setMsg('เพิ่มแล้ว ✓');
     router.refresh();
   }
 
@@ -79,7 +78,7 @@ export function MemberCertificateManager({
               <span
                 className={`member-cert-status member-cert-status-${c.status}`}
               >
-                {c.status === 'published' ? 'เผยแพร่แล้ว' : 'รออนุมัติ'}
+                {c.status === 'published' ? 'เผยแพร่แล้ว' : 'ฉบับร่าง'}
               </span>
               <button
                 type="button"

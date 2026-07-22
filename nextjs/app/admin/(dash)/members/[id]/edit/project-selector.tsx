@@ -5,11 +5,11 @@ import { createClient } from '@/lib/client';
 import type { EditableProject } from '@/lib/member-session';
 
 /**
- * Member project-selection (Epic C / C3) — pick which GitHub-sourced repos show on
- * the public profile. Toggling writes `member_projects.selected`; RLS scopes it to
- * the member's own rows and the column grant limits the write to `selected`. The
- * public `/team/[slug]` read already filters `selected = true`, so a deselect drops
- * the repo from the profile. Optimistic UI, reverted on error.
+ * Admin project-selection for a member — pick which GitHub-sourced repos show on that
+ * member's public profile. Toggling writes `member_projects.selected` by row id; RLS
+ * (0024 team policy) lets any admin toggle any member's rows and the column grant limits
+ * the write to `selected`. The public `/team/[slug]` read filters `selected = true`, so a
+ * deselect drops the repo from the profile. Optimistic UI, reverted on error.
  */
 export function MemberProjectSelector({ initial }: { initial: EditableProject[] }) {
   const [projects, setProjects] = useState(initial);

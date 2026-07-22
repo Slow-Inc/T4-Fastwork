@@ -13,12 +13,19 @@ interface Initial {
 }
 
 /**
- * Member self-edit (Epic C / C3) — skills, tech stack, and README visibility. RLS
- * scopes the write to the member's own row; editing stack flips its provenance to
- * 'human' (a DB trigger) so GitHub sync won't overwrite it, and re-feeds the home
- * tech carousel. Comma-separated input → clean list via `parseTechList`.
+ * Admin edit of a member's profile — skills, tech stack, README visibility + override.
+ * Writes members.{skills,stack,readme_visible,readme_override} for the TARGET member id;
+ * RLS (0024 team policy) lets any admin edit any member's profile content while the column
+ * grant keeps identity columns unwritable. Editing stack flips its provenance to 'human'
+ * (a DB trigger) so GitHub sync won't overwrite it. Input: one item per line via `parseTechList`.
  */
-export function MemberProfileForm({ initial }: { initial: Initial }) {
+export function MemberProfileForm({
+  memberId,
+  initial,
+}: {
+  memberId: number;
+  initial: Initial;
+}) {
   const router = useRouter();
   const [skills, setSkills] = useState(initial.skills.join('\n'));
   const [stack, setStack] = useState(initial.stack.join('\n'));
@@ -32,14 +39,6 @@ export function MemberProfileForm({ initial }: { initial: Initial }) {
     setPending(true);
     setMsg(null);
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setMsg('เซสชันหมดอายุ — เข้าสู่ระบบใหม่');
-      setPending(false);
-      return;
-    }
     const { error } = await supabase
       .from('members')
       .update({
@@ -48,7 +47,7 @@ export function MemberProfileForm({ initial }: { initial: Initial }) {
         readme_visible: readmeVisible,
         readme_override: readmeOverride.trim() || null,
       })
-      .eq('auth_user_id', user.id);
+      .eq('id', memberId);
     setPending(false);
     setMsg(error ? 'บันทึกไม่สำเร็จ' : 'บันทึกแล้ว ✓');
     if (!error) router.refresh();
