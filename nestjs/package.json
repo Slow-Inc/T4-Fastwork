@@ -19,6 +19,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:seed": "bun src/database/seed.ts",
+    "db:seed:members": "bun src/database/seed-members.ts",
+    "db:seed:member-content": "bun src/database/seed-member-content.ts",
+    "db:seed:app-admins": "bun src/database/seed-app-admins.ts",
     "db:ingest": "bun src/ingestion/ingest.ts"
   },
   "dependencies": {
