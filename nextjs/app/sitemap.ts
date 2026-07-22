@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { getAllProjects } from '@/lib/projects-repo';
-import { blogPosts } from '@/content/blog';
+import { getPosts } from '@/lib/blog-repo';
 import { solutionSlugs } from '@/content/solution-detail';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://t4labs.dev';
@@ -36,7 +36,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  const blogEntries = blogPosts.map((p) => ({
+  const posts = await getPosts();
+  const blogEntries = posts.map((p) => ({
     url: `${SITE_URL}/blog/${p.slug}`,
     changeFrequency: 'monthly' as const,
     priority: 0.5,

@@ -21,6 +21,10 @@ export async function generateStaticParams() {
 // Members can be added to the DB after build (Epic C); render new slugs on-demand.
 export const dynamicParams = true;
 
+// #92 — team pages aren't in the on-demand revalidation set, so ISR-refresh at most
+// every 5 min lets a direct DB write to member content appear without a redeploy.
+export const revalidate = 300;
+
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const m = await getMemberBySlug(slug);

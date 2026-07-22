@@ -5,15 +5,23 @@ import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { BlogArticleContent } from '@/components/pages/blog-article-content';
-import { blogPosts } from '@/content/blog';
-import { getPostBySlug } from '@/lib/blog-repo';
+import { getPostBySlug, getPosts } from '@/lib/blog-repo';
 import { pageAlternates } from '@/lib/seo';
 
 type Params = Promise<{ slug: string }>;
 
-export function generateStaticParams() {
-  return blogPosts.map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  const posts = await getPosts();
+  return posts.map((p) => ({ slug: p.slug }));
 }
+
+// DB-authored posts (e.g. AI case studies) render on demand.
+export const dynamicParams = true;
+
+// Blog detail isn't in the on-demand revalidation set (revalidate.ts targets
+// /blog + sitemap, not /blog/[slug]), so ISR-refresh at most every 5 min lets a
+// DB edit to a post appear on its detail page without a redeploy (mirrors T2.3).
+export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
