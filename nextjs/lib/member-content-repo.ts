@@ -40,7 +40,9 @@ export async function getMemberProjects(slug: string): Promise<TeamProject[]> {
       // Human order (sort_order) wins; AI display-rank orders the rest (nulls last).
       .order('sort_order', { ascending: true })
       .order('ai_rank', { ascending: true, nullsFirst: false });
-    if (error || !data || data.length === 0) return staticProjects(slug);
+    // Empty is a valid result (member curated to zero selected repos) — only a DB
+    // error falls back to the static seed, not an intentionally-empty selection.
+    if (error || !data) return staticProjects(slug);
     return (data as unknown as DbMemberProjectRow[]).map(mapDbMemberProject);
   } catch {
     return staticProjects(slug);
@@ -58,7 +60,9 @@ export async function getMemberCertificates(
       .eq('members.slug', slug)
       .order('sort_order', { ascending: true })
       .order('ai_rank', { ascending: true, nullsFirst: false });
-    if (error || !data || data.length === 0) return staticCertificates(slug);
+    // Empty is a valid result (member curated to zero selected repos) — only a DB
+    // error falls back to the static seed, not an intentionally-empty selection.
+    if (error || !data) return staticCertificates(slug);
     return (data as unknown as DbMemberCertificateRow[]).map(
       mapDbMemberCertificate,
     );
@@ -77,7 +81,9 @@ export async function getTeamProjects(): Promise<TeamOrgProject[]> {
       // unranked rows fall back to their seed order (sort_order).
       .order('ai_rank', { ascending: true, nullsFirst: false })
       .order('sort_order', { ascending: true });
-    if (error || !data || data.length === 0) return staticTeamProjects;
+    // Empty is a valid result (member curated to zero selected repos) — only a DB
+    // error falls back to the static seed, not an intentionally-empty selection.
+    if (error || !data) return staticTeamProjects;
     return (data as unknown as DbTeamProjectRow[]).map(mapDbTeamProject);
   } catch {
     return staticTeamProjects;
