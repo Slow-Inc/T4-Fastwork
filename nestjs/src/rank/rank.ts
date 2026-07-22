@@ -5,7 +5,9 @@ export type RankKind =
   | 'projects'
   | 'certificates'
   | 'blog'
-  | 'team_projects';
+  | 'team_projects'
+  | 'member_projects'
+  | 'member_certificates';
 
 /** One item to rank: a stable id + a title + optional scalar signals. */
 export interface RankCandidate {

@@ -16,6 +16,8 @@ export const RANK_KINDS: RankKind[] = [
   'certificates',
   'blog',
   'team_projects',
+  'member_projects',
+  'member_certificates',
 ];
 
 /**
