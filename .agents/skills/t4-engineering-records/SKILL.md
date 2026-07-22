@@ -1,6 +1,6 @@
 ---
 name: t4-engineering-records
-description: Use when working in a T4-team repo (T4 Labs / Slow-Inc) and something notable just happened that a future agent will need the "why" of — you fixed and validated a bug, made a hard-to-reverse architectural decision, shipped a system-affecting change, or hit a bug whose lesson is worth keeping. Helps pick the right record (post-mortem vs ADR vs system-impact entry vs bug-case-catalog) and write it so it stays a reliable index (file:line, commit SHAs, validated-only). Triggers include "write a post-mortem", "record this decision", "log this change", "should this be an ADR".
+description: Use when working in T4 Fastwork and something notable happened that a future agent needs the why of, including a validated bugfix, hard-to-reverse decision, system-affecting change, wrong assumption, user correction, avoidable rework, regression, or reusable prevention rule. Choose the correct durable record and keep it validated, findable, and linked.
 ---
 
 # T4 Engineering Records
@@ -21,6 +21,9 @@ This skill answers two questions: **which record** to write, and **how** to writ
 | A notable bug whose **transferable lesson** is worth keeping | **one durable knowledge note** | add/update one note in `Obsidian-Fastwork/` and link it from the relevant index |
 
 Guards:
+- **Learning capture is mandatory when triggered.** Before completion, record a wrong assumption,
+  user correction, regression/rework, non-obvious failure, or reusable prevention rule in an
+  existing vault note or one new focused note linked from its index.
 - **Don't post-mortem a hypothesis.** If the repro isn't reliable, the root cause isn't known, or the fix isn't validated — you don't have a post-mortem yet. List what's missing and stop.
 - **A feature/refactor is not a post-mortem** — it's a system-impact entry (+ an ADR if it encodes a decision).
 - **A trivial one-liner needs neither** — the PR description is enough.

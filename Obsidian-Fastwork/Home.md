@@ -63,3 +63,5 @@ current behavior; this vault captures reusable reasoning and operating knowledge
 - All wikilinks resolve and the note is reachable from this Home graph.
 - Repository instructions and canonical documentation are updated when the knowledge changes agent
   behavior.
+- A task that contained a wrong assumption, user correction, regression/rework, non-obvious
+  failure, or reusable prevention rule does not finish until the validated lesson is captured.

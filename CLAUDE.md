@@ -19,6 +19,12 @@ task in this repo — before writing or changing code, not after.**
   base. At the start of every session, read `Obsidian-Fastwork/Home.md` first, then open only the
   linked notes relevant to the task. Do not load the whole vault blindly. Keep `Home.md` and the
   relevant index current whenever durable knowledge is added.
+- **Learning capture is a completion gate:** after a wrong assumption, user correction,
+  regression/rework, non-obvious failure, or reusable lesson, update the relevant vault note (or
+  create and index one) before declaring the task complete. Record only validated causes.
+- **Merged branches do not linger:** GitHub auto-delete is enabled. After a PR merges, verify the
+  remote head is gone, prune remote refs, and safely delete the local branch after switching away.
+  Never delete default/current/long-lived or unverified branches.
 - Also standing: **TDD is mandatory** and **every frontend change is verified end-to-end**
   (`bun run e2e`) — see the ⚠️ note under Commands. Use **`scrutinize` + `security-review`**
   on any auth / RLS / admin-write / security-sensitive change.

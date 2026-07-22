@@ -102,6 +102,27 @@ Per [CLAUDE.md](./CLAUDE.md), non-negotiable:
   before touching those areas — the pinned Next version is newer than your training data.
 - Use the `security-review` skill on any auth / RLS / admin-write / security-sensitive change.
 
+## 8. Capture learning before completion
+
+- If an agent makes a wrong assumption, is corrected by the user, causes avoidable rework or a
+  regression, hits a non-obvious tool/process failure, or discovers a reusable prevention rule,
+  **record the lesson before declaring the task complete**.
+- Update an existing note when it already owns the concept; otherwise create one focused note in
+  `Obsidian-Fastwork/` and link it from the relevant index or `Home.md`.
+- Record the symptom, verified cause, prevention rule, and verification method. Do not promote an
+  unverified hypothesis into durable knowledge; leave it in the open-work ledger until validated.
+- Skip only trivial typos or one-off noise with no reusable lesson.
+
+## 9. Delete branches after merge
+
+- After a PR is confirmed merged, verify the repository host deleted its remote head branch. If it
+  still exists, delete that exact remote branch, then `fetch --prune`.
+- Switch away from the merged branch before deleting its local copy with safe deletion
+  (`git branch -d`). Never force-delete a branch merely because it looks old.
+- Never delete the default branch, the current branch, an explicitly long-lived branch, or any
+  branch whose merge state has not been verified from the PR/remote. A squash merge must be
+  verified from PR state because ancestry alone may not prove it.
+
 ## MCP tooling on this machine (reference)
 
 - **Serena** and **pal** are both installed as **uv tools** (venvs under `%APPDATA%\uv\tools\`),

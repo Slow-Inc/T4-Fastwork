@@ -27,6 +27,7 @@ adds autonomous-agent safety constraints.
 | Plan, design, PR, diff, audit, or second opinion | Use `scrutinize` and trace the actual end-to-end path |
 | Validated bug, hard-to-reverse decision, or system-affecting change | Use `t4-engineering-records` |
 | Durable cross-task lesson | Update one note in `Obsidian-Fastwork/` and link it from the relevant index/Home |
+| PR merged | Verify the remote head was deleted, fetch/prune, switch away, then safely delete the local branch |
 
 ## Standing rules
 
@@ -37,6 +38,11 @@ adds autonomous-agent safety constraints.
 - GitHub issue and PR bodies are bilingual; repository docs remain English unless explicitly
   requested otherwise.
 - Verify the real path before claiming completion. Never infer success from an edit alone.
+- Treat learning capture as a completion gate after a wrong assumption, user correction,
+  regression/rework, non-obvious failure, or reusable prevention rule. Persist only validated
+  causes and link the note from the vault graph.
+- Delete a merged PR branch after verifying merge state. Never delete default/current/long-lived
+  or unverified branches, and never use force deletion to guess past uncertainty.
 - Do not change shared machine-level tooling unless the user explicitly authorizes it.
 
 Re-evaluate the route at each phase boundary. Loading this router does not replace using the

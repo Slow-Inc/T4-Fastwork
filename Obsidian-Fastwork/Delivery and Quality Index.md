@@ -18,3 +18,5 @@ source: Engineering knowledge migration from MangaDock
 - [[Baselines Before Optimization]]
 - [[Release Truth and Rollback Drills]]
 - [[User Acceptance Is a Separate Gate]]
+- [[Learning Capture Before Completion]]
+- [[Merged Branch Cleanup]]
