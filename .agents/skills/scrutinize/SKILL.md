@@ -17,6 +17,20 @@ Stand outside the change and ask whether it should exist at all, then verify it 
 
 Run these in order. Do not skip ahead.
 
+### 0. Establish the review target and security scope
+
+- For a pull request or branch intended for merge, resolve the pull request and review the actual
+  merge diff, not only the latest commit. Record the PR URL/number, base ref and SHA, head ref and
+  SHA, and the reviewed commit SHA. Re-read the head SHA before publishing the verdict; if it
+  changed, the prior review is stale and the new diff must be reviewed.
+- Classify the diff before tracing it. Invoke the `security-review` skill when it touches any trust
+  boundary, including authentication, authorization/RLS, admin or privileged writes, secrets,
+  uploads, webhooks, untrusted input, external requests, or a privileged database client. If the
+  classification is uncertain, run `security-review`. It supplements rather than replaces this
+  end-to-end review.
+- A plan, design, or local artifact may have no PR. Review and report it normally; do not create a
+  placeholder PR solely to hold evidence.
+
 ### 1. Intent — what is this actually trying to do?
 
 - State the goal in one sentence, in your own words. If you cannot, the artifact is underspecified — say so and stop.
@@ -54,6 +68,47 @@ Output one tight section per finding. Order by severity (blocker → major → n
 - **Suggested change** — concrete, minimal.
 
 Close with a one-line verdict: ship / fix-then-ship / rework / reject — with the single biggest reason.
+
+#### PR evidence — mandatory for pull-request and pre-merge reviews
+
+- Publish the complete review as a PR comment through the configured issue tracker. The comment
+  must contain a full English report and a full Thai mirror with the same scope, findings,
+  evidence, suggested changes, verification, security status, and verdict. A translated summary
+  is not sufficient.
+- Identify the reviewed PR, base/head refs and SHAs, and reviewed commit SHA in the comment so the
+  evidence cannot be reused after the code changes.
+- Include a `Security review` section. When security-sensitive, run `security-review` and mirror its
+  findings, remediations, tests, and residual risks in both languages. When it is not required,
+  state that with the concrete classification rationale in both languages.
+- Confirm that the comment exists and capture its comment URL (or stable comment ID). If posting
+  fails, do not mark `scrutinize` complete and do not recommend merge.
+- If findings are fixed or HEAD changes, review the updated actual merge diff and post a new
+  bilingual follow-up comment tied to the new reviewed commit. Never treat a stale comment as the
+  current merge gate.
+
+Use this minimum PR-comment shape (expand each finding using the report rules above):
+
+```md
+## Scrutinize review evidence
+
+PR: <url> · Base: <ref@sha> · Head/reviewed commit: <ref@sha>
+
+### English
+- Intent and simpler alternative: ...
+- Traced paths: ...
+- Findings and suggested changes: ...
+- Verification: ...
+- Security review: <required/not required, evidence and residual risks>
+- Verdict: ...
+
+### ไทย
+- เป้าหมายและทางเลือกที่ง่ายกว่า: ...
+- เส้นทางที่ตรวจ: ...
+- Findings และข้อเสนอแก้ไข: ...
+- การยืนยันผล: ...
+- Security review: <จำเป็น/ไม่จำเป็น หลักฐานและความเสี่ยงคงเหลือ>
+- Verdict: ...
+```
 
 ## Operating rules
 

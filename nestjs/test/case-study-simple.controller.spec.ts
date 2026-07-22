@@ -76,6 +76,26 @@ describe('CaseStudySimpleController', () => {
     expect(writes).toEqual([1]);
   });
 
+  it('caps generations per run at CASE_STUDY_MAX_PER_RUN (serverless-timeout guard)', async () => {
+    process.env.GITHUB_REFRESH_SECRET = 'right';
+    process.env.CASE_STUDY_MAX_PER_RUN = '2';
+    const projects: CaseStudyProject[] = Array.from({ length: 6 }, (_, i) => ({
+      id: i + 1,
+      slug: `p${i}`,
+      ghOwner: 'o',
+      ghRepo: 'r',
+      readmeSha: 'old',
+      description: null,
+    }));
+    const { c, writes } = make({ projects });
+    const res = await c.run('right', { apply: true });
+    expect(res.generated).toBe(2); // stopped after the cap
+    expect(res.attempted).toBe(2);
+    expect(res.capped).toBe(true);
+    expect(writes).toEqual([1, 2]); // only the first 2 (priority order) written
+    delete process.env.CASE_STUDY_MAX_PER_RUN;
+  });
+
   it('is fail-soft: one project throwing does not abort the batch', async () => {
     process.env.GITHUB_REFRESH_SECRET = 'right';
     const projects: CaseStudyProject[] = [
