@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/site/breadcrumb';
 import { FaqAccordion } from '@/components/site/faq-accordion';
-import { faqs } from '@/content/faqs';
+import type { Faq } from '@/content/faqs';
 import { useLocale } from '@/i18n/locale-context';
 
-export function FaqContent() {
+export function FaqContent({ faqs }: { faqs: Faq[] }) {
   const { locale } = useLocale();
   const en = locale === 'en';
   const t = (th: string, e: string) => (en ? e : th);

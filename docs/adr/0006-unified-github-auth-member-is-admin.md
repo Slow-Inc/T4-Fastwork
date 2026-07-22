@@ -1,6 +1,6 @@
 # ADR 0006 — Unified auth: members and admins log in with GitHub; admin = a member flagged `is_admin`
 
-**Status**: Accepted · 2026-07-15 · merged to `master` (PR #34, `c8a131f`)
+**Status**: Superseded by 0012 · original decision accepted 2026-07-15 · merged to `master` (PR #34, `c8a131f`)
 **Relates to**: [ADR 0005](0005-member-content-to-db-provenance-additive.md) (member CMS) · [ADR 0007](0007-db-enforced-authz-rls-is-app-admin.md) (DB authz) · Epic C #53/#57
 **Spec**: `docs/superpowers/specs/2026-07-15-member-profile-cms.md`
 

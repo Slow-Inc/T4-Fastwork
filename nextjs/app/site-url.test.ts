@@ -22,7 +22,7 @@ describe('default site URL (NEXT_PUBLIC_SITE_URL unset)', () => {
 
   it('every sitemap entry is under the live domain', async () => {
     const sitemap = (await import('./sitemap')).default;
-    const urls = sitemap().map((e) => e.url);
+    const urls = (await sitemap()).map((e) => e.url);
     expect(urls.length).toBeGreaterThan(0);
     for (const url of urls) {
       expect(url.startsWith('https://t4labs.dev')).toBe(true);

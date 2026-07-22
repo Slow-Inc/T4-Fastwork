@@ -55,8 +55,8 @@ publish-permission question, so it stays guarded — by code, not a human.
 - **Member repo SELECTION stays admin/member-curated** — that is a different layer (which repos to
   *show* on a profile, decided in `admin/members/[id]/edit`), not a safety judgment. Auto-publish
   governs *whether generated content may go live*, not *which repos are chosen*.
-- **Manual / CMS editorial content keeps its own flow** (ADR 0005 additive draft→approve is
-  unchanged; this ADR is only about GitHub-sourced *generated* content).
+- **Manual / CMS editorial flows are unchanged; the draft→approve gate itself was later removed
+  by flat-authz (ADR 0012).** This ADR is only about GitHub-sourced *generated* content.
 - **Accepted residual risk:** a public repo that leaks a secret in its README could have it echoed
   into generated copy — it is already public, but the site amplifies it. Mitigated (optionally) by
   the secret-regex redact; the owner accepts the residual.

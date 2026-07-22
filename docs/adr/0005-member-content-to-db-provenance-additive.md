@@ -32,8 +32,8 @@ static files as the seed + fallback:
   + a BEFORE-UPDATE trigger `members_flag_human_edits` (migration `0006`) that flips a field
   to `'human'` on a member edit, so a future GitHub sync never overwrites a member's own edit.
 - **Override vs additive (D4)**: override fields are the member's own facts — no approval.
-  Additive content (certificates, blog) is authored as a **draft** and requires **admin
-  approval** to publish (`member_certificates.status`, `blog_posts.published_at`).
+  **Superseded by ADR 0012:** the additive-content draft→approve gate was removed; linked team
+  members publish team content directly. The static→DB provenance decision remains valid.
 - **Read path**: DB-first repos with a static fallback so a bad deploy degrades to today's
   behaviour — `nextjs/lib/members-repo.ts` (`getTeamMembers`, `getMemberBySlug`),
   `member-content-repo.ts`, `certificates-repo.ts`, `blog-repo.ts`. `/team/[slug]` dropped

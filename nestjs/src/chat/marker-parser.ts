@@ -9,11 +9,10 @@
 
 export type CardRef =
   | { kind: 'project'; slug: string }
-  | { kind: 'service'; id: string };
+  | { kind: 'service'; id: string; title?: string; description?: string };
 
 export type ParseEvent =
-  | { type: 'text'; value: string }
-  | { type: 'card'; card: CardRef };
+  { type: 'text'; value: string } | { type: 'card'; card: CardRef };
 
 const FULL_MARKER = /^\[(PROJECT|SERVICE):([A-Za-z0-9_-]+)\]/;
 const MARKER_PREFIXES = ['PROJECT:', 'SERVICE:'];

@@ -5,9 +5,37 @@ import { ProjectGallery } from './project-gallery';
 import { CertificatesView } from './certificates-view';
 import { MetricBand } from './metric-band';
 import { services } from '@/content/services';
-import { featuredProjects } from '@/content/projects';
 import { certificates } from '@/content/site';
 import { metrics } from '@/content/site';
+
+const dbProjects = [
+  {
+    slug: 'mangadock',
+    title: 'MangaDock',
+    titleEn: 'MangaDock',
+    description: 'AI manga translation',
+    content: [],
+    category: 'AI Product',
+    tags: [],
+    technologies: ['Next.js'],
+    isFeatured: true,
+    tone: 'teal' as const,
+    year: '2026',
+  },
+  {
+    slug: 'listingthai',
+    title: 'ListingThai',
+    titleEn: 'ListingThai',
+    description: 'property marketplace',
+    content: [],
+    category: 'Web Application',
+    tags: [],
+    technologies: ['Next.js'],
+    isFeatured: true,
+    tone: 'ink' as const,
+    year: '2026',
+  },
+];
 
 afterEach(cleanup);
 
@@ -20,9 +48,9 @@ describe('ServiceList', () => {
 
 describe('ProjectGallery', () => {
   it('renders every featured project and links to its detail page', () => {
-    render(<ProjectGallery />);
-    for (const p of featuredProjects) {
-      const link = screen.getByRole('link', { name: new RegExp(p.name) });
+    render(<ProjectGallery items={dbProjects} />);
+    for (const p of dbProjects) {
+      const link = screen.getByRole('link', { name: new RegExp(p.title) });
       expect(link.getAttribute('href')).toBe(`/projects/${p.slug}`);
     }
   });

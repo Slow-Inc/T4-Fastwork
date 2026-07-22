@@ -52,7 +52,9 @@ describe('ChatService.streamChat', () => {
     expect(events.at(-1)?.type).toBe('done');
 
     const text = events
-      .filter((e): e is Extract<ChatEvent, { type: 'token' }> => e.type === 'token')
+      .filter(
+        (e): e is Extract<ChatEvent, { type: 'token' }> => e.type === 'token',
+      )
       .map((e) => e.text)
       .join('');
     expect(text).toBe('สวัสดี  ครับ'); // marker stripped
@@ -82,24 +84,30 @@ describe('ChatService.streamChat', () => {
       fakeLog() as never,
       fakeProjectContext() as never,
     );
-    const events = await collect(svc.streamChat({ message: 'hi', language: 'th' }));
+    const events = await collect(
+      svc.streamChat({ message: 'hi', language: 'th' }),
+    );
 
     const reasoning = events
-      .filter((e): e is Extract<ChatEvent, { type: 'reasoning' }> => e.type === 'reasoning')
+      .filter(
+        (e): e is Extract<ChatEvent, { type: 'reasoning' }> =>
+          e.type === 'reasoning',
+      )
       .map((e) => e.text)
       .join('');
     expect(reasoning).toBe('Let me think.');
 
     const answer = events
-      .filter((e): e is Extract<ChatEvent, { type: 'token' }> => e.type === 'token')
+      .filter(
+        (e): e is Extract<ChatEvent, { type: 'token' }> => e.type === 'token',
+      )
       .map((e) => e.text)
       .join('');
     expect(answer).toBe('สวัสดีครับ'); // no leading blank line
 
     // no token is emitted for the whitespace-only "\n\n" prefix
     const firstToken = events.find((e) => e.type === 'token') as
-      | Extract<ChatEvent, { type: 'token' }>
-      | undefined;
+      Extract<ChatEvent, { type: 'token' }> | undefined;
     expect(firstToken?.text).toBe('สวัสดี');
 
     // reasoning events come before any answer token
@@ -112,6 +120,43 @@ describe('ChatService.streamChat', () => {
     expect(typeof done.reasoningMs).toBe('number');
   });
 
+  it('enriches a service card with the retrieved title and description', async () => {
+    const serviceLlm = {
+      async *streamChat() {
+        yield { kind: 'content', value: 'ดูบริการ [SERVICE:3] ได้เลย' };
+      },
+    };
+    const retrieval = {
+      retrieve: async () => [
+        {
+          kind: 'service' as const,
+          ref: '3',
+          title: 'AI Product',
+          summary: 'chatbot และ RAG',
+        },
+      ],
+    };
+    const svc = new ChatService(
+      serviceLlm as never,
+      retrieval as never,
+      fakeLog() as never,
+      fakeProjectContext() as never,
+    );
+
+    const events = await collect(
+      svc.streamChat({ message: 'AI', language: 'th' }),
+    );
+    const card = events.find(
+      (e): e is Extract<ChatEvent, { type: 'card' }> => e.type === 'card',
+    );
+    expect(card?.card).toEqual({
+      kind: 'service',
+      id: '3',
+      title: 'AI Product',
+      description: 'chatbot และ RAG',
+    });
+  });
+
   it('sets no reasoningMs when the model does not think (content only)', async () => {
     const svc = new ChatService(
       fakeLlm as never,
@@ -119,7 +164,9 @@ describe('ChatService.streamChat', () => {
       fakeLog() as never,
       fakeProjectContext() as never,
     );
-    const events = await collect(svc.streamChat({ message: 'hi', language: 'th' }));
+    const events = await collect(
+      svc.streamChat({ message: 'hi', language: 'th' }),
+    );
     const done = events.at(-1) as Extract<ChatEvent, { type: 'done' }>;
     expect(done.reasoningMs).toBeUndefined();
     expect(events.some((e) => e.type === 'reasoning')).toBe(false);
@@ -197,7 +244,11 @@ describe('ChatService.streamChat', () => {
     );
 
     await collect(
-      svc.streamChat({ message: 'บอกรายละเอียดผลงานนี้หน่อย', language: 'th', projectSlug: 'mangadock' }),
+      svc.streamChat({
+        message: 'บอกรายละเอียดผลงานนี้หน่อย',
+        language: 'th',
+        projectSlug: 'mangadock',
+      }),
     );
 
     expect(systemPrompt).toContain('MangaDock');
@@ -232,7 +283,11 @@ describe('ChatService.streamChat', () => {
     );
 
     const events = await collect(
-      svc.streamChat({ message: 'hi', language: 'th', projectSlug: 'mangadock' }),
+      svc.streamChat({
+        message: 'hi',
+        language: 'th',
+        projectSlug: 'mangadock',
+      }),
     );
 
     expect(events.at(-1)?.type).toBe('done');

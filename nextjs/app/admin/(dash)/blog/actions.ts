@@ -4,6 +4,11 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/server';
 import { assertAdmin } from '@/lib/admin-access';
+import { contentRevalidationTargets } from '@/lib/revalidate';
+
+function revalidatePublicBlog() {
+  for (const target of contentRevalidationTargets('blog')) revalidatePath(target.path, target.type);
+}
 
 export interface PostFormState {
   error?: string;
@@ -44,6 +49,7 @@ export async function createPost(_prev: PostFormState, formData: FormData): Prom
 
   revalidatePath('/admin/blog');
   revalidatePath('/blog');
+  revalidatePublicBlog();
   redirect('/admin/blog');
 }
 
@@ -85,6 +91,7 @@ export async function updatePost(_prev: PostFormState, formData: FormData): Prom
 
   revalidatePath('/admin/blog');
   revalidatePath('/blog');
+  revalidatePublicBlog();
   redirect('/admin/blog');
 }
 
@@ -96,4 +103,5 @@ export async function deletePost(formData: FormData) {
   await supabase.from('blog_posts').delete().eq('id', Number(id));
   revalidatePath('/admin/blog');
   revalidatePath('/blog');
+  revalidatePublicBlog();
 }

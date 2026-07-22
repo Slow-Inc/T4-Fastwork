@@ -38,6 +38,23 @@ export interface RevalidateTarget {
   type?: 'page' | 'layout';
 }
 
+export type ContentRevalidationKind = 'faq' | 'service' | 'certificate' | 'blog';
+
+export function contentRevalidationTargets(
+  kind: ContentRevalidationKind,
+): RevalidateTarget[] {
+  switch (kind) {
+    case 'faq':
+      return [{ path: '/faq' }];
+    case 'service':
+      return [{ path: '/' }];
+    case 'certificate':
+      return [{ path: '/' }, { path: '/about' }];
+    case 'blog':
+      return [{ path: '/blog' }, { path: '/sitemap.xml' }];
+  }
+}
+
 /** The paths to revalidate for a project write. With a slug, target that one
  * detail page; without, target every detail page via the dynamic template. The
  * list page is always included. */

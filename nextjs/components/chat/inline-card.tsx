@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { services } from '@/content/services';
 
 export type CardData =
   | { kind: 'project'; slug: string; title?: string }
-  | { kind: 'service'; id: string };
+  | { kind: 'service'; id: string; title?: string; description?: string };
 
 /** Renders a project/service card injected mid-stream (docs/api/chat.md). Projects
  * are DB-only, so a client-rendered card labels itself from the marker's own
@@ -18,13 +17,11 @@ export function InlineCard({ card }: { card: CardData }) {
     );
   }
 
-  const svc = services.find((s) => parseInt(s.no, 10) === parseInt(card.id, 10));
-  if (!svc) return null;
   return (
     <Link href="/#services" className="chat-card">
       <span className="t-meta">บริการ</span>
-      <strong>{svc.title}</strong>
-      <span className="chat-card-desc">{svc.description}</span>
+      <strong>{card.title ?? card.id}</strong>
+      {card.description ? <span className="chat-card-desc">{card.description}</span> : null}
     </Link>
   );
 }

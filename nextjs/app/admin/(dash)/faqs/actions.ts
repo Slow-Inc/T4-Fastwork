@@ -3,6 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/server';
 import { assertAdmin } from '@/lib/admin-access';
+import { contentRevalidationTargets } from '@/lib/revalidate';
+
+function revalidatePublicFaq() {
+  for (const target of contentRevalidationTargets('faq')) revalidatePath(target.path, target.type);
+}
 
 export interface FaqFormState {
   error?: string;
@@ -28,6 +33,7 @@ export async function createFaq(
   if (error) return { error: 'บันทึกไม่สำเร็จ' };
 
   revalidatePath('/admin/faqs');
+  revalidatePublicFaq();
   return { ok: true };
 }
 
@@ -38,4 +44,5 @@ export async function deleteFaq(formData: FormData) {
   const supabase = await createClient();
   await supabase.from('faqs').delete().eq('id', Number(id));
   revalidatePath('/admin/faqs');
+  revalidatePublicFaq();
 }

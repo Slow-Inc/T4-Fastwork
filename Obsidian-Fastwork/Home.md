@@ -28,6 +28,8 @@ current behavior; this vault captures reusable reasoning and operating knowledge
 
 - [[Engineering North Star]] — simplest correct logic, maintainable long-term, with measured
   performance and surgical changes.
+- [[Frontend SSE Card Contract]] — direct card payload shape shared by the Nest chat endpoint and
+  Next chat client.
 
 ## Knowledge Maps
 

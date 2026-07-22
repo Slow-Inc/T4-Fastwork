@@ -1,6 +1,6 @@
 "use client";
 
-import { services, type Service } from "@/content/services";
+import type { Service } from "@/content/services";
 import { useLocale } from "@/i18n/locale-context";
 
 /** Presentational services list — pure, unit-testable. */
@@ -31,7 +31,7 @@ export function ServiceListView({
 }
 
 /** Homepage services (Requirement §4.5), bilingual (§7.1). */
-export function ServiceList() {
+export function ServiceList({ items }: { items: Service[] }) {
   const { locale } = useLocale();
-  return <ServiceListView items={services} en={locale === "en"} />;
+  return <ServiceListView items={items} en={locale === "en"} />;
 }

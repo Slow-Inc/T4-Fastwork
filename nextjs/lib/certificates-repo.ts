@@ -17,8 +17,9 @@ export async function getCertificates(): Promise<Certificate[]> {
     const supabase = publicDb();
     const { data, error } = await supabase
       .from('certificates')
-      .select('title, title_en, issuer, issuer_logo, issued_year, thumbnail, full_image, verify_url')
-      // Human pin (sort_order) wins (D1); AI display-rank orders the rest (nulls last).
+      .select('title, title_en, issuer, issuer_logo, issued_year, thumbnail, full_image, verify_url, is_featured')
+      // Featured pins win, then human sort_order, then AI display-rank (nulls last).
+      .order('is_featured', { ascending: false })
       .order('sort_order', { ascending: true })
       .order('ai_rank', { ascending: true, nullsFirst: false });
     if (error || !data || data.length === 0) return fallback;

@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'bun:test';
-import { postProjectRevalidation } from '../src/revalidate/revalidate';
+import {
+  postContentRevalidation,
+  postProjectRevalidation,
+} from '../src/revalidate/revalidate';
 
 function mockFetch() {
   const calls: Array<{ url: string; init?: RequestInit }> = [];
@@ -58,5 +61,19 @@ describe('postProjectRevalidation (#92 backend → frontend revalidate)', () => 
       secret: 's',
     });
     expect(ok).toBe(false);
+  });
+});
+
+describe('postContentRevalidation', () => {
+  it('posts the content kind to the frontend allowlist endpoint', async () => {
+    const { fn, calls } = mockFetch();
+    const ok = await postContentRevalidation(
+      { fetchImpl: fn, frontendOrigin: 'https://t4labs.dev', secret: 's' },
+      'certificate',
+    );
+    expect(ok).toBe(true);
+    expect(calls[0].url).toBe(
+      'https://t4labs.dev/api/revalidate?kind=certificate',
+    );
   });
 });

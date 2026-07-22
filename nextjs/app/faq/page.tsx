@@ -5,7 +5,7 @@ import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { FaqContent } from '@/components/pages/faq-content';
-import { faqs } from '@/content/faqs';
+import { getFaqs } from '@/lib/faqs-repo';
 
 export const metadata: Metadata = {
   title: 'คำถามที่พบบ่อย (FAQ) — T4 Labs',
@@ -14,7 +14,8 @@ export const metadata: Metadata = {
   alternates: pageAlternates('/faq'),
 };
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const faqs = await getFaqs();
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -33,7 +34,7 @@ export default function FaqPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <div className="wrap">
-        <FaqContent />
+        <FaqContent faqs={faqs} />
         <SiteFooter />
       </div>
       <ChatButton />
