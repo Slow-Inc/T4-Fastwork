@@ -58,6 +58,15 @@ describe('CaseStudySimpleController', () => {
     expect(writes).toHaveLength(0); // nothing written in dry-run
   });
 
+  it('a truthy-but-not-true apply value stays dry-run (no prod write)', async () => {
+    process.env.GITHUB_REFRESH_SECRET = 'right';
+    const { c, writes } = make();
+    // e.g. a stringy body from a mis-serialized client — must NOT persist.
+    const res = await c.run('right', { apply: 'true' as unknown as boolean });
+    expect(res.applied).toBe(false);
+    expect(writes).toHaveLength(0);
+  });
+
   it('apply=true persists via the store', async () => {
     process.env.GITHUB_REFRESH_SECRET = 'right';
     const { c, writes } = make();

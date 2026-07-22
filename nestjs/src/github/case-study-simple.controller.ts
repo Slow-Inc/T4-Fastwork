@@ -46,10 +46,15 @@ export class CaseStudySimpleController {
       throw new UnauthorizedException();
     }
 
+    // Strict boolean — this endpoint writes prod DB only on an EXPLICIT `true`.
+    // A truthy-but-not-true body (`"false"`, `1`, a typo) must stay dry-run, never
+    // silently persist. (`body` may itself be undefined for a bodyless POST.)
+    const apply = body?.apply === true;
+
     const projects = await this.store.listPublishedGithubProjects();
     // Dry-run: swap in a store whose publishCaseStudy is a no-op so the pure
     // service flow (delta gate + LLM) is reused unchanged but writes nothing.
-    const store: CaseStudySimpleStore = body.apply
+    const store: CaseStudySimpleStore = apply
       ? this.store
       : {
           listPublishedGithubProjects: () =>
@@ -67,6 +72,6 @@ export class CaseStudySimpleController {
         // Fail-soft per project — a bad repo/LLM reply never aborts the batch.
       }
     }
-    return { candidates: projects.length, generated, applied: Boolean(body.apply) };
+    return { candidates: projects.length, generated, applied: apply };
   }
 }

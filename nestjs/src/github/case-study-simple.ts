@@ -95,7 +95,12 @@ export class CaseStudySimpleService {
       await this.llm.complete(buildGeneratePrompt(ctx)),
     );
     // Same tech guard as ContentGenerateService — drop anything the model invented
-    // that the README doesn't evidence (defense with the UNTRUSTED_README fence).
+    // that the README doesn't evidence (defense-in-depth behind the UNTRUSTED_README
+    // fence, which is the primary injection control). NOTE: the simplified path has no
+    // repo-language metadata (`languages: {}`), so the guard degrades to a README
+    // substring check — a `technologies` tag is only cosmetic (free text on the blog
+    // post), and the fence, not this guard, blocks prompt injection. Supplying real
+    // language evidence is a follow-up if the tag quality matters.
     const guarded: GeneratedContent = {
       ...gen,
       technologies: validateTechnologies(gen.technologies, ctx.languages, ctx.readme),

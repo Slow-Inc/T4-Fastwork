@@ -45,7 +45,12 @@ describe('PgCaseStudySimpleStore', () => {
     expect(blog).toContain("'business'");
     expect(blog).toContain("'case_study'");
     expect(blog).toContain("owner = 'auto'"); // owner-guard in the conflict update
-    expect(blog).toContain('coalesce'); // published_at kept once set
+    // published_at is owner-guarded too — a human draft (published_at null, owner
+    // 'human') must NOT be silently re-published by regeneration.
+    expect(blog).toContain('coalesce'); // published_at kept once set (auto rows)
+    expect(blog).toMatch(
+      /published_at = case when blog_posts\.owner = 'auto'\s+then coalesce\(blog_posts\.published_at, now\(\)\)\s+else blog_posts\.published_at end/,
+    );
     expect(calls[0].params).toContain('proj-case-study');
     expect(calls[0].params).toContain('ชื่อ');
 

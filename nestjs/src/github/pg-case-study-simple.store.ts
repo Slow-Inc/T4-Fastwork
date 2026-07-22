@@ -71,7 +71,9 @@ export class PgCaseStudySimpleStore implements CaseStudySimpleStore {
               excerpt = case when blog_posts.owner = 'auto' then excluded.excerpt else blog_posts.excerpt end,
               content = case when blog_posts.owner = 'auto' then excluded.content else blog_posts.content end,
               tags = case when blog_posts.owner = 'auto' then excluded.tags else blog_posts.tags end,
-              published_at = coalesce(blog_posts.published_at, now())`,
+              published_at = case when blog_posts.owner = 'auto'
+                                  then coalesce(blog_posts.published_at, now())
+                                  else blog_posts.published_at end`,
       );
       // b) Mirror the narrative into projects.content (owner-guarded) so the existing
       //    chunkProject/RAG ingest picks it up — no chunkBlog needed. readme_sha is
