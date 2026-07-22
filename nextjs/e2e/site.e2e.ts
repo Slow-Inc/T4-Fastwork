@@ -461,6 +461,42 @@ test("the /projects grid reveals even when it is many cards tall (reveal not rat
   await expect(page.locator(".pcard").first()).toBeVisible();
 });
 
+test("every project card bottom-aligns its 'ดูรายละเอียด' action row (missing desc/tags)", async ({
+  page,
+}) => {
+  // Cards with no description/tags (e.g. a bare GitHub repo) used to float their
+  // action row up under the title while richer rowmates pushed theirs to the
+  // bottom — a ragged row. The fix: .pcard-body flex:1 + .pcard-actions
+  // margin-top:auto, so the action row sits at the card bottom regardless of copy.
+  await page.goto("/projects", { waitUntil: "networkidle" });
+  await expect(page.locator(".pcard").first()).toBeVisible();
+
+  const check = await page.evaluate(() => {
+    const bodyGrow = getComputedStyle(
+      document.querySelector(".pcard-body")!,
+    ).flexGrow;
+    // For every card the action row must hug the bottom: the gap to the card
+    // bottom is just the body's bottom padding (~20px), never the tall empty
+    // space a top-anchored action row would leave on a short card.
+    const maxGap = Math.max(
+      ...[...document.querySelectorAll(".pcard")].map((c) => {
+        const cardB = c.getBoundingClientRect().bottom;
+        const actB = c
+          .querySelector(".pcard-actions")!
+          .getBoundingClientRect().bottom;
+        return cardB - actB;
+      }),
+    );
+    return { bodyGrow, maxGap: Math.round(maxGap) };
+  });
+
+  expect(check.bodyGrow, ".pcard-body must grow to fill the card").toBe("1");
+  expect(
+    check.maxGap,
+    "an action row is not bottom-anchored (ragged card)",
+  ).toBeLessThanOrEqual(32);
+});
+
 test("project detail shows an owner chip (team/personal) — spec P6", async ({
   page,
 }) => {
