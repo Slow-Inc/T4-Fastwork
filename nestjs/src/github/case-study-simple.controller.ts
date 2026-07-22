@@ -59,16 +59,19 @@ export class CaseStudySimpleController {
 
     // Bound the LLM calls per invocation so one request stays under the serverless
     // timeout (Vercel maxDuration 60s — an unbounded loop over all candidates timed
-    // out with 504). The delta-gate makes the job idempotent + incremental: a
-    // generated project bumps `readme_sha` and is skipped next run, so repeated cron
-    // runs converge — this cap limits how many are done per run, never which.
-    // A malformed env (non-numeric → NaN) must NOT silently disable the cap
-    // (`attempted >= NaN` is always false → unbounded); fall back to the default.
+    // out with 504). Measured on prod, one non-streaming `complete()` with the
+    // reasoning model is ~15s, so the default of 2 (~30s + the snapshot scan) leaves
+    // comfortable margin; 5 (~75s) timed out. The delta-gate makes the job idempotent
+    // + incremental — a generated project bumps `readme_sha` and is skipped next run,
+    // and each generation commits its own txn, so even a timeout persists the finished
+    // ones and the hourly cron converges. Tune up via `CASE_STUDY_MAX_PER_RUN` only if
+    // the plan's maxDuration allows. A malformed env (non-numeric → NaN) must NOT
+    // silently disable the cap (`attempted >= NaN` is always false → unbounded).
     const configured = Number(process.env.CASE_STUDY_MAX_PER_RUN);
     const maxPerRun =
       Number.isFinite(configured) && configured >= 1
         ? Math.floor(configured)
-        : 5;
+        : 2;
 
     const projects = await this.store.listPublishedGithubProjects();
     // Dry-run: swap in a store whose publishCaseStudy is a no-op so the pure
