@@ -1,19 +1,20 @@
 import 'server-only';
 import { publicDb } from '@/lib/public-db';
-import { projects as staticProjects, type Project } from '@/content/catalog';
-import {
-  mapDbProject,
-  mergeProjects,
-  overlayLiveFields,
-  type DbProjectRow,
-} from './project-map';
-import { orderByRank } from './project-rank';
+import { type Project } from '@/content/catalog';
+import { mapDbProject, type DbProjectRow } from './project-map';
 
 /**
- * Projects data access (Requirement §10 / §12). The rich curated catalog is the
- * base; projects created in the admin CMS (new slugs in the DB) are merged in so
- * they appear on the public site without a redeploy. Any DB/env failure falls
- * back to the static catalog, so the site never breaks.
+ * Projects data access (Requirement §10 / §12) — DB-ONLY.
+ *
+ * Both the list (`getAllProjects`) and the detail (`getProjectBySlug`) read the
+ * published projects managed in the admin CMS / GitHub ingestion, with NO static
+ * catalog: the public showcase mirrors the DB — and therefore the admin dashboard —
+ * exactly, so everything is editable from admin (dev decision 2026-07-23). A DB/env
+ * failure yields an empty result rather than falling back to hardcoded content.
+ *
+ * Public reads are gated by BOTH the `status` publication flag and a `published_at`
+ * date — `published_at` alone let a draft/hidden row (e.g. a GitHub auto-draft) leak
+ * once it had a date (#63). The DB `.order('ai_rank')` applies the AI display order.
  */
 
 const SELECT =
@@ -24,27 +25,23 @@ const SELECT =
   'project_technologies(technologies(name)),' +
   'project_tags(tags(name))';
 
-/** slug → ai_rank for the published projects — drives the display order of the
- * (static-content) Featured / Selected-work / list without moving content to the DB (B5). */
-function rankFromRows(rows: { slug: string; ai_rank: number | null }[]): Map<string, number> {
-  const m = new Map<string, number>();
-  for (const r of rows) if (r.ai_rank != null) m.set(r.slug, r.ai_rank);
-  return m;
-}
-
+/** slug → ai_rank for the published projects — drives the AI display order of the
+ * home "Selected work" editorial mosaic (a separate positional design element in
+ * `content/projects.ts`) without moving that mosaic's content into the DB (B5). */
 export async function getProjectRankMap(): Promise<Map<string, number>> {
   try {
     const supabase = publicDb();
     const { data, error } = await supabase
       .from('projects')
       .select('slug, ai_rank')
-      // Public reads must be gated by BOTH the `status` publication flag and a
-      // publish date — `published_at` alone let a draft/hidden row (e.g. a GitHub
-      // auto-draft) leak once it had a date (#63).
       .eq('status', 'published')
       .not('published_at', 'is', null);
     if (error || !data) return new Map();
-    return rankFromRows(data as { slug: string; ai_rank: number | null }[]);
+    const m = new Map<string, number>();
+    for (const r of data as { slug: string; ai_rank: number | null }[]) {
+      if (r.ai_rank != null) m.set(r.slug, r.ai_rank);
+    }
+    return m;
   } catch {
     return new Map();
   }
@@ -59,18 +56,14 @@ export async function getAllProjects(): Promise<Project[]> {
       .eq('status', 'published')
       .not('published_at', 'is', null)
       .order('ai_rank', { ascending: true, nullsFirst: false });
-    if (error || !data) return staticProjects;
-    const rows = data as unknown as (DbProjectRow & { ai_rank: number | null })[];
-    const dbProjects = rows.map(mapDbProject);
-    // Content stays the static catalog (parity); the AI rank only reorders it (B5).
-    return orderByRank(mergeProjects(staticProjects, dbProjects), rankFromRows(rows));
+    if (error || !data) return [];
+    return (data as unknown as DbProjectRow[]).map(mapDbProject);
   } catch {
-    return staticProjects;
+    return [];
   }
 }
 
 export async function getProjectBySlug(slug: string): Promise<Project | undefined> {
-  const fromStatic = staticProjects.find((p) => p.slug === slug);
   try {
     const supabase = publicDb();
     const { data, error } = await supabase
@@ -80,14 +73,9 @@ export async function getProjectBySlug(slug: string): Promise<Project | undefine
       .eq('status', 'published')
       .not('published_at', 'is', null)
       .maybeSingle();
-    const db =
-      !error && data ? mapDbProject(data as unknown as DbProjectRow) : undefined;
-    // Static slug: overlay the DB's live snapshot onto the curated entry — parity
-    // with the /projects list (which overlays via mergeProjects), so the detail
-    // page shows the screenshot too, not just the card.
-    if (fromStatic) return overlayLiveFields(fromStatic, db);
-    return db;
+    if (error || !data) return undefined;
+    return mapDbProject(data as unknown as DbProjectRow);
   } catch {
-    return fromStatic;
+    return undefined;
   }
 }

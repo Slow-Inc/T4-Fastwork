@@ -1,11 +1,5 @@
 import { test, expect, describe } from 'bun:test';
-import {
-  mapDbProject,
-  toneForSlug,
-  mergeProjects,
-  overlayLiveFields,
-} from './project-map';
-import type { Project } from '@/content/catalog';
+import { mapDbProject, toneForSlug } from './project-map';
 
 const dbRow = {
   slug: 'admin-added',
@@ -62,82 +56,5 @@ describe('mapDbProject', () => {
     expect(p.tags).toEqual([]);
     expect(p.content).toEqual([]);
     expect(p.liveUrl).toBeUndefined();
-  });
-});
-
-describe('mergeProjects', () => {
-  const staticProjects: Project[] = [
-    {
-      slug: 'mangadock',
-      title: 'MangaDock',
-      titleEn: 'MangaDock',
-      description: 'x',
-      content: [],
-      category: 'AI/Automation',
-      tags: [],
-      technologies: [],
-      isFeatured: true,
-      tone: 'teal',
-      year: '2025',
-    },
-  ];
-
-  test('appends DB projects with new slugs', () => {
-    const merged = mergeProjects(staticProjects, [mapDbProject(dbRow)]);
-    expect(merged.length).toBe(2);
-    expect(merged.some((p) => p.slug === 'admin-added')).toBe(true);
-  });
-
-  test('static entries win over DB duplicates by slug', () => {
-    const dupe = mapDbProject({ ...dbRow, slug: 'mangadock', title: 'From DB' });
-    const merged = mergeProjects(staticProjects, [dupe]);
-    expect(merged.length).toBe(1);
-    expect(merged[0].title).toBe('MangaDock');
-  });
-
-  test('overlays the DB snapshotImage onto a same-slug static entry (live field from DB)', () => {
-    // Static MangaDock has no snapshotImage; the screenshot worker writes it to
-    // the DB. The curated identity stays static; only the live field is overlaid.
-    const dbWithShot = mapDbProject({
-      ...dbRow,
-      slug: 'mangadock',
-      title: 'From DB',
-      snapshot_image: 'https://cdn.example/mangadock.jpg',
-    });
-    const merged = mergeProjects(staticProjects, [dbWithShot]);
-    expect(merged.length).toBe(1);
-    expect(merged[0].title).toBe('MangaDock'); // curated static field preserved
-    expect(merged[0].snapshotImage).toBe('https://cdn.example/mangadock.jpg'); // live field overlaid
-  });
-
-  test('a DB row without a snapshotImage does not clobber the static entry', () => {
-    const dbNoShot = mapDbProject({ ...dbRow, slug: 'mangadock' }); // no snapshot_image
-    const merged = mergeProjects(staticProjects, [dbNoShot]);
-    expect(merged.length).toBe(1);
-    expect(merged[0].snapshotImage).toBeUndefined();
-  });
-});
-
-describe('overlayLiveFields', () => {
-  const base = mapDbProject({ ...dbRow, slug: 'mangadock' }); // no snapshot_image
-
-  test('overlays a DB snapshotImage onto the base entry', () => {
-    const db = mapDbProject({
-      ...dbRow,
-      slug: 'mangadock',
-      snapshot_image: 'https://cdn.example/x.jpg',
-    });
-    expect(overlayLiveFields(base, db).snapshotImage).toBe(
-      'https://cdn.example/x.jpg',
-    );
-  });
-
-  test('an undefined DB row returns the base unchanged', () => {
-    expect(overlayLiveFields(base, undefined)).toBe(base);
-  });
-
-  test('a null DB snapshotImage does not clobber the base', () => {
-    const dbNoShot = mapDbProject({ ...dbRow, slug: 'mangadock' });
-    expect(overlayLiveFields(base, dbNoShot).snapshotImage).toBeUndefined();
   });
 });

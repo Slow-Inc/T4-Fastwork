@@ -214,7 +214,15 @@ test("experience + project-count claims are accurate everywhere (7 years, 21+ pr
     expect(bodyText, `${path} should not claim 500 projects`).not.toContain(
       "500",
     );
-    expect(bodyText, `${path} should claim 21+ projects`).toContain("21+");
+    // The project count is DYNAMIC (getSiteStats over the DB — member + team
+    // projects), not a hardcoded "21+": assert the largest "N+" claim on the page
+    // is a real count of at least 21 (years is "7+"), so it grows with the DB and
+    // a collapse to 0/empty still fails.
+    const counts = [...bodyText.matchAll(/(\d+)\+/g)].map((m) => Number(m[1]));
+    expect(
+      Math.max(0, ...counts),
+      `${path} should claim a real (dynamic) project count ≥ 21`,
+    ).toBeGreaterThanOrEqual(21);
   }
 });
 
@@ -434,6 +442,40 @@ test("home shows the team directory and a filterable tech-stack — spec P8 / §
   await expect(chip).toBeVisible();
   await expect(chip).toHaveAttribute("href", /\/projects\?tech=/);
   expect(errors).toEqual([]);
+});
+
+test("the /projects showcase is DB-only — retired mockups don't leak, real projects do", async ({
+  page,
+}) => {
+  // The static catalog was retired (dev decision 2026-07-23): /projects mirrors the
+  // published DB rows (admin-editable) only. The old curated mockups must be gone,
+  // a former-mockup slug now 404s, and a real DB project still resolves.
+  await page.goto("/projects", { waitUntil: "networkidle" });
+  const slugs = await page.$$eval(".pcard a.pcard-shot", (as) =>
+    as.map((a) => (a.getAttribute("href") ?? "").split("/").pop()),
+  );
+  for (const mockup of [
+    "listingthai",
+    "powernics",
+    "ghost-maps",
+    "clinic-flow",
+    "stockpilot",
+    "docai-extract",
+    "eduportal",
+  ]) {
+    expect(slugs, `mockup ${mockup} must not leak into the DB-only list`).not.toContain(
+      mockup,
+    );
+  }
+  // A real, DB-backed project is present and its detail resolves.
+  expect(slugs, "the real flagship should be in the DB list").toContain("mangadock");
+  const ok = await page.goto("/projects/mangadock", { waitUntil: "networkidle" });
+  expect(ok?.status(), "mangadock detail should resolve").toBeLessThan(400);
+  await expect(page.locator("h1").first()).toBeVisible();
+
+  // A retired mockup slug is no longer in the DB → its detail 404s.
+  const gone = await page.goto("/projects/listingthai", { waitUntil: "networkidle" });
+  expect(gone?.status(), "a retired mockup slug should 404").toBe(404);
 });
 
 test("the /projects grid reveals even when it is many cards tall (reveal not ratio-gated)", async ({
