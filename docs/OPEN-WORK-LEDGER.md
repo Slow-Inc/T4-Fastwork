@@ -24,11 +24,17 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
 - **Verify:** lint + tsc clean (only `.next` typegen noise); **codex adversarial security review**
   — all findings adjudicated (member_id=content not identity; app_admins=intended break-glass;
   status already NOT NULL). Turnkey JWT-sim SQL embedded in 0023+0024.
-- **PARKED (🔴 boundary/cost — for the human):** (1) **prod-apply of 0023+0024** = irreversible
+- **App-layer flatten DONE (`bffddb2`, pushed):** folded the whole member self-service area into
+  /admin + removed all approval flows. Deleted `app/member/**` + `admin/(dash)/approvals/**` +
+  member-admin-toggle + the `is_admin` roster column (-623 net). Moved the 3 member editors into a
+  new `admin/members/[id]/edit` (profile skills/stack/README, project selection, certificates —
+  certs now publish directly, no draft). Roster rows link to it; auth callback default `/member`
+  →`/admin`; `member-session.ts` trimmed to the two editor types. Build+lint clean, e2e 8/8.
+- **PARKED (🔴 boundary/cost — for the human):** (1) **prod-apply of 0023+0024+0025** = irreversible
   authz boundary → human deploys after review, preflight `select distinct status from
-  member_certificates`; (2) **Supabase-branch JWT verify** (needs `confirm_cost` + seeded members);
-  (3) app cleanup: remove the now-vestigial approvals-queue + member-admin-toggle UI + reconcile
-  the member self-service draft flow.
+  member_certificates` + the 0025 dup-url preflight; (2) **Supabase-branch JWT verify** (needs
+  `confirm_cost` + seeded members). NOTE cross-member admin reads/writes + seeing unselected
+  member_projects all rely on 0024's team-wide RLS being applied (deploys as a unit with this branch).
 - **Slice B (ingestion) — B1–B3 DONE (`b9fab85`, `40dbbe3`, pushed):** the inert `CurateService`
   (no caller before) is now wired end-to-end. B1 threads repo `homepage → projects.live_url` via
   the previously-unused `mapRepoMetadata`. B2 `PgProjectDraftStore` (Drizzle pooler, idempotent
@@ -37,12 +43,15 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
   snapshot → `collectReposFromSnapshots` → `CurateService`. `GithubCurateModule` in AppModule. 250
   nestjs tests pass, build green. This is the real "pull each person + all their repos → showcase"
   path. See [[showcase-system-already-built]].
-- **Slice B — B4 PARKED (its own increment):** reconcile `member_projects` from live
-  `github_snapshots` so each member selects their REAL repos — needs a `(member_id, name|url)`
-  **unique-constraint migration** + an upsert that PRESERVES human-owned `selected`/`sort_order`
-  (mirror the auto-owned guard in `pg-generate.store.ts`), resolving the member row by
-  `github_login`. Distinct from the org/team project curation above. Then downstream: `project_documents`
-  ingest → case studies (#81) → RAG → rank cron.
+- **Slice B — B4 DONE (`3cfd186`, pushed):** `POST /github/sync-member-projects` pulls EVERY
+  public repo per member (forks+archived included — no eligibility filter; dev's call "pull all,
+  choose in admin") into `member_projects`. Migration `0025` = unique(member_id, url); the upsert
+  refreshes content but PRESERVES the admin's `selected`/`sort_order`; new rows land `selected=false`
+  (hidden until picked in `admin/members/[id]/edit`). `github-member-sync.ts` (pure mapper +
+  reconcile) + `PgMemberProjectStore` + `GithubMemberSyncModule`. Secret-guarded, dry-run default.
+  260 tests, build green. **To run end-to-end:** members need `github_login` set + the hourly
+  snapshot sync populated + 0025 applied; admin toggling needs 0024. Downstream still open:
+  `project_documents` ingest → case studies (#81) → RAG → rank cron.
 
 ## ✅ 2026-07-18 (AFK) — home "labs-grade" redesign shipped (#108/#109, `59dbbad`)
 
