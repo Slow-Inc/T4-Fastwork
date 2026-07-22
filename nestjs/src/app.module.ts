@@ -6,6 +6,7 @@ import { HealthModule } from './health/health.module';
 import { ChatModule } from './chat/chat.module';
 import { GithubModule } from './github/github.module';
 import { GithubGenerateModule } from './github/github-generate.module';
+import { CaseStudySimpleModule } from './github/case-study-simple.module';
 import { GithubCurateModule } from './github/github-curate.module';
 import { GithubMemberSyncModule } from './github/github-member-sync.module';
 import { CaseStudyModule } from './github/github-case-study.module';
@@ -24,6 +25,7 @@ import { RankModule } from './rank/rank.module';
     ChatModule,
     GithubModule,
     GithubGenerateModule,
+    CaseStudySimpleModule,
     GithubCurateModule,
     GithubMemberSyncModule,
     CaseStudyModule,
