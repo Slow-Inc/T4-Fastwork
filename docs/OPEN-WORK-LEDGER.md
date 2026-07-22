@@ -3,8 +3,10 @@
 - **🔴 Migration tracking drift (2026-07-23):** `supabase_migrations.schema_migrations` is current only
   to **0022** (ts 20260717222128). **0023/0024/0025** (flat-authz, prior session) **and 0026/0027**
   (faqs/services `_en` + certificates `is_featured`, this session) were all applied to prod out-of-band
-  via raw `execute_sql`, so they have **no tracking row**. Consequence: a `supabase db push` would try to
-  re-run them — 0026/0027 are `if not exists` (safe) but 0023/0024 `create policy` would ERROR.
+  via raw `execute_sql`, so they have **no tracking row**. **0028** (blog `title_en/excerpt_en/content_en`)
+  is now committed on master too but **NOT applied** — additive/`if not exists`, safe to `db push`, and
+  master runs fine without it (blog-repo's SELECT is EN-free). Consequence: a `supabase db push` would try
+  to re-run 0023–0028 — 0026/0027/0028 are `if not exists` (safe) but 0023/0024 `create policy` would ERROR.
   **RECONCILE via the supported path only** (`supabase migration repair --status applied <ver>` — CLI at
   `~/scoop/shims/supabase.exe`, dev logged in), NOT more raw SQL and NOT by hand-editing the table. This
   is a prod-DB write ⇒ needs explicit authz per CLAUDE.md's prod-DB rule. Blocker before the next
@@ -13,6 +15,25 @@
 
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
+
+## 2026-07-23 (AFK) — Fix Plan Wave 2 shipped + Wave 3 (inert) shipped
+
+- **Wave 2 (#114, PR #115 → master `dcd1a65`):** blog SEO from DB (sitemap + `generateStaticParams`
+  via `getPosts`, `dynamicParams`), `/team/[slug]` + `/blog/[slug]` ISR `revalidate=300`, and GitHub
+  detail from DB — `GithubRefreshService` now detail-syncs every published github project (new
+  `PgShowcaseRepoStore`, union+dedupe+cap-50+serve-stale), not just MangaDock. codex review cleared
+  (blog ISR, `published_at` predicate, deterministic order). nestjs 273→ + e2e 58/58.
+- **Wave 3 T3.1–T3.3 (#116, PR #117 → master):** simplified case-study generator (ADR 0013) — service
+  + `PgCaseStudySimpleStore` (one-txn upsert `audience='business'` post + `projects.content` mirror,
+  owner-guarded incl. `published_at`, readme_sha delta-gate) + secret-guarded inert `POST
+  /github/generate-case-studies` (dry-run default, strict `apply===true`). security-review PASS; codex
+  review cleared 2 findings. nestjs 286 pass. **Ships INERT** — writes nothing until POSTed w/ secret +
+  `apply:true`.
+- **🔴 PARKED for explicit authz (prod DB writes):** (a) migration **0028** (blog EN cols) — committed on
+  master, **NOT applied** (extends the drift set below; blog-repo SELECT is EN-free so master is safe
+  without it); the coupled blog-repo EN SELECT ships in the same deploy as 0028's apply. (b) **Wave 3
+  T3.4** — the cron leg + first `apply:true` canary + T3.5 RAG-confirm (#116 is `ready-for-human`).
+  (c) migration tracking-drift reconcile (below).
 
 ## ⚠️ 2026-07-22 — flat-authz migrations APPLIED TO PROD out-of-band (process note)
 
