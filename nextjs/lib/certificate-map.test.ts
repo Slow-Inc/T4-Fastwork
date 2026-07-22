@@ -22,6 +22,7 @@ describe('mapDbCertificate', () => {
       thumbnail: 'https://cdn/thumb.png',
       fullImage: 'https://cdn/full.png',
       verifyUrl: 'https://coursera.org/verify/abc',
+      isFeatured: false,
     });
   });
 
@@ -42,6 +43,17 @@ describe('mapDbCertificate', () => {
     expect(c.thumbnail).toBeUndefined();
     expect(c.fullImage).toBeUndefined();
     expect(c.verifyUrl).toBeUndefined();
+    expect(c.isFeatured).toBe(false);
+  });
+
+  test('maps a featured certificate flag', () => {
+    expect(
+      mapDbCertificate({
+        title: 'Featured',
+        issuer: 'Issuer',
+        is_featured: true,
+      }).isFeatured,
+    ).toBe(true);
   });
 });
 

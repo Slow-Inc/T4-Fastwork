@@ -127,6 +127,7 @@ export interface Certificate {
   thumbnail?: string;
   fullImage?: string;
   verifyUrl?: string;
+  isFeatured?: boolean;
 }
 export const certificates: Certificate[] = [
   { issuer: 'NVIDIA', title: 'AI for All: From Basics to GenAI Practice' },

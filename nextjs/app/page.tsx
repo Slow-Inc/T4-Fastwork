@@ -11,7 +11,8 @@ import { FeaturedCarousel } from "@/components/site/featured-carousel";
 import { Certificates } from "@/components/site/certificates";
 import { facetsFor } from "@/content/catalog";
 import { metricsFromStats } from "@/content/site";
-import { getAllProjects, getProjectRankMap } from "@/lib/projects-repo";
+import { getAllProjects } from "@/lib/projects-repo";
+import { getServices } from "@/lib/services-repo";
 import { getSiteStats } from "@/lib/site-stats";
 import { TeamTechSection } from "@/components/site/team-tech-section";
 import { CtaSection } from "@/components/site/cta-section";
@@ -22,12 +23,11 @@ import { CountUpObserver } from "@/components/site/count-up-observer";
 import { SmoothScroll } from "@/components/site/smooth-scroll";
 
 export default async function Home() {
-  // DB-only showcase: the featured carousel + tech chips come from the published
-  // projects (admin-editable). The AI display-rank map still orders the separate
-  // "Selected work" editorial mosaic. Live headline stats drive the hero band.
-  const [all, rank, stats] = await Promise.all([
+  // DB-only showcase: published projects and services are admin-editable.
+  // Live headline stats drive the hero band.
+  const [all, services, stats] = await Promise.all([
     getAllProjects(),
-    getProjectRankMap(),
+    getServices(),
     getSiteStats(),
   ]);
   const featured = all.filter((p) => p.isFeatured);
@@ -44,8 +44,8 @@ export default async function Home() {
         <TeamTechSection />
         <FeaturedCarousel projects={featured} />
         <SolutionSelector />
-        <ProjectGallery order={rank} />
-        <ServiceList />
+        <ProjectGallery items={all.slice(0, 4)} />
+        <ServiceList items={services} />
         <ProcessSchematic />
         <SdlcSection />
         <TeamSection />

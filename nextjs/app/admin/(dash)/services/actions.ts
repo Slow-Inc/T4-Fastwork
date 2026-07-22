@@ -3,6 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/server';
 import { assertAdmin } from '@/lib/admin-access';
+import { contentRevalidationTargets } from '@/lib/revalidate';
+
+function revalidatePublicServices() {
+  for (const target of contentRevalidationTargets('service')) revalidatePath(target.path, target.type);
+}
 
 export interface ServiceFormState {
   error?: string;
@@ -28,6 +33,7 @@ export async function createService(
   if (error) return { error: 'บันทึกไม่สำเร็จ' };
 
   revalidatePath('/admin/services');
+  revalidatePublicServices();
   return { ok: true };
 }
 
@@ -38,4 +44,5 @@ export async function deleteService(formData: FormData) {
   const supabase = await createClient();
   await supabase.from('services').delete().eq('id', Number(id));
   revalidatePath('/admin/services');
+  revalidatePublicServices();
 }

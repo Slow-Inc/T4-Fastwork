@@ -21,6 +21,9 @@ export interface RevalidateDeps {
   secret: string | undefined;
 }
 
+export type ContentRevalidationKind =
+  'faq' | 'service' | 'certificate' | 'blog';
+
 /** Fire a bulk project revalidation at the frontend. Returns whether the POST
  * was attempted+succeeded; never throws. */
 export async function postProjectRevalidation(
@@ -31,6 +34,24 @@ export async function postProjectRevalidation(
   const origin = parseAllowedOrigins(frontendOrigin)[0];
   try {
     await fetchImpl(`${origin}/api/revalidate`, {
+      method: 'POST',
+      headers: { 'x-refresh-secret': secret },
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function postContentRevalidation(
+  deps: RevalidateDeps,
+  kind: ContentRevalidationKind,
+): Promise<boolean> {
+  const { fetchImpl, frontendOrigin, secret } = deps;
+  if (!secret) return false;
+  const origin = parseAllowedOrigins(frontendOrigin)[0];
+  try {
+    await fetchImpl(`${origin}/api/revalidate?kind=${kind}`, {
       method: 'POST',
       headers: { 'x-refresh-secret': secret },
     });

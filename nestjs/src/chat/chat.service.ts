@@ -15,6 +15,16 @@ import type { ChatEvent, ChatInput } from './chat.types';
 
 const MODEL = process.env.CUSTOM_OPENAI_MODEL ?? 'qwen3.6-35b-a3b';
 
+function enrichCard(card: CardRef, retrieved: RetrievedItem[]): CardRef {
+  if (card.kind !== 'service') return card;
+  const item = retrieved.find(
+    (candidate) => candidate.kind === 'service' && candidate.ref === card.id,
+  );
+  return item
+    ? { ...card, title: item.title, description: item.summary }
+    : card;
+}
+
 /**
  * Orchestrates a chat turn: retrieve context → build the system prompt →
  * stream the LLM → parse markers into card events → wrap failures in a
@@ -85,8 +95,9 @@ export class ChatService {
           assistantText += value;
           yield { type: 'token', text: value };
         } else {
-          cards.push(ev.card);
-          yield { type: 'card', card: ev.card };
+          const card = enrichCard(ev.card, retrieved);
+          cards.push(card);
+          yield { type: 'card', card };
         }
       }
     }.bind(this);

@@ -1,5 +1,8 @@
 # Open-Work Ledger
 
+- **Migration hygiene (2026-07-23):** 0023–0025 were applied out-of-band and are tracking-drifted;
+  migration 0026+ must be applied through the supported path, never by hand-editing the tracking table.
+
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 

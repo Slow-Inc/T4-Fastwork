@@ -14,6 +14,7 @@ export interface DbCertificateRow {
   thumbnail?: string | null;
   full_image?: string | null;
   verify_url?: string | null;
+  is_featured?: boolean | null;
 }
 
 export function mapDbCertificate(row: DbCertificateRow): Certificate {
@@ -26,6 +27,7 @@ export function mapDbCertificate(row: DbCertificateRow): Certificate {
     thumbnail: row.thumbnail ?? undefined,
     fullImage: row.full_image ?? undefined,
     verifyUrl: row.verify_url ?? undefined,
+    isFeatured: row.is_featured ?? false,
   };
 }
 

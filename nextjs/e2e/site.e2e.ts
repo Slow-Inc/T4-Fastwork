@@ -286,6 +286,49 @@ test("FAQ list items expand with a smooth transition", async ({ page }) => {
   await expect(answer).toBeVisible();
 });
 
+test("DB-backed FAQ keeps an English answer after switching locale", async ({
+  page,
+}) => {
+  await page.goto("/faq", { waitUntil: "networkidle" });
+  await expect(page.locator(".faq-item").first()).toBeVisible();
+  await page
+    .locator("nav")
+    .first()
+    .getByRole("button", { name: /Switch language/i })
+    .click();
+  await expect(page.getByText("How long does a build take?")).toBeVisible();
+});
+
+test("home renders the DB-backed service list and selected-work mosaic", async ({
+  page,
+}) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  await expect(page.locator("#services .srv-row").first()).toBeVisible();
+  await expect(page.locator("#work a[href^='/projects/']").first()).toBeVisible();
+});
+
+test("chat service cards render the label carried by the backend event", async ({
+  page,
+}) => {
+  await page.route("**/chat/stream", async (route) => {
+    const body =
+      'event: session\ndata: {"sessionId":"e2e-service-card"}\n\n' +
+      'event: card\ndata: {"kind":"service","id":"3","title":"AI Product","description":"chatbot และ RAG"}\n\n' +
+      'event: done\ndata: {"latencyMs":10}\n\n';
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body,
+    });
+  });
+
+  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.getByPlaceholder("พิมพ์ข้อความ…").fill("AI");
+  await page.locator(".chat-pane .chat-send").click();
+  await expect(page.locator(".chat-card strong")).toHaveText("AI Product");
+  await expect(page.locator(".chat-card-desc")).toHaveText("chatbot และ RAG");
+});
+
 test("FAQ items slide down into place with a cascading stagger", async ({
   page,
 }) => {

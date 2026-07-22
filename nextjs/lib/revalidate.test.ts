@@ -2,6 +2,7 @@ import { describe, it, expect } from 'bun:test';
 import {
   constantTimeEqual,
   authorizeRevalidate,
+  contentRevalidationTargets,
   revalidationTargets,
 } from './revalidate';
 
@@ -57,6 +58,21 @@ describe('revalidationTargets', () => {
     expect(revalidationTargets('')).toEqual([
       { path: '/projects' },
       { path: '/projects/[slug]', type: 'page' },
+    ]);
+  });
+});
+
+describe('contentRevalidationTargets', () => {
+  it('targets the public surface for each CMS content kind', () => {
+    expect(contentRevalidationTargets('faq')).toEqual([{ path: '/faq' }]);
+    expect(contentRevalidationTargets('service')).toEqual([{ path: '/' }]);
+    expect(contentRevalidationTargets('certificate')).toEqual([
+      { path: '/' },
+      { path: '/about' },
+    ]);
+    expect(contentRevalidationTargets('blog')).toEqual([
+      { path: '/blog' },
+      { path: '/sitemap.xml' },
     ]);
   });
 });

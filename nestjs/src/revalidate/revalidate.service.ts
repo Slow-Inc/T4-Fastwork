@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { postProjectRevalidation } from './revalidate';
+import {
+  postContentRevalidation,
+  postProjectRevalidation,
+  type ContentRevalidationKind,
+} from './revalidate';
 
 /**
  * Fire-and-forget bulk revalidation of the public project pages after a
@@ -15,5 +19,16 @@ export class RevalidateService {
       frontendOrigin: process.env.FRONTEND_ORIGIN,
       secret: process.env.GITHUB_REFRESH_SECRET,
     });
+  }
+
+  async revalidateContent(kind: ContentRevalidationKind): Promise<boolean> {
+    return postContentRevalidation(
+      {
+        fetchImpl: globalThis.fetch,
+        frontendOrigin: process.env.FRONTEND_ORIGIN,
+        secret: process.env.GITHUB_REFRESH_SECRET,
+      },
+      kind,
+    );
   }
 }

@@ -119,6 +119,7 @@ export const services = pgTable('services', {
   title: text('title').notNull(),
   targetAudience: text('target_audience'),
   description: text('description'),
+  descriptionEn: text('description_en'),
   icon: text('icon'),
   sortOrder: integer('sort_order').notNull().default(0),
 });
@@ -127,6 +128,8 @@ export const faqs = pgTable('faqs', {
   id: serial('id').primaryKey(),
   question: text('question').notNull(),
   answer: text('answer').notNull(),
+  questionEn: text('question_en'),
+  answerEn: text('answer_en'),
   category: text('category'),
   sortOrder: integer('sort_order').notNull().default(0),
 });
