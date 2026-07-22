@@ -20,3 +20,4 @@ source: Engineering knowledge migration from MangaDock
 - [[User Acceptance Is a Separate Gate]]
 - [[Learning Capture Before Completion]]
 - [[Merged Branch Cleanup]]
+- [[Bilingual Pre-Merge Review Evidence]]
