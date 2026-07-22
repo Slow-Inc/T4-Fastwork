@@ -11,22 +11,36 @@ Single source of open work (tracked + untracked). Newest/most-active on top.
   `docs/reports/2026-07-22-automation-remediation-roadmap.md`. Owner decisions locked: **D-A =
   auto-publish public repos** (reverses ADR 0009's publish-gate → new ADR pending; keeps automated
   injection/output validation) · **D-B = full case-study pipeline** (GitHub App + map-reduce + 3-audience).
-- **AFK batch done (TDD/verify, committed):**
+- **AFK batch done (TDD/verify, committed + pushed):**
   - `116701e` **Phase 1 cron-chain** — `github-refresh-cron.yml` now chains curate→member-sync→rank
     after refresh (secret-guarded, fail-soft, no-op if secret unset). Activates on merge to master.
   - `6ab1ec3` chores — Drizzle `project_documents.extract jsonb` (aligns migration 0022); 3 seed
-    scripts exposed in package.json. Build green.
+    scripts exposed in package.json.
+  - `2cdd0bd` **ADR 0011** — auto-publish public repos (visibility = publish authorization).
+  - `cdb5f47` **Phase 2a** — `PgGenerateStore.applyPatch` now persists generated category/tags/
+    technologies (transactional, owner-guarded, resolves to existing taxonomy = drops hallucinated
+    ones). Closes codex #12.
+  - `fe0111e` **Phase 2 safety** — `buildGeneratePrompt` delimits the untrusted README + forbids
+    following instructions in it + strips breakout attempts (ADR 0011 injection guard).
+  - `4ea12d8` **#13** — rank now covers member_projects/member_certificates (was null → sort_order).
+  - All: 268 nestjs tests pass, build green.
 - **Correctly SKIPPED (not bugs):** static-fallback on members/blog/certs/site-stats — that empty→
   static is intentional resilience (the `members` table is never empty; "always show something" is
   desirable). Only the member-content/projects case (B4 curated-empty) was a real bug — already fixed.
-- **🛑 PARKED (needs human / boundary / big build — see roadmap):**
-  1. **Deploy the flat-authz branch + apply 0023/0024/0025** (irreversible authz boundary — human).
-     This unblocks the Phase-1 cron (endpoints must be live for the cron to call them).
-  2. Phase 2 (auto content-gen + safety validation — security boundary) · Phase 3 (kill-static repo
-     sweep — risky) · Phase 4 (GitHub App + case studies — big build).
-  3. `githubLoginFromUser` delete (auth-boundary module) · `PgGenerateStore` taxonomy M2M (data-model
-     decision) · sitemap dynamic projects (overlaps Phase 3).
-  4. Write the **D-A ADR** (auto-publish-public reverses ADR 0009).
+- **🛑 PARKED — the remainder needs an EXTERNAL action or would add inert code (not buildable now):**
+  1. **🔑 Deploy the flat-authz branch + apply 0023/0024/0025** (irreversible authz boundary — human).
+     Unblocks the Phase-1 cron + is needed to verify every downstream leg end-to-end.
+  2. **Generate ORCHESTRATION** (assemble GenerateContext from snapshots → run generate for draft
+     projects → add a generate step to the cron): blocked because the README/languages snapshots
+     aren't populated for curated repos until the **detail-sync extension** (codex #11: refresh
+     tracks `GITHUB_SHOWCASE_REPOS=[MangaDock]` only, must derive tracked repos from the projects
+     table). Building the orchestration before that = MORE inert code. Do detail-sync → orchestration
+     → cron-wire as one post-deploy slice (verifiable end-to-end).
+  3. **Phase 4 case studies** — needs the **GitHub App install** on the org + member accounts
+     (external, user action; ADR 0009 prerequisite) + the #66 producer worker.
+  4. **Phase 3 kill-static + sitemap dynamic** — frontend that touches lib/*-repo.ts + pages the
+     `prototype/*` branches also touch → conflict risk; do after the prototype design lands.
+  5. `githubLoginFromUser` delete (auth-boundary module — AFK park).
 
 ## 🔴 2026-07-22 (AFK) — FLAT AUTHZ Slice A done + reviewed (branch `feat/flat-authz-repo-ingestion`)
 
