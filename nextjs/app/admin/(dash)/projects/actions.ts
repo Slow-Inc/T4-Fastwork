@@ -4,6 +4,11 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/server';
 import { assertAdmin } from '@/lib/admin-access';
+import {
+  memberRepoToProjectInsert,
+  availableToImport,
+  type MemberRepoInput,
+} from '@/lib/member-repo-import';
 
 export interface ProjectFormState {
   error?: string;
@@ -77,6 +82,81 @@ export async function updateProject(
 
   if (error) return { error: 'บันทึกไม่สำเร็จ' };
 
+  revalidatePath('/admin/projects');
+  revalidatePath('/projects');
+  redirect('/admin/projects');
+}
+
+/** A member_projects row + its member's github_login (for the import mapping). */
+interface MemberRepoRow {
+  id: number;
+  name: string;
+  url: string;
+  description: string | null;
+  members: { github_login: string | null } | { github_login: string | null }[] | null;
+}
+
+function toInput(r: MemberRepoRow): MemberRepoInput {
+  const m = Array.isArray(r.members) ? r.members[0] : r.members;
+  return {
+    name: r.name,
+    url: r.url,
+    description: r.description,
+    ownerLogin: m?.github_login ?? null,
+  };
+}
+
+const MEMBER_REPO_SELECT =
+  'id, name, url, description, members!inner(github_login)';
+
+/** Promote one member-selected repo to a projects row (idempotent by slug). */
+export async function importMemberRepo(formData: FormData) {
+  await assertAdmin();
+  const id = Number(formData.get('id'));
+  if (!id) return;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('member_projects')
+    .select(MEMBER_REPO_SELECT)
+    .eq('id', id)
+    .maybeSingle();
+  if (!data) return;
+  const row = memberRepoToProjectInsert(
+    toInput(data as unknown as MemberRepoRow),
+    new Date().toISOString(),
+  );
+  await supabase
+    .from('projects')
+    .upsert(row, { onConflict: 'slug', ignoreDuplicates: true });
+  revalidatePath('/admin/projects');
+  revalidatePath('/projects');
+  redirect('/admin/projects');
+}
+
+/** Bulk-import every selected member repo not already in `projects`. */
+export async function importAllMemberRepos() {
+  await assertAdmin();
+  const supabase = await createClient();
+  const [repos, existing] = await Promise.all([
+    supabase
+      .from('member_projects')
+      .select(MEMBER_REPO_SELECT)
+      .eq('selected', true),
+    supabase.from('projects').select('slug'),
+  ]);
+  const inputs = ((repos.data as unknown as MemberRepoRow[]) ?? []).map(toInput);
+  const existingSlugs = ((existing.data as { slug: string }[]) ?? []).map(
+    (p) => p.slug,
+  );
+  const now = new Date().toISOString();
+  const rows = availableToImport(inputs, existingSlugs).map((mp) =>
+    memberRepoToProjectInsert(mp, now),
+  );
+  if (rows.length) {
+    await supabase
+      .from('projects')
+      .upsert(rows, { onConflict: 'slug', ignoreDuplicates: true });
+  }
   revalidatePath('/admin/projects');
   revalidatePath('/projects');
   redirect('/admin/projects');
