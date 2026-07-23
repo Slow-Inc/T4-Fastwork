@@ -145,6 +145,55 @@ test("/about lists the team as a directory that links to each real profile", asy
   ).toBeVisible();
 });
 
+test("project detail separates overview, deep detail, and technology into accessible tabs (#129)", async ({
+  page,
+}) => {
+  await page.goto("/projects/mangadock", { waitUntil: "networkidle" });
+
+  const tabs = page.getByRole("tablist", { name: "เนื้อหาโปรเจกต์" });
+  const overview = tabs.getByRole("tab", { name: "ภาพรวม" });
+  const deepDetail = tabs.getByRole("tab", { name: "รายละเอียดเชิงลึก" });
+  const technology = tabs.getByRole("tab", { name: "เทคโนโลยี" });
+
+  await expect(overview).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#project-panel-overview")).toBeVisible();
+  await expect(page.locator("#project-panel-deep-detail")).toBeHidden();
+  await expect(page.locator("#project-panel-technology")).toBeHidden();
+
+  await deepDetail.click();
+  await expect(deepDetail).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#project-panel-deep-detail")).toBeVisible();
+  await expect(page.locator("#project-panel-deep-detail p").first()).not.toBeEmpty();
+
+  // Arrow-key navigation follows the ARIA tabs pattern and moves focus/selection.
+  await deepDetail.press("ArrowRight");
+  await expect(technology).toBeFocused();
+  await expect(technology).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#project-panel-technology")).toBeVisible();
+  await expect(
+    page.locator("#project-panel-technology").getByText("เทคโนโลยีที่ใช้"),
+  ).toBeVisible();
+  await expect(
+    page.locator("#project-panel-technology .chip:not(.chip-muted)").first(),
+  ).toBeVisible();
+  await expect(
+    page.locator("#project-panel-technology .chip-muted").first(),
+  ).toBeVisible();
+
+  await page
+    .locator("nav")
+    .first()
+    .getByRole("button", { name: /Switch language/i })
+    .click();
+  const englishTabs = page.getByRole("tablist", { name: "Project content" });
+  await expect(englishTabs.getByRole("tab", { name: "Overview" })).toBeVisible();
+  await expect(englishTabs.getByRole("tab", { name: "Deep detail" })).toBeVisible();
+  await expect(englishTabs.getByRole("tab", { name: "Technology" })).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(englishTabs).toBeVisible();
+});
+
 test("a member profile shows real repos and opens certificates in a lightbox", async ({
   page,
 }) => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useState, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Breadcrumb } from '@/components/site/breadcrumb';
@@ -13,8 +14,11 @@ import {
 } from '@/lib/contributors';
 import { ReadmeMarkdown } from '@/components/site/readme-markdown';
 import { WebsitePreview } from '@/components/site/website-preview';
-import { LanguageDonut } from '@/components/site/language-donut';
+import { ProjectTechnologyPanel } from '@/components/pages/project-technology-panel';
 import { useLocale } from '@/i18n/locale-context';
+
+const projectTabs = ['overview', 'deep-detail', 'technology'] as const;
+type ProjectTab = (typeof projectTabs)[number];
 
 export function ProjectDetailContent({
   project: p,
@@ -32,6 +36,8 @@ export function ProjectDetailContent({
   const description = en && p.descriptionEn ? p.descriptionEn : p.description;
   const pathname = usePathname();
   const { openChat } = useFloatingChat();
+  const [activeTab, setActiveTab] = useState<ProjectTab>('overview');
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const contributors = detail
     ? classifyContributors(detail.contributors, detail.pulls, roster)
@@ -43,6 +49,39 @@ export function ProjectDetailContent({
     void trackCtaClick(pathname, 'project-ask-ai-details');
     openChat(p.slug, p.title);
   }
+
+  function selectTab(tab: ProjectTab, focus = false) {
+    setActiveTab(tab);
+    if (focus) tabRefs.current[projectTabs.indexOf(tab)]?.focus();
+  }
+
+  function handleTabKeyDown(
+    event: KeyboardEvent<HTMLButtonElement>,
+    currentTab: ProjectTab,
+  ) {
+    const currentIndex = projectTabs.indexOf(currentTab);
+    let nextIndex: number | null = null;
+
+    if (event.key === 'ArrowRight') {
+      nextIndex = (currentIndex + 1) % projectTabs.length;
+    } else if (event.key === 'ArrowLeft') {
+      nextIndex = (currentIndex - 1 + projectTabs.length) % projectTabs.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = projectTabs.length - 1;
+    }
+
+    if (nextIndex === null) return;
+    event.preventDefault();
+    selectTab(projectTabs[nextIndex], true);
+  }
+
+  const tabLabels: Record<ProjectTab, string> = {
+    overview: t('ภาพรวม', 'Overview'),
+    'deep-detail': t('รายละเอียดเชิงลึก', 'Deep detail'),
+    technology: t('เทคโนโลยี', 'Technology'),
+  };
 
   return (
     <article className="section section-page">
@@ -75,64 +114,108 @@ export function ProjectDetailContent({
         )}
       </div>
 
-      <div className="detail-grid">
-        <div className="detail-content rv">
-          {p.content.map((para, i) => (
-            <p key={i}>{para}</p>
+      <div className="project-tabs rv">
+        <div
+          className="project-tabs__list"
+          role="tablist"
+          aria-label={t('เนื้อหาโปรเจกต์', 'Project content')}
+        >
+          {projectTabs.map((tab, index) => (
+            <button
+              key={tab}
+              ref={(node) => {
+                tabRefs.current[index] = node;
+              }}
+              type="button"
+              id={`project-tab-${tab}`}
+              className="project-tabs__tab"
+              role="tab"
+              aria-selected={activeTab === tab}
+              aria-controls={`project-panel-${tab}`}
+              tabIndex={activeTab === tab ? 0 : -1}
+              onClick={() => selectTab(tab)}
+              onKeyDown={(event) => handleTabKeyDown(event, tab)}
+            >
+              <span aria-hidden>{String(index + 1).padStart(2, '0')}</span>
+              {tabLabels[tab]}
+            </button>
           ))}
         </div>
-        <aside className="detail-meta rv">
-          <div className="meta-block">
-            <span className="t-meta">{t('เทคโนโลยี', 'Technology')}</span>
-            <ul className="chip-row">
-              {p.technologies.map((tech) => (
-                <li key={tech} className="chip">
-                  {tech}
-                </li>
-              ))}
-            </ul>
-            {detail?.languages && Object.keys(detail.languages).length > 0 && (
-              <div className="meta-langs">
-                <span className="t-meta">
-                  {t('สัดส่วนภาษา', 'Language mix')}
-                </span>
-                <LanguageDonut languages={detail.languages} en={en} />
+
+        <section
+          id="project-panel-overview"
+          className="project-tabs__panel"
+          role="tabpanel"
+          aria-labelledby="project-tab-overview"
+          hidden={activeTab !== 'overview'}
+          tabIndex={0}
+        >
+          <div className="detail-grid">
+            <div className="detail-content">
+              <p>{description}</p>
+              {p.liveUrl && (
+                <WebsitePreview url={p.liveUrl} title={p.title} en={en} />
+              )}
+            </div>
+            <aside className="detail-meta">
+              <div className="meta-block">
+                <span className="t-meta">{t('ปี', 'Year')}</span>
+                <p>{p.year}</p>
               </div>
-            )}
+              {p.liveUrl && (
+                <a
+                  href={p.liveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn"
+                >
+                  {t('ดูเว็บจริง ↗', 'Visit site ↗')}
+                </a>
+              )}
+              {p.github && (
+                <a
+                  href={`https://github.com/${p.github.owner}/${p.github.repo}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn ghost"
+                >
+                  {t('ดูบน GitHub ↗', 'View on GitHub ↗')}
+                </a>
+              )}
+            </aside>
           </div>
-          <div className="meta-block">
-            <span className="t-meta">{t('แท็ก', 'Tags')}</span>
-            <ul className="chip-row">
-              {p.tags.map((tag) => (
-                <li key={tag} className="chip chip-muted">
-                  {tag}
-                </li>
-              ))}
-            </ul>
+        </section>
+
+        <section
+          id="project-panel-deep-detail"
+          className="project-tabs__panel"
+          role="tabpanel"
+          aria-labelledby="project-tab-deep-detail"
+          hidden={activeTab !== 'deep-detail'}
+          tabIndex={0}
+        >
+          <div className="detail-content">
+            {p.content.map((para, i) => (
+              <p key={i}>{para}</p>
+            ))}
           </div>
-          <div className="meta-block">
-            <span className="t-meta">{t('ปี', 'Year')}</span>
-            <p>{p.year}</p>
-          </div>
-          {p.liveUrl && (
-            <a href={p.liveUrl} target="_blank" rel="noopener noreferrer" className="btn">
-              {t('ดูเว็บจริง ↗', 'Visit site ↗')}
-            </a>
-          )}
-          {p.liveUrl && (
-            <WebsitePreview url={p.liveUrl} title={p.title} en={en} />
-          )}
-          {p.github && (
-            <a
-              href={`https://github.com/${p.github.owner}/${p.github.repo}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn ghost"
-            >
-              {t('ดูบน GitHub ↗', 'View on GitHub ↗')}
-            </a>
-          )}
-        </aside>
+        </section>
+
+        <section
+          id="project-panel-technology"
+          className="project-tabs__panel"
+          role="tabpanel"
+          aria-labelledby="project-tab-technology"
+          hidden={activeTab !== 'technology'}
+          tabIndex={0}
+        >
+          <ProjectTechnologyPanel
+            technologies={p.technologies}
+            tags={p.tags}
+            languages={detail?.languages}
+            en={en}
+          />
+        </section>
       </div>
 
       {contributors.length > 0 && (
