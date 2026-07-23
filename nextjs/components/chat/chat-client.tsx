@@ -78,12 +78,14 @@ const SUGGESTIONS: { title: string; subtitle: string }[] = [
 
 /**
  * @param initialProjectSlug When set (Requirement §5.4), grounds every turn in
- * this exact project (deterministic, not just semantic retrieval) and opens
- * with a question about it.
+ * this exact project (deterministic, not just semantic retrieval). Full-page
+ * project chat may open with a generated question; embedded chat can wait for
+ * visitor-authored input.
  */
 export function ChatClient({
   initialProjectSlug,
   initialProjectTitle,
+  autoSendProjectQuestion = true,
   persistKey,
   initialMessages,
   initialSessionId,
@@ -93,6 +95,8 @@ export function ChatClient({
 }: {
   initialProjectSlug?: string;
   initialProjectTitle?: string;
+  /** Keep project context ready without sending until the visitor submits. */
+  autoSendProjectQuestion?: boolean;
   /** When set, the conversation survives unmount/remount via sessionStorage under
    * this key (used by the floating widget so closing/reopening keeps the chat). */
   persistKey?: string;
@@ -364,7 +368,12 @@ export function ChatClient({
   }
 
   useEffect(() => {
-    if (initialProjectSlug && initialProjectTitle && !autoSentRef.current) {
+    if (
+      autoSendProjectQuestion &&
+      initialProjectSlug &&
+      initialProjectTitle &&
+      !autoSentRef.current
+    ) {
       autoSentRef.current = true;
       send(buildProjectGreetingMessage(initialProjectTitle));
     }

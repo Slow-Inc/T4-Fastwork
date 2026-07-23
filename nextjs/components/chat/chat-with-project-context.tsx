@@ -17,9 +17,11 @@ import { ChatAppShell } from "./chat-app-shell";
 export function ChatWithProjectContext({
   slug,
   title,
+  autoSendProjectQuestion = true,
 }: {
   slug?: string;
   title?: string;
+  autoSendProjectQuestion?: boolean;
 }) {
   if (!slug) return <ChatAppShell />;
 
@@ -28,6 +30,7 @@ export function ChatWithProjectContext({
       <ChatClient
         initialProjectSlug={slug}
         initialProjectTitle={title ?? "ผลงานนี้"}
+        autoSendProjectQuestion={autoSendProjectQuestion}
       />
       <ScopeSummaryPanel />
     </ChatSessionProvider>

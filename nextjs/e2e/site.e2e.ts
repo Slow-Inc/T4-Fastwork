@@ -198,7 +198,7 @@ test("project detail shows decision-first brief before progressive detail (#138)
   expect(overflow).toBeLessThanOrEqual(1);
 });
 
-test("project detail lazily embeds a chat grounded to that project (#132)", async ({
+test("project detail shows a request-free grounded AI composer immediately (#140)", async ({
   page,
 }) => {
   const requests: Array<{ projectSlug?: string; message?: string }> = [];
@@ -227,7 +227,16 @@ test("project detail lazily embeds a chat grounded to that project (#132)", asyn
   await expect(
     embedded.getByRole("link", { name: "เปิดแชทเต็มหน้า" }),
   ).toHaveAttribute("href", "/chat?project=mangadock");
-  await expect(embedded.locator(".chat-full")).toHaveCount(0);
+  await expect(
+    embedded.getByRole("textbox", { name: "พิมพ์ข้อความถึงผู้ช่วย AI" }),
+  ).toBeVisible();
+  await expect(
+    embedded.getByRole("button", { name: /เริ่มถาม AI|Start asking AI/ }),
+  ).toHaveCount(0);
+  await expect(embedded.locator(".chat-full")).toBeVisible();
+  await expect(
+    embedded.getByText("กำลังคุยเกี่ยวกับผลงาน: MangaDock"),
+  ).toBeVisible();
   expect(requests).toHaveLength(0);
 
   await page
@@ -243,20 +252,27 @@ test("project detail lazily embeds a chat grounded to that project (#132)", asyn
   ).toHaveAttribute("href", "/chat?project=mangadock");
   expect(requests).toHaveLength(0);
 
-  await embedded.getByRole("button", { name: "Start asking AI" }).click();
   await expect(
     embedded.getByRole("region", { name: "AI chat about MangaDock" }),
-  ).toBeFocused();
-  await expect(embedded.locator(".chat-full")).toBeVisible();
-  await expect(
-    embedded.getByText("กำลังคุยเกี่ยวกับผลงาน: MangaDock"),
   ).toBeVisible();
-  await expect(
-    embedded.getByRole("textbox", { name: "พิมพ์ข้อความถึงผู้ช่วย AI" }),
-  ).toBeVisible();
+  const composer = embedded.getByRole("textbox", {
+    name: "พิมพ์ข้อความถึงผู้ช่วย AI",
+  });
+  await composer.fill("MangaDock ใช้ OCR อย่างไร");
+  await composer.press("Enter");
+
   await expect.poll(() => requests.length).toBe(1);
   expect(requests[0]?.projectSlug).toBe("mangadock");
-  expect(requests[0]?.message).toContain("MangaDock");
+  expect(requests[0]?.message).toBe("MangaDock ใช้ OCR อย่างไร");
+  await expect(
+    embedded.getByText("พร้อมตอบเรื่อง MangaDock ครับ"),
+  ).toBeVisible();
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
 });
 
 test("a member profile shows real repos and opens certificates in a lightbox", async ({
