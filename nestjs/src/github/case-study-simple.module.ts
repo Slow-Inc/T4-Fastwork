@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { LlmModule } from '../llm/llm.module';
 import { LlmService } from '../llm/llm.service';
+import { RevalidateModule } from '../revalidate/revalidate.module';
 import { GithubModule } from './github.module';
 import { GithubReadService } from './github-read.service';
 import { PgCaseStudySimpleStore } from './pg-case-study-simple.store';
@@ -19,7 +20,7 @@ import {
  * trigger. Mirrors GithubGenerateModule. Registered in AppModule.imports.
  */
 @Module({
-  imports: [DatabaseModule, LlmModule, GithubModule],
+  imports: [DatabaseModule, LlmModule, GithubModule, RevalidateModule],
   controllers: [CaseStudySimpleController],
   providers: [
     PgCaseStudySimpleStore,

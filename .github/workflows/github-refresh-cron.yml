@@ -79,6 +79,23 @@ jobs:
           echo "POST $BACKEND_URL/github/sync-member-projects -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
           case "$code" in 2*) : ;; *) echo "::warning::member-sync failed HTTP $code (non-blocking)" ;; esac
 
+      # Generate a bilingual case study for each github project whose README changed
+      # (ADR 0013). Capped per run (CASE_STUDY_MAX_PER_RUN, default 1 — one ~29s
+      # generation fits the 60s function), so it converges over successive hourly
+      # runs; the delta-gate skips unchanged repos. BEFORE rank so new blog content
+      # is ranked in the same run. Fail-soft; no-ops if the secret is unset.
+      - name: Generate case studies from changed READMEs
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          [ -z "$REFRESH_SECRET" ] && { echo "secret unset — skip"; exit 0; }
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" -H "Content-Type: application/json" \
+            -d '{"apply":true}' "$BACKEND_URL/github/generate-case-studies")
+          echo "POST $BACKEND_URL/github/generate-case-studies -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
+          case "$code" in 2*) : ;; *) echo "::warning::case-study gen failed HTTP $code (non-blocking)" ;; esac
+
       - name: Refresh AI display-rank
         env:
           REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}

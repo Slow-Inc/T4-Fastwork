@@ -4,10 +4,12 @@ import {
   Headers,
   Inject,
   Logger,
+  Optional,
   Post,
   UnauthorizedException,
 } from '@nestjs/common';
 import { constantTimeEqual } from './webhook-verify';
+import { RevalidateService } from '../revalidate/revalidate.service';
 import {
   CaseStudySimpleService,
   type CaseStudySimpleStore,
@@ -37,6 +39,11 @@ export class CaseStudySimpleController {
     @Inject(CASE_STUDY_LLM) private readonly llm: CompletionLlm,
     @Inject(CASE_STUDY_SIMPLE_STORE)
     private readonly store: CaseStudySimpleStore,
+    // Optional so the unit tests construct the controller with just the 3 core
+    // deps; wired in prod to refresh /blog + sitemap after a real generation.
+    @Optional()
+    @Inject(RevalidateService)
+    private readonly revalidate?: RevalidateService,
   ) {}
 
   @Post('generate-case-studies')
@@ -118,6 +125,13 @@ export class CaseStudySimpleController {
         attempted++;
       }
     }
+    // A real write happened → refresh the cached /blog list + sitemap so the new
+    // case study shows without waiting for ISR (the detail page already renders
+    // on-demand via dynamicParams). Fire-and-forget, like rank.controller.
+    if (apply && generated > 0) {
+      void this.revalidate?.revalidateContent('blog');
+    }
+
     return {
       candidates: projects.length,
       attempted,

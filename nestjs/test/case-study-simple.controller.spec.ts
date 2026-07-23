@@ -76,6 +76,42 @@ describe('CaseStudySimpleController', () => {
     expect(writes).toEqual([1]);
   });
 
+  it('revalidates /blog only after a real generation (apply + generated>0)', async () => {
+    process.env.GITHUB_REFRESH_SECRET = 'right';
+    const kinds: string[] = [];
+    const revalidate = {
+      revalidateProjects: async () => true,
+      revalidateContent: async (k: string) => {
+        kinds.push(k);
+        return true;
+      },
+    };
+    const store: CaseStudySimpleStore = {
+      listPublishedGithubProjects: async () => [
+        { id: 1, slug: 'a', ghOwner: 'o', ghRepo: 'r', readmeSha: 'old', description: null },
+      ],
+      publishCaseStudy: async () => {},
+    };
+    const readme: ReadmeReader = {
+      getRepoReadme: async () => ({ data: { markdown: 'ts', sha: 'new' }, stale: false }),
+    };
+    const llm: CompletionLlm = { complete: async () => VALID };
+    const c = new CaseStudySimpleController(
+      readme,
+      llm,
+      store,
+      revalidate as never,
+    );
+
+    await c.run('right', {}); // dry-run → no revalidation
+    expect(kinds).toEqual([]);
+
+    await c.run('right', { apply: true }); // real write → revalidate blog
+    // fire-and-forget: let the microtask settle
+    await Promise.resolve();
+    expect(kinds).toEqual(['blog']);
+  });
+
   it('caps generations per run at CASE_STUDY_MAX_PER_RUN (serverless-timeout guard)', async () => {
     process.env.GITHUB_REFRESH_SECRET = 'right';
     process.env.CASE_STUDY_MAX_PER_RUN = '2';
