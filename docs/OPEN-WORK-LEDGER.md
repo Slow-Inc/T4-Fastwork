@@ -1,5 +1,11 @@
 # Open-Work Ledger
 
+## 2026-07-24 — #75 generate apply:true no second LLM MERGED
+
+- **MERGED:** PR #152 squash → `master`. `apply:true` requires reviewed `patch`;
+  `filterReviewedPatch` keeps auto-owned fields only; LLM not called on apply.
+- **Verified:** generate controller/spec tests; nest build. Scrutinize + security on PR.
+
 ## 2026-07-24 — #143 targeted repo-detail refresh MERGED
 
 - **MERGED:** PR #151 squash → `master` `ccdd60e`. Remote feature branch deleted.
