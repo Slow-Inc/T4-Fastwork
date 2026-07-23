@@ -1,5 +1,13 @@
 # Open-Work Ledger
 
+## 2026-07-24 — Epic #156 project enrichment (PRD + issues + AFK D1)
+
+- **PRD:** `docs/prd/2026-07-24-project-enrichment.md`
+- **Epic:** [#156](https://github.com/Slow-Inc/T4-Fastwork/issues/156)
+- **Children:** #157 live_url · #158 README · #159 taxonomy · #160 content · #161 snapshot
+- **In progress:** #157 — homepage→`live_url` on org/member import + `POST /github/fill-live-urls`
+- Prod `apply:true` for fill-live-urls: STOP until explicit OK (data write via Nest).
+
 ## 2026-07-24 — Epic #127 CLOSED; D3/D4 backfill done (reachable set)
 
 - **CLOSED:** [#127](https://github.com/Slow-Inc/T4-Fastwork/issues/127) — all epic deliverables shipped.
