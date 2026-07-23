@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/server';
-import { importOrgRepo } from '../actions';
+import { importOrgRepo, importAllOrgRepos } from '../actions';
 import { getTeamSnapshotPayload } from '@/lib/github';
 import {
   availableOrgReposToImport,
@@ -59,38 +59,45 @@ export default async function ImportFromOrgPage() {
           ว่าง
         </p>
       ) : (
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Repo</th>
-                <th>คำอธิบาย</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {available.map((r) => (
-                <tr key={`${SLOW_INC_ORG}/${r.name}`}>
-                  <td>
-                    <a href={r.htmlUrl} target="_blank" rel="noopener noreferrer">
-                      {SLOW_INC_ORG}/{r.name}
-                    </a>
-                  </td>
-                  <td className="t-meta">{r.description ?? '—'}</td>
-                  <td className="admin-row-actions">
-                    <form action={importOrgRepo}>
-                      <input type="hidden" name="owner" value={SLOW_INC_ORG} />
-                      <input type="hidden" name="repo" value={r.name} />
-                      <button type="submit" className="admin-edit">
-                        + เพิ่ม
-                      </button>
-                    </form>
-                  </td>
+        <>
+          <form action={importAllOrgRepos} style={{ marginBottom: 16 }}>
+            <button type="submit" className="btn">
+              เพิ่มทั้งหมด ({available.length})
+            </button>
+          </form>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Repo</th>
+                  <th>คำอธิบาย</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {available.map((r) => (
+                  <tr key={`${SLOW_INC_ORG}/${r.name}`}>
+                    <td>
+                      <a href={r.htmlUrl} target="_blank" rel="noopener noreferrer">
+                        {SLOW_INC_ORG}/{r.name}
+                      </a>
+                    </td>
+                    <td className="t-meta">{r.description ?? '—'}</td>
+                    <td className="admin-row-actions">
+                      <form action={importOrgRepo}>
+                        <input type="hidden" name="owner" value={SLOW_INC_ORG} />
+                        <input type="hidden" name="repo" value={r.name} />
+                        <button type="submit" className="admin-edit">
+                          + เพิ่ม
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

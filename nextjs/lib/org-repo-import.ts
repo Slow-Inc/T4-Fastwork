@@ -94,6 +94,18 @@ export function availableOrgReposToImport(
   });
 }
 
+/** Bulk path: map the missing set to published team insert rows (empty = no-op). */
+export function orgReposToBulkInserts(
+  catalogue: OrgRepoInput[],
+  existing: ExistingProjectIdentity[],
+  nowIso: string,
+  org: string = SLOW_INC_ORG,
+): OrgProjectInsert[] {
+  return availableOrgReposToImport(catalogue, existing).map((repo) =>
+    orgRepoToProjectInsert(repo, nowIso, org),
+  );
+}
+
 function narrowOrgRepo(raw: unknown, expectedOrg: string): OrgRepoInput | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
