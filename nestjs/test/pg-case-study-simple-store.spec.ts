@@ -29,7 +29,7 @@ const gen: GeneratedContent = {
   description: 'ย่อ',
   content: 'ก\n\nข',
   category: 'web',
-  tags: ['x'],
+  tags: ['x', 'y', 'z'],
   technologies: ['ts'],
 };
 
@@ -53,6 +53,13 @@ describe('PgCaseStudySimpleStore', () => {
     );
     expect(calls[0].params).toContain('proj-case-study');
     expect(calls[0].params).toContain('ชื่อ');
+    // tags MUST be an explicit array constructor, not a bare `${array}` (which
+    // drizzle expands into a row/tuple `($5,$6,$7)` in the tags column position —
+    // that broke the INSERT on prod). Elements stay parameterized (injection-safe).
+    expect(blog).toContain('array[');
+    expect(blog).toContain('::text[]');
+    expect(calls[0].params).toContain('x');
+    expect(calls[0].params).toContain('z'); // all elements bound as params
 
     const proj = calls[1].text;
     expect(proj).toContain('update projects');
