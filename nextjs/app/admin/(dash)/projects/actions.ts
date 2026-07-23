@@ -12,7 +12,10 @@ import {
 import {
   orgRepoToProjectInsert,
   resolveOrgRepoFromSnapshot,
+  parseOrgReposFromTeamPayload,
+  orgReposToBulkInserts,
   SLOW_INC_ORG,
+  type ExistingProjectIdentity,
 } from '@/lib/org-repo-import';
 import { getTeamSnapshotPayload } from '@/lib/github';
 
@@ -201,6 +204,46 @@ export async function importOrgRepo(formData: FormData) {
   await supabase
     .from('projects')
     .upsert(row, { onConflict: 'slug', ignoreDuplicates: true });
+  revalidatePath('/admin/projects');
+  revalidatePath('/projects');
+  redirect('/admin/projects');
+}
+
+/**
+ * Bulk-import every Slow-Inc org repo from the durable snapshot that is not yet
+ * represented. Recomputes the missing set server-side (never trusts a client
+ * checklist). Empty missing set / missing snapshot → no-op.
+ */
+export async function importAllOrgRepos() {
+  await assertAdmin();
+  const team = await getTeamSnapshotPayload();
+  const catalogue = parseOrgReposFromTeamPayload(team, SLOW_INC_ORG);
+  if (!catalogue) return;
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from('projects')
+    .select('slug, gh_owner, gh_repo');
+  const identities: ExistingProjectIdentity[] = (
+    (existing as
+      | { slug: string; gh_owner: string | null; gh_repo: string | null }[]
+      | null) ?? []
+  ).map((p) => ({
+    slug: p.slug,
+    ghOwner: p.gh_owner,
+    ghRepo: p.gh_repo,
+  }));
+  const rows = orgReposToBulkInserts(
+    catalogue,
+    identities,
+    new Date().toISOString(),
+    SLOW_INC_ORG,
+  );
+  if (rows.length) {
+    await supabase
+      .from('projects')
+      .upsert(rows, { onConflict: 'slug', ignoreDuplicates: true });
+  }
   revalidatePath('/admin/projects');
   revalidatePath('/projects');
   redirect('/admin/projects');

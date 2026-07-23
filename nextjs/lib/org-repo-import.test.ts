@@ -4,6 +4,7 @@ import {
   availableOrgReposToImport,
   resolveOrgRepoFromSnapshot,
   parseOrgReposFromTeamPayload,
+  orgReposToBulkInserts,
   type OrgRepoInput,
   type ExistingProjectIdentity,
 } from './org-repo-import';
@@ -69,6 +70,53 @@ describe('availableOrgReposToImport', () => {
     expect(availableOrgReposToImport(repos, existing).map((r) => r.name)).toEqual([
       'Website_Prototype01_Frontend',
     ]);
+  });
+});
+
+describe('orgReposToBulkInserts', () => {
+  test('maps only the available missing set to published team rows (bulk idempotent input)', () => {
+    const catalogue: OrgRepoInput[] = [
+      {
+        name: 'MangaDock',
+        htmlUrl: 'https://github.com/Slow-Inc/MangaDock',
+        description: 'a',
+      },
+      {
+        name: 'Website_Prototype01_Frontend',
+        htmlUrl: 'https://github.com/Slow-Inc/Website_Prototype01_Frontend',
+        description: 'b',
+      },
+    ];
+    const existing: ExistingProjectIdentity[] = [
+      { slug: 'mangadock', ghOwner: 'Slow-Inc', ghRepo: 'MangaDock' },
+    ];
+    const rows = orgReposToBulkInserts(catalogue, existing, NOW, ORG);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      slug: 'website-prototype01-frontend',
+      title: 'Website_Prototype01_Frontend',
+      source: 'github',
+      status: 'published',
+      published_at: NOW,
+      gh_owner: 'Slow-Inc',
+      gh_repo: 'Website_Prototype01_Frontend',
+      owner_type: 'team',
+      owner_login: 'Slow-Inc',
+    });
+  });
+
+  test('returns an empty list when nothing is missing (retry is a no-op)', () => {
+    const catalogue: OrgRepoInput[] = [
+      {
+        name: 'MangaDock',
+        htmlUrl: 'https://github.com/Slow-Inc/MangaDock',
+        description: null,
+      },
+    ];
+    const existing: ExistingProjectIdentity[] = [
+      { slug: 'mangadock', ghOwner: 'Slow-Inc', ghRepo: 'MangaDock' },
+    ];
+    expect(orgReposToBulkInserts(catalogue, existing, NOW, ORG)).toEqual([]);
   });
 });
 

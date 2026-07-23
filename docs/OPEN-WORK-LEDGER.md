@@ -1,6 +1,16 @@
 # Open-Work Ledger
 
-## 2026-07-24 — #146 Admin Slow-Inc single-repo import READY for PR
+## 2026-07-24 — #147 Admin Slow-Inc bulk import READY for PR
+
+- **Branch:** `feat/admin-slow-inc-bulk-import` after #146/#148 merged (`33a7be2`).
+- **Seam:** `orgReposToBulkInserts` + `importAllOrgRepos`; UI “เพิ่มทั้งหมด (N)” only when
+  available > 0; missing set recomputed server-side from snapshot.
+- **Verified:** unit 10/10; build exit 0; e2e 61/61. No prod DB write.
+
+## 2026-07-24 — #146 Admin Slow-Inc single-repo import MERGED
+
+- **MERGED:** PR #148 squash → `master` `33a7be2`. Remote feature branch deleted.
+- Unblocked #147.
 
 - **Branch:** `feat/admin-slow-inc-repo-import` (D1 of epic #145). #147 remains blocked until merge.
 - **Seams shipped (red→green):** `nextjs/lib/org-repo-import.ts` — map → published team row,
