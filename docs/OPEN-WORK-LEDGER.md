@@ -1,12 +1,20 @@
 # Open-Work Ledger
 
-## 2026-07-24 — Epic #156 project enrichment (PRD + issues + AFK D1)
+## 2026-07-24 — #158 D2 missing-README backfill (in progress)
+
+- Branch `feat/158-missing-readme-backfill`: `POST /github/refresh/missing-readme`
+  (dry-run default; `apply:true` calls existing `refreshRepoDetail`; cap default 1).
+- Pure `selectReposMissingReadme` + store list ports on `PgShowcaseRepoStore`.
+- Does not raise broad refresh budget; missing-first path avoids 504-prone bulk.
+
+## 2026-07-24 — Epic #156 project enrichment (PRD + issues + D1 merged)
 
 - **PRD:** `docs/prd/2026-07-24-project-enrichment.md`
 - **Epic:** [#156](https://github.com/Slow-Inc/T4-Fastwork/issues/156)
 - **Children:** #157 live_url · #158 README · #159 taxonomy · #160 content · #161 snapshot
-- **In progress:** #157 — homepage→`live_url` on org/member import + `POST /github/fill-live-urls`
-- Prod `apply:true` for fill-live-urls: STOP until explicit OK (data write via Nest).
+- **MERGED:** [#162](https://github.com/Slow-Inc/T4-Fastwork/pull/162) / #157 — homepage→`live_url` + fill-live-urls cron.
+- **In progress:** #158 / #163 merge after cron reconcile with #162.
+- Prod capped `apply:true` for enrichment endpoints: authorized by "ทำตามนั้น" after dry-run.
 
 ## 2026-07-24 — Epic #127 CLOSED; D3/D4 backfill done (reachable set)
 
