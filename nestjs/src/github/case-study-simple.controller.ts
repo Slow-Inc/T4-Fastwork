@@ -3,6 +3,7 @@ import {
   Controller,
   Headers,
   Inject,
+  Logger,
   Post,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -29,6 +30,8 @@ export const CASE_STUDY_SIMPLE_STORE = Symbol('CASE_STUDY_SIMPLE_STORE');
  */
 @Controller('github')
 export class CaseStudySimpleController {
+  private readonly logger = new Logger(CaseStudySimpleController.name);
+
   constructor(
     @Inject(CASE_STUDY_README) private readonly readme: ReadmeReader,
     @Inject(CASE_STUDY_LLM) private readonly llm: CompletionLlm,
@@ -101,9 +104,17 @@ export class CaseStudySimpleController {
           generated++;
           attempted++;
         }
-      } catch {
+      } catch (err) {
         // Fail-soft per project — a bad repo/LLM reply never aborts the batch, but
-        // it did consume an LLM call, so it counts against the per-run budget.
+        // it did consume an LLM call, so it counts against the per-run budget. Log
+        // the cause: a silently-swallowed failure makes a self-updating job
+        // un-debuggable, and at a low cap a persistently-failing project would
+        // otherwise stall progress invisibly.
+        this.logger.error(
+          `case-study generation failed for project ${p.slug} (id ${p.id}): ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
         attempted++;
       }
     }
