@@ -18,3 +18,5 @@ source: MangaDock engineering memory, adapted for T4 Fastwork on 2026-07-22
 - [[Operations and Performance Index]]
 
 ข้อกำหนดใน `CLAUDE.md`, ADR, issue และเอกสาร canonical ของ T4 Fastwork มีลำดับความสำคัญเหนือโน้ตชุดนี้เสมอ
+
+- [[Drizzle Raw SQL Array Binding]] — bare `${jsArray}` in a drizzle `sql` template expands to placeholders (a row/tuple), not a single array value; use `array[...]::text[]`. A SQL-capture test catches it.

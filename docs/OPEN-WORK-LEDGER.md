@@ -16,6 +16,20 @@
 Single source of open work (tracked + untracked). Newest/most-active on top.
 🔴 = untracked (MD-only, no issue). See `t4-agent-memory`.
 
+## 2026-07-23 (AFK) — Fix Plan Wave 2 shipped + Wave 3 ACTIVATED on prod
+
+- **Wave 3 ACTIVATED (#116 CLOSED, dev-authorized):** the case-study generator now runs on prod +
+  hourly cron. Activation fixes after the inert ship: per-run cap #119 → default 1 #122 (one ~29s gen
+  fits the 60s Vercel function — measured), error logging #123, and the real bug **#124: `tags` must be
+  an `array[...]::text[]` constructor** (drizzle expands a bare `${array}` into a row/tuple → INSERT
+  rejected — see [[Drizzle Raw SQL Array Binding]]). **T3.4 cron leg + blog revalidation #125.** Proven:
+  two `apply:true` runs generated `resume-web-case-study` + `hype-macro-store-case-study`, live at
+  `/blog/<slug>-case-study` (200) + in the `/blog` list. ~44/46 remaining converge 1/hour via cron.
+  - 🔴 **Follow-up (discovered):** dormant `pg-case-study.store` (+ likely `pg-generate.store`'s
+    `any(${arr}::text[])`) carry the same bare-array latent bug — tracked as a new issue. Throughput
+    1/run (faster model / streaming / async to raise). Migration **0028** (blog EN cols) stays parked;
+    the case-study persist writes Thai fields only, so activation didn't need it.
+
 ## 2026-07-23 (AFK) — Fix Plan Wave 2 shipped + Wave 3 (inert) shipped
 
 - **Wave 2 (#114, PR #115 → master `dcd1a65`):** blog SEO from DB (sitemap + `generateStaticParams`
