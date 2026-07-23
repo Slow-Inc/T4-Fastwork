@@ -4965,3 +4965,41 @@ footer {
     transform: none;
   }
 }
+
+/* Project-detail language-proportion donut (#128 · D1). */
+.meta-langs { margin-top: 0.85rem; }
+.lang-donut {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.lang-donut__ring { width: 92px; height: 92px; flex: 0 0 auto; }
+.lang-donut__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  min-width: 150px;
+}
+.lang-donut__legend li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+.lang-donut__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--dot);
+}
+.lang-donut__name { color: var(--ink); }
+.lang-donut__pct {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}

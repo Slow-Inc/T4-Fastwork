@@ -13,6 +13,7 @@ import {
 } from '@/lib/contributors';
 import { ReadmeMarkdown } from '@/components/site/readme-markdown';
 import { WebsitePreview } from '@/components/site/website-preview';
+import { LanguageDonut } from '@/components/site/language-donut';
 import { useLocale } from '@/i18n/locale-context';
 
 export function ProjectDetailContent({
@@ -90,6 +91,14 @@ export function ProjectDetailContent({
                 </li>
               ))}
             </ul>
+            {detail?.languages && Object.keys(detail.languages).length > 0 && (
+              <div className="meta-langs">
+                <span className="t-meta">
+                  {t('สัดส่วนภาษา', 'Language mix')}
+                </span>
+                <LanguageDonut languages={detail.languages} en={en} />
+              </div>
+            )}
           </div>
           <div className="meta-block">
             <span className="t-meta">{t('แท็ก', 'Tags')}</span>

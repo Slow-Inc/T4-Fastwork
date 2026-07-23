@@ -53,6 +53,11 @@ export class GithubReadService {
     return this.getResource(snapshotKey.repoReadme(owner, repo));
   }
 
+  /** The repo's language breakdown (`{ language: bytes }`) for the detail donut. */
+  getRepoLanguages(owner: string, repo: string): Promise<ReadResult | null> {
+    return this.getResource(snapshotKey.repoLanguages(owner, repo));
+  }
+
   getUserProfile(login: string): Promise<ReadResult | null> {
     return this.getResource(snapshotKey.userProfile(login));
   }

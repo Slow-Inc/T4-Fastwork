@@ -54,13 +54,15 @@ export class GithubController {
     contributors: ReadResult | null;
     pulls: ReadResult | null;
     readme: ReadResult | null;
+    languages: ReadResult | null;
   }> {
-    const [contributors, pulls, readme] = await Promise.all([
+    const [contributors, pulls, readme, languages] = await Promise.all([
       this.read.getRepoContributors(owner, repo),
       this.read.getRepoPulls(owner, repo),
       this.read.getRepoReadme(owner, repo),
+      this.read.getRepoLanguages(owner, repo),
     ]);
-    return { contributors, pulls, readme };
+    return { contributors, pulls, readme, languages };
   }
 
   /** A member's profile + profile README (team page, spec P7). */
