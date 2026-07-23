@@ -1,5 +1,12 @@
 # Open-Work Ledger
 
+## 2026-07-24 — #160 D4 empty-content case-study backfill
+
+- Branch `feat/160-content-backfill`: `shouldGenerateCaseStudy` allows gen when
+  README sha unchanged but `content` empty + `content_owner=auto`; list prefers
+  empty content; revalidate projects after apply.
+- Open PRs: #162 live_url · #163 missing-readme · #164 taxonomy · (this) content
+
 ## 2026-07-24 — Epic #127 CLOSED; D3/D4 backfill done (reachable set)
 
 - **CLOSED:** [#127](https://github.com/Slow-Inc/T4-Fastwork/issues/127) — all epic deliverables shipped.

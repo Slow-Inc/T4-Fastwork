@@ -78,6 +78,8 @@ describe('PgCaseStudySimpleStore', () => {
         gh_repo: 'r',
         readme_sha: null,
         description: 'd',
+        content: null,
+        content_owner: 'auto',
       },
     ]);
     const rows = await new PgCaseStudySimpleStore(
@@ -85,12 +87,22 @@ describe('PgCaseStudySimpleStore', () => {
     ).listPublishedGithubProjects();
 
     expect(rows).toEqual([
-      { id: 3, slug: 's', ghOwner: 'o', ghRepo: 'r', readmeSha: null, description: 'd' },
+      {
+        id: 3,
+        slug: 's',
+        ghOwner: 'o',
+        ghRepo: 'r',
+        readmeSha: null,
+        description: 'd',
+        content: null,
+        contentOwner: 'auto',
+      },
     ]);
     const q = calls[0].text;
     expect(q).toContain("source = 'github'");
     expect(q).toContain("status = 'published'");
     expect(q).toContain('published_at is not null');
     expect(q).toContain('gh_owner is not null');
+    expect(q).toContain('content_owner');
   });
 });

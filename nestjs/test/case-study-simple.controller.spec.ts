@@ -22,7 +22,7 @@ function make(over: { projects?: CaseStudyProject[] } = {}) {
   const store: CaseStudySimpleStore = {
     listPublishedGithubProjects: async () =>
       over.projects ?? [
-        { id: 1, slug: 'a', ghOwner: 'o', ghRepo: 'r', readmeSha: 'old', description: null },
+        { id: 1, slug: 'a', ghOwner: 'o', ghRepo: 'r', readmeSha: 'old', description: null, content: null, contentOwner: 'auto' },
       ],
     publishCaseStudy: async (id) => {
       writes.push(id);
@@ -76,11 +76,15 @@ describe('CaseStudySimpleController', () => {
     expect(writes).toEqual([1]);
   });
 
-  it('revalidates /blog only after a real generation (apply + generated>0)', async () => {
+  it('revalidates /blog and /projects after a real generation (apply + generated>0)', async () => {
     process.env.GITHUB_REFRESH_SECRET = 'right';
     const kinds: string[] = [];
+    let projectsCalls = 0;
     const revalidate = {
-      revalidateProjects: async () => true,
+      revalidateProjects: async () => {
+        projectsCalls++;
+        return true;
+      },
       revalidateContent: async (k: string) => {
         kinds.push(k);
         return true;
@@ -88,7 +92,16 @@ describe('CaseStudySimpleController', () => {
     };
     const store: CaseStudySimpleStore = {
       listPublishedGithubProjects: async () => [
-        { id: 1, slug: 'a', ghOwner: 'o', ghRepo: 'r', readmeSha: 'old', description: null },
+        {
+          id: 1,
+          slug: 'a',
+          ghOwner: 'o',
+          ghRepo: 'r',
+          readmeSha: 'old',
+          description: null,
+          content: null,
+          contentOwner: 'auto',
+        },
       ],
       publishCaseStudy: async () => {},
     };
@@ -105,11 +118,12 @@ describe('CaseStudySimpleController', () => {
 
     await c.run('right', {}); // dry-run → no revalidation
     expect(kinds).toEqual([]);
+    expect(projectsCalls).toBe(0);
 
-    await c.run('right', { apply: true }); // real write → revalidate blog
-    // fire-and-forget: let the microtask settle
+    await c.run('right', { apply: true });
     await Promise.resolve();
     expect(kinds).toEqual(['blog']);
+    expect(projectsCalls).toBe(1);
   });
 
   it('caps generations per run at CASE_STUDY_MAX_PER_RUN (serverless-timeout guard)', async () => {
@@ -122,6 +136,8 @@ describe('CaseStudySimpleController', () => {
       ghRepo: 'r',
       readmeSha: 'old',
       description: null,
+      content: null,
+      contentOwner: 'auto' as const,
     }));
     const { c, writes } = make({ projects });
     const res = await c.run('right', { apply: true });
@@ -138,8 +154,26 @@ describe('CaseStudySimpleController', () => {
     // is correct, but here we're asserting the batch continues past the throw.
     process.env.CASE_STUDY_MAX_PER_RUN = '5';
     const projects: CaseStudyProject[] = [
-      { id: 1, slug: 'boom', ghOwner: 'o', ghRepo: 'r', readmeSha: 'old', description: null },
-      { id: 2, slug: 'ok', ghOwner: 'o', ghRepo: 'r', readmeSha: 'old', description: null },
+      {
+        id: 1,
+        slug: 'boom',
+        ghOwner: 'o',
+        ghRepo: 'r',
+        readmeSha: 'old',
+        description: null,
+        content: null,
+        contentOwner: 'auto',
+      },
+      {
+        id: 2,
+        slug: 'ok',
+        ghOwner: 'o',
+        ghRepo: 'r',
+        readmeSha: 'old',
+        description: null,
+        content: null,
+        contentOwner: 'auto',
+      },
     ];
     const writes: number[] = [];
     const store: CaseStudySimpleStore = {

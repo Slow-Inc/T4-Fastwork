@@ -29,6 +29,23 @@ export interface CaseStudyProject {
   ghRepo: string | null;
   readmeSha: string | null;
   description: string | null;
+  /** Showcase deep-detail body — empty + auto-owned still needs fill (#160). */
+  content: string | null;
+  contentOwner: 'auto' | 'human';
+}
+
+/**
+ * Run generation when the README sha changed, OR when deep-detail content is
+ * still empty and auto-owned (#160 backfill). Human-owned empty content is left
+ * alone.
+ */
+export function shouldGenerateCaseStudy(
+  project: CaseStudyProject,
+  snapSha: string,
+): boolean {
+  if (!project.readmeSha || project.readmeSha !== snapSha) return true;
+  const empty = project.content == null || project.content.trim() === '';
+  return empty && project.contentOwner === 'auto';
 }
 
 /** Persistence surface — see PgCaseStudySimpleStore. */
@@ -79,8 +96,8 @@ export class CaseStudySimpleService {
     const snap = asReadmeSnapshot(rr?.data);
     if (!snap) return { generated: false };
 
-    // Delta gate: an unchanged README makes zero LLM calls.
-    if (project.readmeSha && project.readmeSha === snap.sha) {
+    // Delta gate (#160): unchanged README skips unless content still empty+auto.
+    if (!shouldGenerateCaseStudy(project, snap.sha)) {
       return { generated: false };
     }
 
