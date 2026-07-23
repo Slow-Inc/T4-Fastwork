@@ -240,6 +240,9 @@ test("project detail lazily embeds a chat grounded to that project (#132)", asyn
   expect(requests).toHaveLength(0);
 
   await embedded.getByRole("button", { name: "Start asking AI" }).click();
+  await expect(
+    embedded.getByRole("region", { name: "AI chat about MangaDock" }),
+  ).toBeFocused();
   await expect(embedded.locator(".chat-full")).toBeVisible();
   await expect(
     embedded.getByText("กำลังคุยเกี่ยวกับผลงาน: MangaDock"),

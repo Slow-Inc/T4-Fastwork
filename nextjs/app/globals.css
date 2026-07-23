@@ -1422,6 +1422,16 @@ footer {
 .detail-chat__surface .chat-scroll {
   max-height: 390px;
 }
+.detail-chat__surface:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.detail-chat__loading {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
 .detail-grid {
   display: grid;
   grid-template-columns: 1.7fr 1fr;

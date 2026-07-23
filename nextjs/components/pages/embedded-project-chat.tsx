@@ -1,8 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChatWithProjectContext } from '@/components/chat/chat-with-project-context';
+import dynamic from 'next/dynamic';
+
+const ChatWithProjectContext = dynamic(
+  () =>
+    import('@/components/chat/chat-with-project-context').then(
+      (mod) => mod.ChatWithProjectContext,
+    ),
+  {
+    loading: () => (
+      <p className="detail-chat__loading" role="status">
+        กำลังโหลดแชท / Loading chat…
+      </p>
+    ),
+  },
+);
 
 interface Props {
   slug: string;
@@ -12,6 +26,11 @@ interface Props {
 
 export function EmbeddedProjectChat({ slug, title, en = false }: Props) {
   const [started, setStarted] = useState(false);
+  const surfaceRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (started) surfaceRef.current?.focus();
+  }, [started]);
 
   return (
     <section className="detail-chat rv" aria-labelledby="detail-chat-title">
@@ -47,7 +66,13 @@ export function EmbeddedProjectChat({ slug, title, en = false }: Props) {
       </div>
 
       {started && (
-        <div className="detail-chat__surface">
+        <div
+          ref={surfaceRef}
+          className="detail-chat__surface"
+          role="region"
+          aria-label={en ? `AI chat about ${title}` : `แชท AI เกี่ยวกับ ${title}`}
+          tabIndex={-1}
+        >
           <ChatWithProjectContext slug={slug} title={title} />
         </div>
       )}
