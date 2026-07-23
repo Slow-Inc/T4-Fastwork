@@ -40,8 +40,10 @@ Next.js detail route never asks the GitHub snapshot API for that repository.
 4. If a broad refresh times out, do not retry blindly. Read the repo-detail snapshot endpoint and
    inspect each partial side effect first.
 5. Revalidate only the affected public project path after binding/snapshot data is ready.
-6. Prefer the targeted repo-detail refresh proposed in
-   [#143](https://github.com/Slow-Inc/T4-Fastwork/issues/143) for future one-repository repairs.
+6. Prefer the targeted repo-detail refresh (#143 / PR #151):
+   `POST /github/refresh/repo-detail?owner=&repo=` with `x-refresh-secret` —
+   syncs only contributors/pulls/languages/README, revalidates `?slug=` for the
+   matching published project, and does **not** re-ingest RAG.
 
 ## Verification method
 

@@ -1,5 +1,14 @@
 # Open-Work Ledger
 
+## 2026-07-24 — #143 targeted repo-detail refresh MERGED
+
+- **MERGED:** PR #151 squash → `master` `ccdd60e`. Remote feature branch deleted.
+- `POST /github/refresh/repo-detail?owner=&repo=` — secret fail-closed, charset-safe
+  owner/repo, per-repo single-flight, `syncRepoDetail` only (no list/RAG), slug-scoped
+  revalidate via `?slug=`.
+- **Verified:** nest `bun test` 297/297; `bun run build`. Scrutinize + security on PR.
+- **Still open nearby:** #135 (bound broad `/github/refresh` detail loop / cron 504).
+
 ## 2026-07-24 — #133 D6 human-authored blog MERGED
 
 - **MERGED:** PR #150 squash → `master` `53db3a8`. Remote feature branch deleted (auto).
