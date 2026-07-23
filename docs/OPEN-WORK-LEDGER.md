@@ -1,5 +1,18 @@
 # Open-Work Ledger
 
+## 2026-07-24 — #158 D2 missing-README backfill (in progress)
+
+- Branch `feat/158-missing-readme-backfill`: `POST /github/refresh/missing-readme`
+  (dry-run default; `apply:true` calls existing `refreshRepoDetail`; cap default 1).
+- Pure `selectReposMissingReadme` + store list ports on `PgShowcaseRepoStore`.
+- Does not raise broad refresh budget; missing-first path avoids 504-prone bulk.
+
+## 2026-07-24 — Epic #156 project enrichment (tracker)
+
+- **Epic:** [#156](https://github.com/Slow-Inc/T4-Fastwork/issues/156) — children #157–#161
+- **D1 PR:** [#162](https://github.com/Slow-Inc/T4-Fastwork/pull/162) (live_url) — separate branch
+- PRD lands with #157 / #162 when that PR merges.
+
 ## 2026-07-24 — Epic #127 CLOSED; D3/D4 backfill done (reachable set)
 
 - **CLOSED:** [#127](https://github.com/Slow-Inc/T4-Fastwork/issues/127) — all epic deliverables shipped.
