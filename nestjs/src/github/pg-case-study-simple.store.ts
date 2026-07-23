@@ -53,6 +53,14 @@ export class PgCaseStudySimpleStore implements CaseStudySimpleStore {
     sha: string,
   ): Promise<void> {
     const postSlug = `${slug}-case-study`;
+    // drizzle's `sql` template EXPANDS a bare `${jsArray}` into separate
+    // placeholders (`($1,$2,$3)`), which lands a row/tuple in the `tags` column
+    // position and breaks the INSERT. Build an explicit ARRAY[...] constructor so
+    // it's one text[] value, with every element still parameterized (injection-safe).
+    const tags = sql`array[${sql.join(
+      gen.tags.map((t) => sql`${t}`),
+      sql`, `,
+    )}]::text[]`;
     await this.db.transaction(async (tx) => {
       // a) Upsert the published business case-study post. audience='business' is
       //    part of the (project_id, audience) idempotency key; owner='auto' guard in
@@ -63,7 +71,7 @@ export class PgCaseStudySimpleStore implements CaseStudySimpleStore {
         sql`insert into blog_posts
               (slug, title, excerpt, content, tags, project_id, audience, kind, source, owner, published_at)
             values
-              (${postSlug}, ${gen.title}, ${gen.description}, ${gen.content}, ${gen.tags}, ${projectId},
+              (${postSlug}, ${gen.title}, ${gen.description}, ${gen.content}, ${tags}, ${projectId},
                'business', 'case_study', 'github', 'auto', now())
             on conflict (project_id, audience) where kind = 'case_study'
             do update set
