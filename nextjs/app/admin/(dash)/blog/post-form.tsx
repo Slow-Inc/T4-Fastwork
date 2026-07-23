@@ -26,7 +26,7 @@ export function PostForm() {
       setExcerpt(parsed.excerpt);
       setContent(parsed.content);
       setReadTime(String(parsed.readTimeMin));
-      setFileHint(`เติมจาก ${file.name} — เซิร์ฟเวอร์จะ parse ไฟล์อีกครั้งตอนบันทึก`);
+      setFileHint(`เติมจาก ${file.name} — ตรวจ/แก้ฟอร์มแล้วกดบันทึก (เนื้อหาส่งจากฟอร์ม)`);
     } catch (err) {
       setFileHint(err instanceof Error ? err.message : 'อ่านไฟล์ไม่สำเร็จ');
     }

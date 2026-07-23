@@ -39,7 +39,8 @@ async function fieldsFromForm(formData: FormData): Promise<
   const file = formData.get('markdown');
   if (file instanceof File && file.size > 0) {
     const name = file.name || 'post.md';
-    if (!/\.md$/i.test(name) && file.type && !file.type.includes('markdown') && file.type !== 'text/plain') {
+    // Require a .md suffix — do not trust an empty MIME type (browsers often omit it).
+    if (!/\.md$/i.test(name)) {
       return { error: 'อัปโหลดได้เฉพาะไฟล์ .md' };
     }
     let text: string;
