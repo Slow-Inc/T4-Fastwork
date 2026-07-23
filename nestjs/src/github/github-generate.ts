@@ -83,6 +83,38 @@ export function reconcile(
 }
 
 /**
+ * Keep only auto-owned fields from a reviewed dry-run patch (#75). Defense in
+ * depth so apply:true cannot clobber human fields even if the client sends them.
+ */
+export function filterReviewedPatch(
+  current: CurrentContent,
+  reviewed: ContentPatch,
+): ContentPatch {
+  const patch: ContentPatch = {};
+  if (current.titleOwner === 'auto' && reviewed.title !== undefined)
+    patch.title = reviewed.title;
+  if (current.titleEnOwner === 'auto' && reviewed.titleEn !== undefined)
+    patch.titleEn = reviewed.titleEn;
+  if (current.descriptionOwner === 'auto' && reviewed.description !== undefined)
+    patch.description = reviewed.description;
+  if (current.contentOwner === 'auto' && reviewed.content !== undefined)
+    patch.content = reviewed.content;
+  if (current.categoryOwner === 'auto' && reviewed.category !== undefined)
+    patch.category = reviewed.category;
+  if (current.tagsOwner === 'auto' && reviewed.tags !== undefined)
+    patch.tags = reviewed.tags;
+  if (
+    current.technologiesOwner === 'auto' &&
+    reviewed.technologies !== undefined
+  )
+    patch.technologies = reviewed.technologies;
+  if (reviewed.readmeSha !== undefined) patch.readmeSha = reviewed.readmeSha;
+  if (reviewed.generatedAt !== undefined)
+    patch.generatedAt = reviewed.generatedAt;
+  return patch;
+}
+
+/**
  * Drop technologies the LLM invented: keep only those evidenced by the repo's
  * language breakdown or mentioned in the README (case-insensitive).
  */
