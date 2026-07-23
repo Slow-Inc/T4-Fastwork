@@ -40,6 +40,8 @@ current behavior; this vault captures reusable reasoning and operating knowledge
   records.
 - [[Frontend Verification Must Use the Current Build]] — verify screenshots and E2E against the
   active branch's CSS rather than a stale server.
+- [[Targeted GitHub Snapshot Repairs]] — repair one project's GitHub binding safely; verify partial
+  writes after Vercel timeout instead of blindly retrying a broad refresh.
 - [[Knowledge Management Index]] — truth hierarchy, ADR lifecycle, vocabulary, surveys, and
   handoffs.
 - [[Security and Reliability Index]] — diagnosis, trust boundaries, authorization, privacy,
