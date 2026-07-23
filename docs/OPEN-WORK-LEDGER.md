@@ -1,5 +1,15 @@
 # Open-Work Ledger
 
+## 2026-07-24 — Epic #127 CLOSED; D3/D4 backfill done (reachable set)
+
+- **CLOSED:** [#127](https://github.com/Slow-Inc/T4-Fastwork/issues/127) — all epic deliverables shipped.
+- **Tech used-for:** 10/10 technologies filled (`apply:true` ×9 after Bun).
+- **Overview:** 15/46 published GitHub projects filled. Remaining **31** have no
+  `repo:owner/repo:readme` snapshot → generator correctly skips (no LLM). Further
+  fill needs `repo-detail` refresh first, then capped `generate-overviews`.
+- Revalidated `/projects` via `t4labs.dev/api/revalidate`.
+- **Still open:** [#110](https://github.com/Slow-Inc/T4-Fastwork/issues/110) v3 art direction (`ready-for-human`).
+
 ## 2026-07-24 — #131 D4 prod migration + first used-for APPLIED
 
 - **Authorized** ("ok" after explicit apply ask).
