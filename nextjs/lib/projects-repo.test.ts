@@ -88,6 +88,29 @@ describe('mapDbProject', () => {
     });
     expect(p.overview).toBeUndefined();
   });
+
+  test('maps D4 technology used-for blurbs when present', () => {
+    const p = mapDbProject({
+      ...dbRow,
+      project_technologies: [
+        {
+          technologies: {
+            name: 'Next.js',
+            used_for: 'ใช้สร้าง frontend',
+            used_for_en: 'Powers the frontend',
+          },
+        },
+      ],
+    });
+    expect(p.technologies).toEqual(['Next.js']);
+    expect(p.technologyDetails).toEqual([
+      {
+        name: 'Next.js',
+        usedFor: 'ใช้สร้าง frontend',
+        usedForEn: 'Powers the frontend',
+      },
+    ]);
+  });
 });
 
 describe('isMissingOverviewColumnError (#130)', () => {
@@ -97,6 +120,11 @@ describe('isMissingOverviewColumnError (#130)', () => {
     expect(
       isMissingOverviewColumnError({
         message: "column projects.overview_summary does not exist",
+      }),
+    ).toBe(true);
+    expect(
+      isMissingOverviewColumnError({
+        message: "Could not find the 'used_for' column of 'technologies'",
       }),
     ).toBe(true);
     expect(isMissingOverviewColumnError({ code: 'PGRST116' })).toBe(false);

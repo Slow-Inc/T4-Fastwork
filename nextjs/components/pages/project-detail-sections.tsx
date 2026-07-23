@@ -118,6 +118,7 @@ export function ProjectBrief({
         </div>
         <ProjectTechnologyPanel
           technologies={project.technologies}
+          technologyDetails={project.technologyDetails}
           tags={project.tags}
           languages={detail?.languages}
           en={en}

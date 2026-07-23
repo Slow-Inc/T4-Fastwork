@@ -1,5 +1,27 @@
 # Open-Work Ledger
 
+## 2026-07-24 — #131 D4 tech used-for IN PROGRESS (code)
+
+- **Branch:** `feat/tech-used-for-d4-131`. Issue #131 = `ready-for-agent`.
+- Migration `0030_tech_used_for.sql` (additive on `technologies`); Nest
+  `POST /github/generate-tech-used-for`; Next panel shows used-for under chips;
+  SELECT attempt ladder for missing D3/D4 columns.
+- **Verified:** nest 11/11 + build; frontend unit; e2e **62/62**.
+- **HARD STOP:** do not apply `0030` to prod until explicit OK.
+
+## 2026-07-24 — #130 D3 prod migration + first overview APPLIED
+
+- **Authorized by user** ("ทำตามนั้น" after explicit apply ask).
+- `apply_migration` `project_ai_overview` on prod `ngpsbetwbhbemcoequoy` — 7 overview_* cols.
+- Reloaded PostgREST schema (`NOTIFY pgrst, 'reload schema'`).
+- Dry-run then `apply:true` generate-overviews → `resume-web` persisted (1/run cap).
+- Live: `/projects/resume-web` shows ภาพรวม / สรุป 30 วิ / เหมาะกับใคร.
+- Revalidate via `POST https://t4labs.dev/api/revalidate?slug=resume-web`.
+- **Lesson:** after additive DDL, PostgREST may 204 until schema reload; frontend SELECT
+  fallback kept the site up, but overview UI needs cache reload + ISR revalidate.
+- Remaining: ~45 projects without overview (re-run capped `apply:true` as needed).
+- Next: #131 D4.
+
 ## 2026-07-24 — #130 D3 AI overview card CODE MERGED (prod migration parked)
 
 - **MERGED:** PR [#154](https://github.com/Slow-Inc/T4-Fastwork/pull/154) squash → `master`.

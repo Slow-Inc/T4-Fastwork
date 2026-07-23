@@ -35,11 +35,25 @@ export interface DbProjectRow {
   overview_highlights_en?: string | null;
   overview_good_for_en?: string | null;
   category: { name: string } | null;
-  project_technologies: { technologies: { name: string } | null }[];
+  project_technologies: {
+    technologies: {
+      name: string;
+      used_for?: string | null;
+      used_for_en?: string | null;
+    } | null;
+  }[];
   project_tags: { tags: { name: string } | null }[];
 }
 
 export function mapDbProject(row: DbProjectRow): Project {
+  const techRows = (row.project_technologies ?? [])
+    .map((t) => t.technologies)
+    .filter((t): t is NonNullable<typeof t> => Boolean(t?.name));
+  const technologyDetails = techRows.map((t) => ({
+    name: t.name,
+    ...(t.used_for ? { usedFor: t.used_for } : {}),
+    ...(t.used_for_en ? { usedForEn: t.used_for_en } : {}),
+  }));
   return {
     slug: row.slug,
     title: row.title,
@@ -50,9 +64,10 @@ export function mapDbProject(row: DbProjectRow): Project {
     tags: (row.project_tags ?? [])
       .map((t) => t.tags?.name)
       .filter((n): n is string => Boolean(n)),
-    technologies: (row.project_technologies ?? [])
-      .map((t) => t.technologies?.name)
-      .filter((n): n is string => Boolean(n)),
+    technologies: techRows.map((t) => t.name),
+    ...(technologyDetails.some((t) => t.usedFor)
+      ? { technologyDetails }
+      : {}),
     liveUrl: row.live_url ?? undefined,
     snapshotImage: row.snapshot_image ?? undefined,
     isFeatured: row.is_featured,

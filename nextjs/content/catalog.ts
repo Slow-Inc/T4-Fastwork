@@ -26,6 +26,12 @@ export interface Project {
   category: string;
   tags: string[];
   technologies: string[];
+  /** D4 per-tech "used for" blurbs keyed by technology name. */
+  technologyDetails?: Array<{
+    name: string;
+    usedFor?: string;
+    usedForEn?: string;
+  }>;
   liveUrl?: string;
   videoUrl?: string;
   /** Cover image URL (e.g. uploaded via the CMS); falls back to a tone tile. */

@@ -3,27 +3,16 @@ import { publicDb } from '@/lib/public-db';
 import { type Project } from '@/content/catalog';
 import { mapDbProject, type DbProjectRow } from './project-map';
 import {
-  isMissingOverviewColumnError,
-  SELECT_CORE,
-  SELECT_WITH_OVERVIEW,
+  isMissingProjectColumnError,
+  PROJECT_SELECT_ATTEMPTS,
 } from './projects-select';
 
 /**
  * Projects data access (Requirement §10 / §12) — DB-ONLY.
  *
- * Both the list (`getAllProjects`) and the detail (`getProjectBySlug`) read the
- * published projects managed in the admin CMS / GitHub ingestion, with NO static
- * catalog: the public showcase mirrors the DB — and therefore the admin dashboard —
- * exactly, so everything is editable from admin (dev decision 2026-07-23). A DB/env
- * failure yields an empty result rather than falling back to hardcoded content.
- *
- * Public reads are gated by BOTH the `status` publication flag and a `published_at`
- * date — `published_at` alone let a draft/hidden row (e.g. a GitHub auto-draft) leak
- * once it had a date (#63). The DB `.order('ai_rank')` applies the AI display order.
- *
- * D3 overview columns (#130) are selected when present; if migration 0029 is not yet
- * applied, PostgREST returns PGRST204 and we retry without those columns so the
- * public site keeps working until prod apply is explicitly authorized.
+ * D3/D4 columns are selected when present; if migrations are not yet applied,
+ * PostgREST returns PGRST204 and we retry a poorer SELECT so the public site
+ * keeps working until prod apply is explicitly authorized.
  */
 
 /** slug → ai_rank for the published projects — drives the AI display order of the
@@ -64,20 +53,17 @@ async function selectPublished(
     return q.order('ai_rank', { ascending: true, nullsFirst: false });
   };
 
-  const withOv = await run(SELECT_WITH_OVERVIEW);
-  if (!withOv.error) {
-    if (!withOv.data) return slug ? null : [];
-    return (
-      Array.isArray(withOv.data) ? withOv.data : [withOv.data]
-    ) as unknown as DbProjectRow[];
+  for (const select of PROJECT_SELECT_ATTEMPTS) {
+    const res = await run(select);
+    if (!res.error) {
+      if (!res.data) return slug ? null : [];
+      return (
+        Array.isArray(res.data) ? res.data : [res.data]
+      ) as unknown as DbProjectRow[];
+    }
+    if (!isMissingProjectColumnError(res.error)) return null;
   }
-  if (!isMissingOverviewColumnError(withOv.error)) return null;
-
-  const core = await run(SELECT_CORE);
-  if (core.error || !core.data) return slug ? null : [];
-  return (
-    Array.isArray(core.data) ? core.data : [core.data]
-  ) as unknown as DbProjectRow[];
+  return null;
 }
 
 export async function getAllProjects(): Promise<Project[]> {
