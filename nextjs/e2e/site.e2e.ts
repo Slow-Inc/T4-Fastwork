@@ -155,6 +155,13 @@ test("project detail shows decision-first brief before progressive detail (#138)
   await expect(
     brief.getByRole("heading", { name: "สรุปโปรเจกต์" }),
   ).toBeVisible();
+  await expect(brief.locator(".project-brief__lead")).not.toBeEmpty();
+  await expect(brief.locator(".project-facts")).toContainText("หมวดหมู่");
+  await expect(brief.locator(".project-facts")).toContainText("ปี");
+  await expect(brief.locator(".project-facts")).toContainText("ผู้ดูแลผลงาน");
+  await expect(
+    brief.getByRole("link", { name: /ดูเว็บจริง|ดูบน GitHub/ }),
+  ).toBeVisible();
   await expect(brief.getByText("เทคโนโลยีที่ใช้")).toBeVisible();
   await expect(brief.locator(".chip:not(.chip-muted)").first()).toBeVisible();
   await expect(brief.locator(".chip-muted").first()).toBeVisible();
@@ -162,9 +169,14 @@ test("project detail shows decision-first brief before progressive detail (#138)
   const deepDetail = page.locator("details.project-disclosure").first();
   await expect(deepDetail).not.toHaveAttribute("open", "");
   await expect(deepDetail.locator(".detail-content")).toBeHidden();
-  await deepDetail.getByText("รายละเอียดเชิงลึก", { exact: true }).click();
+  const deepDetailSummary = deepDetail.locator("summary");
+  await deepDetailSummary.focus();
+  await deepDetailSummary.press("Enter");
   await expect(deepDetail).toHaveAttribute("open", "");
   await expect(deepDetail.locator(".detail-content")).toBeVisible();
+  await expect(deepDetail.locator(".project-disclosure__when-open")).toHaveText(
+    "ปิด",
+  );
 
   await page
     .locator("nav")
@@ -174,6 +186,8 @@ test("project detail shows decision-first brief before progressive detail (#138)
   await expect(
     brief.getByRole("heading", { name: "Project summary" }),
   ).toBeVisible();
+  await expect(brief.locator(".project-facts")).toContainText("Category");
+  await expect(brief.locator(".project-facts")).toContainText("Ownership");
   await expect(brief.getByText("Technology stack")).toBeVisible();
 
   await page.setViewportSize({ width: 375, height: 812 });

@@ -1,6 +1,6 @@
 # PRD — AI-rich project detail + human-authored blog
 
-**Epic:** [Slow-Inc/T4-Fastwork#127](https://github.com/Slow-Inc/T4-Fastwork/issues/127) · **Date:** 2026-07-23 · **Status:** approved (dev vision) · **Delivery:** build-first (no red-TDD per dev), verify visually + `bun run e2e`.
+**Epic:** [Slow-Inc/T4-Fastwork#127](https://github.com/Slow-Inc/T4-Fastwork/issues/127) · **Date:** 2026-07-23 · **Status:** approved (dev vision) · **Delivery:** red-first TDD + visual verification + `bun run e2e`.
 
 ## 1. Problem / intent
 
@@ -49,6 +49,9 @@ Reference: the dev's two screenshots — (1) the chat's structured project overv
 - **D4 — Per-tech "used for" descriptions** (AI auto, owner-guarded, admin-editable; render in the tech tab, Image #2 style).
 - **D5 — Embed per-project AI chat** in the detail page.
 - **D6 — /blog human-authored** (hide `kind='case_study'`; admin Markdown-upload authoring).
+- **D7 — Decision-first project brief** ([#138](https://github.com/Slow-Inc/T4-Fastwork/issues/138);
+  existing summary/facts/tech/tags/languages visible first, deep narrative and README disclosed on
+  demand; presentation-only, no production data write).
 
 ## 7. Sequencing
 
