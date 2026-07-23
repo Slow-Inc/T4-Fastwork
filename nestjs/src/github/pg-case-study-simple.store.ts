@@ -27,14 +27,17 @@ export class PgCaseStudySimpleStore implements CaseStudySimpleStore {
     // published AND published_at set. Ordered so a bounded run has a deterministic,
     // priority set (featured first, then most recently published).
     const rows = (await this.db.execute(
-      sql`select id, slug, gh_owner, gh_repo, readme_sha, description
+      sql`select id, slug, gh_owner, gh_repo, readme_sha, description,
+                 content, content_owner
           from projects
           where source = 'github'
             and status = 'published'
             and published_at is not null
             and gh_owner is not null
             and gh_repo is not null
-          order by is_featured desc, published_at desc, id`,
+          order by
+            case when content is null or btrim(content) = '' then 0 else 1 end,
+            is_featured desc, published_at desc, id`,
     )) as Array<Record<string, unknown>>;
     return rows.map((r) => ({
       id: Number(r.id),
@@ -43,6 +46,8 @@ export class PgCaseStudySimpleStore implements CaseStudySimpleStore {
       ghRepo: r.gh_repo == null ? null : String(r.gh_repo),
       readmeSha: typeof r.readme_sha === 'string' ? r.readme_sha : null,
       description: typeof r.description === 'string' ? r.description : null,
+      content: typeof r.content === 'string' ? r.content : null,
+      contentOwner: r.content_owner === 'human' ? 'human' : 'auto',
     }));
   }
 

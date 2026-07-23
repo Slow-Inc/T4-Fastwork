@@ -130,6 +130,7 @@ export class CaseStudySimpleController {
     // on-demand via dynamicParams). Fire-and-forget, like rank.controller.
     if (apply && generated > 0) {
       void this.revalidate?.revalidateContent('blog');
+      void this.revalidate?.revalidateProjects();
     }
 
     return {

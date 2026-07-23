@@ -26,6 +26,8 @@ function project(over: Partial<CaseStudyProject> = {}): CaseStudyProject {
     ghRepo: 'Repo',
     readmeSha: null,
     description: 'd',
+    content: null,
+    contentOwner: 'auto',
     ...over,
   };
 }
@@ -71,10 +73,35 @@ describe('CaseStudySimpleService.generateForProject', () => {
   it('skips (0 LLM calls) when the README sha is unchanged — delta gate', async () => {
     const d = deps({ readme: { markdown: '# x', sha: 'same' } });
     const svc = new CaseStudySimpleService(d.readme, d.llm, d.store);
-    const r = await svc.generateForProject(project({ readmeSha: 'same' }));
+    const r = await svc.generateForProject(
+      project({ readmeSha: 'same', content: 'already filled', contentOwner: 'auto' }),
+    );
     expect(r.generated).toBe(false);
     expect(d.llmCalls).toHaveLength(0);
     expect(d.published).toHaveLength(0);
+  });
+
+  it('still generates when sha unchanged but content is empty auto-owned (#160)', async () => {
+    const d = deps({
+      readme: { markdown: '# readme typescript', sha: 'same' },
+    });
+    const svc = new CaseStudySimpleService(d.readme, d.llm, d.store);
+    const r = await svc.generateForProject(
+      project({ readmeSha: 'same', content: null, contentOwner: 'auto' }),
+    );
+    expect(r.generated).toBe(true);
+    expect(d.llmCalls).toHaveLength(1);
+    expect(d.published).toHaveLength(1);
+  });
+
+  it('does not backfill empty content when content_owner is human (#160)', async () => {
+    const d = deps({ readme: { markdown: '# x', sha: 'same' } });
+    const svc = new CaseStudySimpleService(d.readme, d.llm, d.store);
+    const r = await svc.generateForProject(
+      project({ readmeSha: 'same', content: null, contentOwner: 'human' }),
+    );
+    expect(r.generated).toBe(false);
+    expect(d.llmCalls).toHaveLength(0);
   });
 
   it('skips when there is no README snapshot', async () => {

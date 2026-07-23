@@ -1,18 +1,18 @@
 # Open-Work Ledger
 
-## 2026-07-24 — #159 D3 AI taxonomy create-or-select + backfill
+## 2026-07-24 — #160 D4 empty-content case-study backfill
 
-- Branch `feat/159-taxonomy-ai`: `PgGenerateStore` create-or-select categories/tags/techs;
-  `POST /github/generate-taxonomy` (dry-run / `apply:true`, cap 1); cron fail-soft.
-- Eligibility: published github, `category_id` null, `category_owner=auto`; no readme delta-gate.
+- Branch `feat/160-content-backfill`: `shouldGenerateCaseStudy` allows gen when
+  README sha unchanged but `content` empty + `content_owner=auto`; list prefers
+  empty content; revalidate projects after apply.
 
-## 2026-07-24 — Epic #156 project enrichment (PRD + D1/D2 merged)
+## 2026-07-24 — Epic #156 project enrichment (PRD + D1–D3 merged)
 
 - **PRD:** `docs/prd/2026-07-24-project-enrichment.md`
 - **Epic:** [#156](https://github.com/Slow-Inc/T4-Fastwork/issues/156)
 - **Children:** #157 live_url · #158 README · #159 taxonomy · #160 content · #161 snapshot
-- **MERGED:** [#162](https://github.com/Slow-Inc/T4-Fastwork/pull/162) / #157; [#163](https://github.com/Slow-Inc/T4-Fastwork/pull/163) / #158.
-- **In progress:** #159 / #164 (taxonomy) then #165 content; D5 parked until live_urls.
+- **MERGED:** #162/#157 · #163/#158 · #164/#159.
+- **In progress:** #165 / #160 content; then prod dry-run + capped apply; D5 parked until live_urls.
 - Prod capped `apply:true` for enrichment endpoints: authorized by "ทำตามนั้น" after dry-run.
 
 ## 2026-07-24 — Epic #127 CLOSED; D3/D4 backfill done (reachable set)
