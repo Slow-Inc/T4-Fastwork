@@ -55,7 +55,7 @@ export class TechUsedForController {
     const maxPerRun =
       Number.isFinite(configured) && configured >= 1
         ? Math.floor(configured)
-        : 5;
+        : 1;
 
     const techs = await this.store.listTechsNeedingUsedFor();
     const store: TechUsedForStore = apply

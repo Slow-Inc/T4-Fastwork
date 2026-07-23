@@ -38,7 +38,7 @@ describe('TechUsedForController (#131)', () => {
   const prevCap = process.env.TECH_USED_FOR_MAX_PER_RUN;
   beforeEach(() => {
     process.env.GITHUB_REFRESH_SECRET = 'right';
-    process.env.TECH_USED_FOR_MAX_PER_RUN = '5';
+    process.env.TECH_USED_FOR_MAX_PER_RUN = '1';
   });
   afterEach(() => {
     if (prev === undefined) delete process.env.GITHUB_REFRESH_SECRET;
