@@ -125,6 +125,20 @@ jobs:
           echo "POST $BACKEND_URL/github/generate-case-studies -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
           case "$code" in 2*) : ;; *) echo "::warning::case-study gen failed HTTP $code (non-blocking)" ;; esac
 
+      # #159 — AI taxonomy (category select/create + tech/tags) for published github
+      # projects with null category_id. Cap default 1 (LLM). Fail-soft.
+      - name: Generate taxonomy for projects missing category
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          [ -z "$REFRESH_SECRET" ] && { echo "secret unset — skip"; exit 0; }
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" -H "Content-Type: application/json" \
+            -d '{"apply":true}' "$BACKEND_URL/github/generate-taxonomy")
+          echo "POST $BACKEND_URL/github/generate-taxonomy -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
+          case "$code" in 2*) : ;; *) echo "::warning::taxonomy gen failed HTTP $code (non-blocking)" ;; esac
+
       - name: Refresh AI display-rank
         env:
           REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}

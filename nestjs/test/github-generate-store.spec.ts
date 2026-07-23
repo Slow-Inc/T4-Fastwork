@@ -65,8 +65,8 @@ describe('PgGenerateStore.applyPatch — only overwrites AUTO-owned fields (#75 
   });
 });
 
-describe('PgGenerateStore.applyPatch — persists generated taxonomy (#12)', () => {
-  it('resolves category_id (owner-guarded) and replaces the tag/technology M2M', async () => {
+describe('PgGenerateStore.applyPatch — persists generated taxonomy (#12 / #159)', () => {
+  it('create-or-selects category/tags/technologies then links them (owner-guarded)', async () => {
     const { store, captured } = captureStore();
     await store.applyPatch('mangadock', {
       category: 'AI Product',
@@ -75,10 +75,15 @@ describe('PgGenerateStore.applyPatch — persists generated taxonomy (#12)', () 
       readmeSha: 's',
     });
     const all = captured.map((c) => c.text).join('\n');
-    // category_id resolved from the EXISTING taxonomy, guarded by category_owner='auto'
+    // #159 — unknown taxonomy names are inserted (slug unique) then resolved
+    expect(all).toContain('insert into public.categories');
+    expect(all).toContain('on conflict');
+    expect(all).toContain('insert into public.tags');
+    expect(all).toContain('insert into public.technologies');
+    // category_id resolved, guarded by category_owner='auto'
     expect(all).toContain('category_id = case when category_owner');
     expect(all).toContain('from public.categories');
-    // tag/technology M2M links replaced (delete-then-insert from existing taxonomy)
+    // tag/technology M2M links replaced (delete-then-insert)
     expect(all).toContain('delete from project_tags');
     expect(all).toContain('insert into project_tags');
     expect(all).toContain('public.tags');

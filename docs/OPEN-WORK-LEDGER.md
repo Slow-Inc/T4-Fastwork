@@ -1,19 +1,18 @@
 # Open-Work Ledger
 
-## 2026-07-24 — #158 D2 missing-README backfill (in progress)
+## 2026-07-24 — #159 D3 AI taxonomy create-or-select + backfill
 
-- Branch `feat/158-missing-readme-backfill`: `POST /github/refresh/missing-readme`
-  (dry-run default; `apply:true` calls existing `refreshRepoDetail`; cap default 1).
-- Pure `selectReposMissingReadme` + store list ports on `PgShowcaseRepoStore`.
-- Does not raise broad refresh budget; missing-first path avoids 504-prone bulk.
+- Branch `feat/159-taxonomy-ai`: `PgGenerateStore` create-or-select categories/tags/techs;
+  `POST /github/generate-taxonomy` (dry-run / `apply:true`, cap 1); cron fail-soft.
+- Eligibility: published github, `category_id` null, `category_owner=auto`; no readme delta-gate.
 
-## 2026-07-24 — Epic #156 project enrichment (PRD + issues + D1 merged)
+## 2026-07-24 — Epic #156 project enrichment (PRD + D1/D2 merged)
 
 - **PRD:** `docs/prd/2026-07-24-project-enrichment.md`
 - **Epic:** [#156](https://github.com/Slow-Inc/T4-Fastwork/issues/156)
 - **Children:** #157 live_url · #158 README · #159 taxonomy · #160 content · #161 snapshot
-- **MERGED:** [#162](https://github.com/Slow-Inc/T4-Fastwork/pull/162) / #157 — homepage→`live_url` + fill-live-urls cron.
-- **In progress:** #158 / #163 merge after cron reconcile with #162.
+- **MERGED:** [#162](https://github.com/Slow-Inc/T4-Fastwork/pull/162) / #157; [#163](https://github.com/Slow-Inc/T4-Fastwork/pull/163) / #158.
+- **In progress:** #159 / #164 (taxonomy) then #165 content; D5 parked until live_urls.
 - Prod capped `apply:true` for enrichment endpoints: authorized by "ทำตามนั้น" after dry-run.
 
 ## 2026-07-24 — Epic #127 CLOSED; D3/D4 backfill done (reachable set)
