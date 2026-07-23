@@ -1,5 +1,18 @@
 # Open-Work Ledger
 
+## 2026-07-23 — MangaDock GitHub binding repaired on production
+
+- **AUTHORIZED + COMPLETE:** production `projects.slug='mangadock'` now binds to
+  `Slow-Inc/MangaDock`. GitHub detail snapshots contain 13 languages, 4 contributors, open pulls,
+  and README data.
+- **Verified live:** `/projects/mangadock` renders the language donut, TypeScript legend data,
+  `Slow-Inc/MangaDock` link, and the immediately visible project AI composer.
+- **Operational finding:** canonical `/github/refresh` exceeded the Vercel 60-second window after
+  persisting MangaDock detail snapshots. Partial effects were inspected; the failed broad call was
+  not retried. Targeted project revalidation completed successfully.
+- **Follow-up:** #143 tracks a bounded, secret-guarded one-repository detail refresh. Knowledge and
+  local verification constraints are captured in [[Targeted GitHub Snapshot Repairs]] via #142.
+
 ## 2026-07-23 — Project-detail AI composer D8 ready for review
 
 - **D8 #140 READY:** replace the ambiguous project AI activation CTA with an immediately visible,
