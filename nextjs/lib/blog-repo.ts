@@ -14,6 +14,9 @@ export interface DbPostRow {
   views: number | null;
 }
 
+/** Public blog surface: human-authored posts only (ADR 0013 / issue #133). */
+export const BLOG_SELECT = 'slug,title,excerpt,content,author,tags,published_at,read_time_min,views';
+
 export function mapDbPost(row: DbPostRow): BlogPost {
   return {
     slug: row.slug,
@@ -28,14 +31,49 @@ export function mapDbPost(row: DbPostRow): BlogPost {
   };
 }
 
-const SELECT = 'slug,title,excerpt,content,author,tags,published_at,read_time_min,views';
+type ListQuery = {
+  neq(column: 'kind', value: 'case_study'): ListQuery;
+  order(
+    column: 'ai_rank' | 'published_at',
+    options: { ascending: boolean; nullsFirst?: boolean },
+  ): ListQuery;
+  then(resolve: (v: { data: unknown[] | null; error: unknown | null }) => void): void;
+};
 
-export async function getPosts(q?: string): Promise<BlogPost[]> {
+type SlugQuery = {
+  neq(column: 'kind', value: 'case_study'): SlugQuery;
+  eq(column: 'slug', value: string): SlugQuery;
+  maybeSingle(): Promise<{ data: unknown | null; error: unknown | null }>;
+};
+
+export interface BlogDb {
+  from(table: 'blog_posts'): {
+    select(columns: string): ListQuery;
+  };
+}
+
+/** Narrow helper so slug lookups keep a typed `.eq` / `.maybeSingle` chain. */
+export interface BlogSlugDb {
+  from(table: 'blog_posts'): {
+    select(columns: string): Omit<SlugQuery, 'neq'> & {
+      neq(column: 'kind', value: 'case_study'): Omit<SlugQuery, 'neq'> & {
+        eq(column: 'slug', value: string): {
+          maybeSingle(): Promise<{ data: unknown | null; error: unknown | null }>;
+        };
+      };
+    };
+  };
+}
+
+export async function getPosts(
+  q?: string,
+  db: BlogDb = publicDb() as unknown as BlogDb,
+): Promise<BlogPost[]> {
   try {
-    const supabase = publicDb();
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('blog_posts')
-      .select(SELECT)
+      .select(BLOG_SELECT)
+      .neq('kind', 'case_study')
       // AI display-rank (views + content) leads; recency breaks ties / unranked.
       .order('ai_rank', { ascending: true, nullsFirst: false })
       .order('published_at', { ascending: false });
@@ -53,12 +91,15 @@ export async function getPosts(q?: string): Promise<BlogPost[]> {
   }
 }
 
-export async function getPostBySlug(slug: string): Promise<BlogPost | undefined> {
+export async function getPostBySlug(
+  slug: string,
+  db: BlogSlugDb = publicDb() as unknown as BlogSlugDb,
+): Promise<BlogPost | undefined> {
   try {
-    const supabase = publicDb();
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('blog_posts')
-      .select(SELECT)
+      .select(BLOG_SELECT)
+      .neq('kind', 'case_study')
       .eq('slug', slug)
       .maybeSingle();
     if (error || !data) return staticGet(slug);
