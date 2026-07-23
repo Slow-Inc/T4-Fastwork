@@ -159,8 +159,10 @@ test("project detail shows decision-first brief before progressive detail (#138)
   await expect(brief.locator(".project-facts")).toContainText("หมวดหมู่");
   await expect(brief.locator(".project-facts")).toContainText("ปี");
   await expect(brief.locator(".project-facts")).toContainText("ผู้ดูแลผลงาน");
+  // MangaDock (and similar) may expose both live + GitHub links; assert at least one
+  // source CTA without strict-mode failure when both match the same name pattern.
   await expect(
-    brief.getByRole("link", { name: /ดูเว็บจริง|ดูบน GitHub/ }),
+    brief.getByRole("link", { name: /ดูเว็บจริง|ดูบน GitHub/ }).first(),
   ).toBeVisible();
   await expect(brief.getByText("เทคโนโลยีที่ใช้")).toBeVisible();
   await expect(brief.locator(".chip:not(.chip-muted)").first()).toBeVisible();
@@ -1263,6 +1265,16 @@ test("admin member-edit requires auth — redirects to admin login when signed o
   // Flat authz folded the member area into /admin; the per-member edit page is an
   // admin route, so a signed-out visitor bounces to the admin login.
   await page.goto("/admin/members/1/edit", { waitUntil: "networkidle" });
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  expect(errors).toEqual([]);
+});
+
+test("admin Slow-Inc org import requires auth — redirects to login when signed out", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  await page.goto("/admin/projects/from-org", { waitUntil: "networkidle" });
   await expect(page).toHaveURL(/\/admin\/login$/);
   expect(errors).toEqual([]);
 });

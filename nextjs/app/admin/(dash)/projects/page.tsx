@@ -17,6 +17,9 @@ export default async function AdminProjects() {
           <Link href="/admin/projects/from-members" className="btn ghost">
             นำเข้าจาก repo สมาชิก
           </Link>
+          <Link href="/admin/projects/from-org" className="btn ghost">
+            นำเข้าจาก Slow-Inc
+          </Link>
           <Link href="/admin/projects/new" className="btn">
             + เพิ่มผลงาน
           </Link>
