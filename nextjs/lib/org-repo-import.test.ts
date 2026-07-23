@@ -19,6 +19,7 @@ describe('orgRepoToProjectInsert', () => {
         name: 'MangaDock',
         htmlUrl: 'https://github.com/Slow-Inc/MangaDock',
         description: 'AI manga translation',
+        homepage: 'mangadock.example',
       },
       NOW,
       ORG,
@@ -33,10 +34,24 @@ describe('orgRepoToProjectInsert', () => {
       gh_owner: 'Slow-Inc',
       gh_repo: 'MangaDock',
       gh_html_url: 'https://github.com/Slow-Inc/MangaDock',
+      live_url: 'https://mangadock.example',
       owner_type: 'team',
       owner_login: 'Slow-Inc',
       is_featured: false,
     });
+  });
+
+  test('maps missing homepage to null live_url', () => {
+    const row = orgRepoToProjectInsert(
+      {
+        name: 'Bare',
+        htmlUrl: 'https://github.com/Slow-Inc/Bare',
+        description: null,
+      },
+      NOW,
+      ORG,
+    );
+    expect(row.live_url).toBeNull();
   });
 });
 
@@ -141,6 +156,7 @@ describe('resolveOrgRepoFromSnapshot', () => {
       name: 'MangaDock',
       htmlUrl: 'https://github.com/Slow-Inc/MangaDock',
       description: 'AI manga',
+      homepage: null,
     });
   });
 
@@ -153,6 +169,23 @@ describe('resolveOrgRepoFromSnapshot', () => {
   test('returns null for missing or malformed snapshot data', () => {
     expect(resolveOrgRepoFromSnapshot(null, 'Slow-Inc', 'MangaDock', ORG)).toBeNull();
     expect(resolveOrgRepoFromSnapshot({ nope: true }, 'Slow-Inc', 'MangaDock', ORG)).toBeNull();
+  });
+  test('threads homepage from the Slow-Inc snapshot into OrgRepoInput', () => {
+    const snapshot = [
+      {
+        name: 'MangaDock',
+        html_url: 'https://github.com/Slow-Inc/MangaDock',
+        description: 'AI manga',
+        homepage: 'mangadock.app',
+        owner: { login: 'Slow-Inc' },
+      },
+    ];
+    expect(resolveOrgRepoFromSnapshot(snapshot, 'Slow-Inc', 'MangaDock', ORG)).toEqual({
+      name: 'MangaDock',
+      htmlUrl: 'https://github.com/Slow-Inc/MangaDock',
+      description: 'AI manga',
+      homepage: 'mangadock.app',
+    });
   });
 });
 
@@ -183,6 +216,7 @@ describe('parseOrgReposFromTeamPayload', () => {
         name: 'MangaDock',
         htmlUrl: 'https://github.com/Slow-Inc/MangaDock',
         description: 'x',
+        homepage: null,
       },
     ]);
   });
