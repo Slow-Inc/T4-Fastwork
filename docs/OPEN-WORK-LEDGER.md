@@ -1,5 +1,14 @@
 # Open-Work Ledger
 
+## 2026-07-24 — #131 D4 prod migration + first used-for APPLIED
+
+- **Authorized** ("ok" after explicit apply ask).
+- `apply_migration` `tech_used_for` on prod; PostgREST schema reload.
+- **504 breadcrumb:** dry-run timed out at ~60s while default cap was 5 LLM calls
+  (Vercel `maxDuration: 60`). Fix `ee3e7da` default cap → 1. Repro after deploy:
+  dry-run ~11s 201; `apply:true` ~12s → 1 tech persisted.
+- Remaining: 9 technologies without `used_for` (re-run capped `apply:true`).
+
 ## 2026-07-24 — #131 D4 tech used-for CODE MERGED (prod migration parked)
 
 - **MERGED:** PR [#155](https://github.com/Slow-Inc/T4-Fastwork/pull/155) squash → `master`.
