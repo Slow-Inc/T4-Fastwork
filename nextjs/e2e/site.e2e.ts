@@ -653,6 +653,23 @@ test("the /projects showcase is DB-only — retired mockups don't leak, real pro
   expect(gone?.status(), "a retired mockup slug should 404").toBe(404);
 });
 
+test("public /blog excludes case_study posts (ADR 0013 / #133)", async ({ page }) => {
+  // AI case studies remain in blog_posts as a backing store but must not appear
+  // on the human blog index or detail routes.
+  await page.goto("/blog", { waitUntil: "networkidle" });
+  const hrefs = await page.$$eval("a[href^='/blog/']", (as) =>
+    as.map((a) => a.getAttribute("href") ?? ""),
+  );
+  for (const href of hrefs) {
+    expect(href, "case_study slug must not link from /blog").not.toMatch(/-case-study$/);
+  }
+
+  const caseStudy = await page.goto("/blog/resume-web-case-study", {
+    waitUntil: "networkidle",
+  });
+  expect(caseStudy?.status(), "case_study detail must 404 on /blog").toBe(404);
+});
+
 test("the /projects grid reveals even when it is many cards tall (reveal not ratio-gated)", async ({
   page,
 }) => {

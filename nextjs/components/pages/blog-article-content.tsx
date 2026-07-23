@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/site/breadcrumb';
 import type { BlogPost } from '@/content/blog';
+import { MarkdownContent } from '@/lib/markdown';
 import { useLocale } from '@/i18n/locale-context';
 
 export function BlogArticleContent({ post: p }: { post: BlogPost }) {
@@ -12,6 +13,10 @@ export function BlogArticleContent({ post: p }: { post: BlogPost }) {
   const title = en && p.titleEn ? p.titleEn : p.title;
   const excerpt = en && p.excerptEn ? p.excerptEn : p.excerpt;
   const content = en && p.contentEn ? p.contentEn : p.content;
+  // Reconstruct source text: DB paragraphs were split on blank lines; MD uploads
+  // store the full document and round-trip via the same join. Drop a leading
+  // ATX h1 so it does not duplicate the page <h1>.
+  const bodySource = content.join('\n\n').replace(/^#\s+.+\n+/, '');
 
   return (
     <article className="section section-page blog-article">
@@ -36,9 +41,7 @@ export function BlogArticleContent({ post: p }: { post: BlogPost }) {
 
       <div className="blog-body rv">
         <p className="blog-lead">{excerpt}</p>
-        {content.map((para, i) => (
-          <p key={i}>{para}</p>
-        ))}
+        <MarkdownContent source={bodySource} />
       </div>
 
       <div className="detail-cta rv">

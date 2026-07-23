@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/server';
 import { assertAdmin } from '@/lib/admin-access';
 import { contentRevalidationTargets } from '@/lib/revalidate';
+import { markdownFileToPostFields, MAX_MARKDOWN_BYTES } from '@/lib/markdown-upload';
 
 function revalidatePublicBlog() {
   for (const target of contentRevalidationTargets('blog')) revalidatePath(target.path, target.type);
@@ -23,27 +24,95 @@ function slugify(input: string): string {
     .replace(/-+/g, '-');
 }
 
-export async function createPost(_prev: PostFormState, formData: FormData): Promise<PostFormState> {
-  await assertAdmin();
+async function fieldsFromForm(formData: FormData): Promise<
+  | {
+      title: string;
+      slug: string;
+      excerpt: string | null;
+      content: string | null;
+      tags: string[];
+      read_time_min: number;
+      published: boolean;
+    }
+  | { error: string }
+> {
+  const file = formData.get('markdown');
+  if (file instanceof File && file.size > 0) {
+    const name = file.name || 'post.md';
+    // Require a .md suffix — do not trust an empty MIME type (browsers often omit it).
+    if (!/\.md$/i.test(name)) {
+      return { error: 'อัปโหลดได้เฉพาะไฟล์ .md' };
+    }
+    let text: string;
+    try {
+      text = await file.text();
+    } catch {
+      return { error: 'อ่านไฟล์ Markdown ไม่สำเร็จ' };
+    }
+    try {
+      const parsed = markdownFileToPostFields(text, name);
+      const title = formData.get('title')?.toString().trim() || parsed.title;
+      const slug =
+        formData.get('slug')?.toString().trim() || slugify(parsed.slug) || parsed.slug;
+      if (!title || !slug) return { error: 'ต้องมีชื่อและ slug' };
+      const tags = (formData.get('tags')?.toString() ?? '')
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+      const published = formData.get('published') === 'on';
+      const readOverride = Number(formData.get('read_time_min'));
+      return {
+        title,
+        slug,
+        excerpt: formData.get('excerpt')?.toString().trim() || parsed.excerpt || null,
+        content: parsed.content,
+        tags,
+        read_time_min: Number.isFinite(readOverride) && readOverride > 0 ? readOverride : parsed.readTimeMin,
+        published,
+      };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : 'ไฟล์ Markdown ไม่ถูกต้อง' };
+    }
+  }
+
   const title = formData.get('title')?.toString().trim() ?? '';
   const slug = (formData.get('slug')?.toString().trim() || slugify(title)) ?? '';
   if (!title || !slug) return { error: 'ต้องมีชื่อและ slug' };
-
   const tags = (formData.get('tags')?.toString() ?? '')
     .split(',')
     .map((t) => t.trim())
     .filter(Boolean);
-  const published = formData.get('published') === 'on';
-
-  const supabase = await createClient();
-  const { error } = await supabase.from('blog_posts').insert({
-    slug,
+  return {
     title,
+    slug,
     excerpt: formData.get('excerpt')?.toString() || null,
     content: formData.get('content')?.toString() || null,
     tags,
     read_time_min: Number(formData.get('read_time_min')) || 5,
-    published_at: published ? new Date().toISOString().slice(0, 10) : null,
+    published: formData.get('published') === 'on',
+  };
+}
+
+export async function createPost(_prev: PostFormState, formData: FormData): Promise<PostFormState> {
+  await assertAdmin();
+  const fields = await fieldsFromForm(formData);
+  if ('error' in fields) return { error: fields.error };
+  if (
+    fields.content &&
+    new TextEncoder().encode(fields.content).length > MAX_MARKDOWN_BYTES
+  ) {
+    return { error: 'เนื้อหายาวเกิน 200KB' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('blog_posts').insert({
+    slug: fields.slug,
+    title: fields.title,
+    excerpt: fields.excerpt,
+    content: fields.content,
+    tags: fields.tags,
+    read_time_min: fields.read_time_min,
+    published_at: fields.published ? new Date().toISOString().slice(0, 10) : null,
   });
   if (error) return { error: error.message.includes('duplicate') ? 'slug นี้มีอยู่แล้ว' : 'บันทึกไม่สำเร็จ' };
 
