@@ -194,6 +194,67 @@ test("project detail separates overview, deep detail, and technology into access
   await expect(englishTabs).toBeVisible();
 });
 
+test("project detail lazily embeds a chat grounded to that project (#132)", async ({
+  page,
+}) => {
+  const requests: Array<{ projectSlug?: string; message?: string }> = [];
+  await page.route("**/chat/stream", async (route) => {
+    requests.push(
+      route.request().postDataJSON() as {
+        projectSlug?: string;
+        message?: string;
+      },
+    );
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body:
+        'event: session\ndata: {"sessionId":"e2e-project-embed"}\n\n' +
+        'event: token\ndata: {"text":"พร้อมตอบเรื่อง MangaDock ครับ"}\n\n' +
+        'event: done\ndata: {"latencyMs":10}\n\n',
+    });
+  });
+
+  await page.goto("/projects/mangadock", { waitUntil: "networkidle" });
+  const embedded = page.locator(".detail-chat");
+  await expect(
+    embedded.getByRole("heading", { name: "ถาม AI เกี่ยวกับ MangaDock" }),
+  ).toBeVisible();
+  await expect(
+    embedded.getByRole("link", { name: "เปิดแชทเต็มหน้า" }),
+  ).toHaveAttribute("href", "/chat?project=mangadock");
+  await expect(embedded.locator(".chat-full")).toHaveCount(0);
+  expect(requests).toHaveLength(0);
+
+  await page
+    .locator("nav")
+    .first()
+    .getByRole("button", { name: /Switch language/i })
+    .click();
+  await expect(
+    embedded.getByRole("heading", { name: "Ask AI about MangaDock" }),
+  ).toBeVisible();
+  await expect(
+    embedded.getByRole("link", { name: "Open full chat" }),
+  ).toHaveAttribute("href", "/chat?project=mangadock");
+  expect(requests).toHaveLength(0);
+
+  await embedded.getByRole("button", { name: "Start asking AI" }).click();
+  await expect(
+    embedded.getByRole("region", { name: "AI chat about MangaDock" }),
+  ).toBeFocused();
+  await expect(embedded.locator(".chat-full")).toBeVisible();
+  await expect(
+    embedded.getByText("กำลังคุยเกี่ยวกับผลงาน: MangaDock"),
+  ).toBeVisible();
+  await expect(
+    embedded.getByRole("textbox", { name: "พิมพ์ข้อความถึงผู้ช่วย AI" }),
+  ).toBeVisible();
+  await expect.poll(() => requests.length).toBe(1);
+  expect(requests[0]?.projectSlug).toBe("mangadock");
+  expect(requests[0]?.message).toContain("MangaDock");
+});
+
 test("a member profile shows real repos and opens certificates in a lightbox", async ({
   page,
 }) => {

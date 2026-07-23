@@ -15,6 +15,7 @@ import {
 import { ReadmeMarkdown } from '@/components/site/readme-markdown';
 import { WebsitePreview } from '@/components/site/website-preview';
 import { ProjectTechnologyPanel } from '@/components/pages/project-technology-panel';
+import { EmbeddedProjectChat } from '@/components/pages/embedded-project-chat';
 import { useLocale } from '@/i18n/locale-context';
 
 const projectTabs = ['overview', 'deep-detail', 'technology'] as const;
@@ -217,6 +218,8 @@ export function ProjectDetailContent({
           />
         </section>
       </div>
+
+      <EmbeddedProjectChat slug={p.slug} title={p.title} en={en} />
 
       {contributors.length > 0 && (
         <section className="detail-contributors rv">

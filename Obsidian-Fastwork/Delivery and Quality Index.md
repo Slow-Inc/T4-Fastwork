@@ -11,6 +11,7 @@ source: Engineering knowledge migration from MangaDock
 
 - [[From Problem to Verified Slice]]
 - [[Small Reversible Delivery]]
+- [[Branch First Delivery]]
 - [[Evidence Before Completion]]
 - [[Layered Verification]]
 - [[Stable E2E Assertions]]
