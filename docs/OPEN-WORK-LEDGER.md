@@ -1,5 +1,17 @@
 # Open-Work Ledger
 
+## 2026-07-23 — AI-rich project detail D5 shipped
+
+- **D5 #132 SHIPPED** via PR #137: project detail embeds the existing grounded chat with
+  `projectSlug` and keeps the full-page `/chat?project=<slug>` path. The embedded client mounts
+  only after explicit user intent, preventing passive project-page traffic from auto-sending an
+  LLM request.
+- **Verified:** red-first Playwright coverage proves zero request before activation, correct
+  project slug after activation, inline banner/composer, TH/EN labels, and full-page link.
+  Targeted ESLint passed, frontend unit tests passed 317/317, and Chromium E2E passed 60/60.
+- **Epic #127 next:** D6 #133 is the next non-DB deliverable. D3/D4 remain parked behind explicit
+  authorization for their production DB writes.
+
 ## 2026-07-23 — AI-rich project detail D2 shipped
 
 - **D2 #129 SHIPPED** via PR #136 (squash merge `a69574e`): project detail now has accessible
