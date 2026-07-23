@@ -5129,6 +5129,28 @@ footer {
   font-size: clamp(16px, 1.5vw, 19px);
   line-height: 1.7;
 }
+.project-overview-card {
+  display: grid;
+  gap: 20px;
+  max-width: 62ch;
+  margin: 24px 0 0;
+}
+.project-overview-card .t-meta {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font: 500 11px/1.3 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.project-overview-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(15px, 1.4vw, 18px);
+  line-height: 1.65;
+}
+.project-overview-card .project-brief__lead {
+  margin: 0;
+}
 .project-facts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

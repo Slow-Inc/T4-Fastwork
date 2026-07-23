@@ -1,5 +1,6 @@
 import { test, expect, describe } from 'bun:test';
 import { mapDbProject, toneForSlug } from './project-map';
+import { isMissingOverviewColumnError } from './projects-select';
 
 const dbRow = {
   slug: 'admin-added',
@@ -56,5 +57,49 @@ describe('mapDbProject', () => {
     expect(p.tags).toEqual([]);
     expect(p.content).toEqual([]);
     expect(p.liveUrl).toBeUndefined();
+  });
+
+  test('maps D3 overview card fields when all three TH fields exist', () => {
+    const p = mapDbProject({
+      ...dbRow,
+      overview_summary: 'ภาพรวม',
+      overview_highlights: 'ไฮไลต์',
+      overview_good_for: 'เหมาะกับ',
+      overview_summary_en: 'Overview',
+      overview_highlights_en: 'Highlights',
+      overview_good_for_en: 'Good for',
+    });
+    expect(p.overview).toEqual({
+      summary: 'ภาพรวม',
+      highlights: 'ไฮไลต์',
+      goodFor: 'เหมาะกับ',
+      summaryEn: 'Overview',
+      highlightsEn: 'Highlights',
+      goodForEn: 'Good for',
+    });
+  });
+
+  test('omits overview when any TH field is missing', () => {
+    const p = mapDbProject({
+      ...dbRow,
+      overview_summary: 'only summary',
+      overview_highlights: null,
+      overview_good_for: null,
+    });
+    expect(p.overview).toBeUndefined();
+  });
+});
+
+describe('isMissingOverviewColumnError (#130)', () => {
+  test('detects PostgREST unknown-column codes', () => {
+    expect(isMissingOverviewColumnError({ code: 'PGRST204' })).toBe(true);
+    expect(isMissingOverviewColumnError({ code: '42703' })).toBe(true);
+    expect(
+      isMissingOverviewColumnError({
+        message: "column projects.overview_summary does not exist",
+      }),
+    ).toBe(true);
+    expect(isMissingOverviewColumnError({ code: 'PGRST116' })).toBe(false);
+    expect(isMissingOverviewColumnError(null)).toBe(false);
   });
 });

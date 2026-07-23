@@ -1,5 +1,15 @@
 # Open-Work Ledger
 
+## 2026-07-24 — #130 D3 AI overview card IN PROGRESS
+
+- **Branch:** `feat/project-ai-overview-d3-130`. Issue #130 = `ready-for-agent`.
+- **Code:** migration `0029_project_ai_overview.sql` (additive); Nest
+  `POST /github/generate-overviews` (secret, dry-run default, `apply:true` persist,
+  owner-guard); Next `ProjectBrief` 3-block card + SELECT fallback when columns missing.
+- **Verified:** nest overview tests 11/11 + build; frontend unit 9/9; e2e **62/62**.
+- **HARD STOP:** do **not** apply `0029` to production until explicit per-action OK.
+  Frontend tolerates pre-migration DB (PGRST204 → SELECT without overview cols).
+
 ## 2026-07-24 — AFK queue cleared (agent-capable)
 
 - **Shipped this run:** #143/#151, #75/#152, #126+#135+#69/#153, #118/#120.

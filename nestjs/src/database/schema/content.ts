@@ -84,6 +84,15 @@ export const projects = pgTable('projects', {
   // only the rest. Nullable/additive → safe to apply on prod.
   aiRank: integer('ai_rank'),
   aiRankRationale: text('ai_rank_rationale'),
+
+  // --- D3 structured AI overview card (#130) --------------------------------
+  overviewSummary: text('overview_summary'),
+  overviewHighlights: text('overview_highlights'),
+  overviewGoodFor: text('overview_good_for'),
+  overviewSummaryEn: text('overview_summary_en'),
+  overviewHighlightsEn: text('overview_highlights_en'),
+  overviewGoodForEn: text('overview_good_for_en'),
+  overviewOwner: text('overview_owner').notNull().default('auto'),
 });
 
 // Many-to-many: projects ↔ technologies / tags.
