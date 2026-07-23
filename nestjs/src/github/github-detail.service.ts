@@ -57,6 +57,17 @@ export class GithubDetailService {
       githubUrl.repoPulls(owner, repo),
     );
 
+    // Language breakdown (`{ language: bytes }`) for the detail donut. Tolerant —
+    // a repo with no detectable language returns an empty object, never fails.
+    try {
+      await this.snap.syncResource(
+        snapshotKey.repoLanguages(owner, repo),
+        githubUrl.repoLanguages(owner, repo),
+      );
+    } catch (err) {
+      if (!isNotFound(err)) throw err;
+    }
+
     let readmeSha: string | null = null;
     try {
       const r = await this.snap.syncResource(

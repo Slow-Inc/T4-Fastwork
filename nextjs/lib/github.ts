@@ -97,6 +97,8 @@ export interface RepoDetail {
   }[];
   pulls: { user: { login: string; avatar_url: string; html_url: string } | null }[];
   readme: string | null;
+  /** GitHub language breakdown `{ language: bytes }` for the proportion donut. */
+  languages: Record<string, number>;
 }
 
 /** Narrow the `/github/repos/:owner/:repo/detail` payload to a `RepoDetail`. */
@@ -105,12 +107,22 @@ export function parseRepoDetail(body: unknown): RepoDetail {
     contributors?: { data?: unknown } | null;
     pulls?: { data?: unknown } | null;
     readme?: { data?: { markdown?: string } | null } | null;
+    languages?: { data?: unknown } | null;
   } | null;
   const asArray = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
+  // Keep only positive numeric byte counts (a GitHub `/languages` map).
+  const langs: Record<string, number> = {};
+  const raw = b?.languages?.data;
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    for (const [name, bytes] of Object.entries(raw as Record<string, unknown>)) {
+      if (typeof bytes === 'number' && bytes > 0) langs[name] = bytes;
+    }
+  }
   return {
     contributors: asArray(b?.contributors?.data) as RepoDetail['contributors'],
     pulls: asArray(b?.pulls?.data) as RepoDetail['pulls'],
     readme: b?.readme?.data?.markdown ?? null,
+    languages: langs,
   };
 }
 
