@@ -1,5 +1,16 @@
 # Open-Work Ledger
 
+## 2026-07-23 — AI-rich project detail D7 ready for merge
+
+- **D7 #138 READY via PR #139:** project detail now presents the existing summary, key facts,
+  source links, tech stack, tags, and available GitHub language breakdown in an always-visible
+  project brief. Long `projects.content` and GitHub README use native progressive disclosure.
+- **Scope:** presentation-only; no generated D3/D4 fields, schema/migration/seed, or production DB
+  write.
+- **Verified:** red-first Playwright evidence, targeted ESLint, 319/319 frontend unit tests,
+  production build, 60/60 Chromium E2E, and fresh-build visual inspection at desktop/mobile
+  overflow widths. Review remediation adds deterministic RepoDetail coverage for language/README.
+
 ## 2026-07-23 — AI-rich project detail D5 shipped
 
 - **D5 #132 SHIPPED** via PR #137: project detail embeds the existing grounded chat with

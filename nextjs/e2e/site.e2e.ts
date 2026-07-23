@@ -145,53 +145,57 @@ test("/about lists the team as a directory that links to each real profile", asy
   ).toBeVisible();
 });
 
-test("project detail separates overview, deep detail, and technology into accessible tabs (#129)", async ({
+test("project detail shows decision-first brief before progressive detail (#138)", async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/projects/mangadock", { waitUntil: "networkidle" });
 
-  const tabs = page.getByRole("tablist", { name: "เนื้อหาโปรเจกต์" });
-  const overview = tabs.getByRole("tab", { name: "ภาพรวม" });
-  const deepDetail = tabs.getByRole("tab", { name: "รายละเอียดเชิงลึก" });
-  const technology = tabs.getByRole("tab", { name: "เทคโนโลยี" });
-
-  await expect(overview).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator("#project-panel-overview")).toBeVisible();
-  await expect(page.locator("#project-panel-deep-detail")).toBeHidden();
-  await expect(page.locator("#project-panel-technology")).toBeHidden();
-
-  await deepDetail.click();
-  await expect(deepDetail).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator("#project-panel-deep-detail")).toBeVisible();
-  await expect(page.locator("#project-panel-deep-detail p").first()).not.toBeEmpty();
-
-  // Arrow-key navigation follows the ARIA tabs pattern and moves focus/selection.
-  await deepDetail.press("ArrowRight");
-  await expect(technology).toBeFocused();
-  await expect(technology).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator("#project-panel-technology")).toBeVisible();
+  const brief = page.locator(".project-brief");
   await expect(
-    page.locator("#project-panel-technology").getByText("เทคโนโลยีที่ใช้"),
+    brief.getByRole("heading", { name: "สรุปโปรเจกต์" }),
   ).toBeVisible();
+  await expect(brief.locator(".project-brief__lead")).not.toBeEmpty();
+  await expect(brief.locator(".project-facts")).toContainText("หมวดหมู่");
+  await expect(brief.locator(".project-facts")).toContainText("ปี");
+  await expect(brief.locator(".project-facts")).toContainText("ผู้ดูแลผลงาน");
   await expect(
-    page.locator("#project-panel-technology .chip:not(.chip-muted)").first(),
+    brief.getByRole("link", { name: /ดูเว็บจริง|ดูบน GitHub/ }),
   ).toBeVisible();
-  await expect(
-    page.locator("#project-panel-technology .chip-muted").first(),
-  ).toBeVisible();
+  await expect(brief.getByText("เทคโนโลยีที่ใช้")).toBeVisible();
+  await expect(brief.locator(".chip:not(.chip-muted)").first()).toBeVisible();
+  await expect(brief.locator(".chip-muted").first()).toBeVisible();
+
+  const deepDetail = page.locator("details.project-disclosure").first();
+  await expect(deepDetail).not.toHaveAttribute("open", "");
+  await expect(deepDetail.locator(".detail-content")).toBeHidden();
+  const deepDetailSummary = deepDetail.locator("summary");
+  await deepDetailSummary.focus();
+  await deepDetailSummary.press("Enter");
+  await expect(deepDetail).toHaveAttribute("open", "");
+  await expect(deepDetail.locator(".detail-content")).toBeVisible();
+  await expect(deepDetail.locator(".project-disclosure__when-open")).toHaveText(
+    "ปิด",
+  );
 
   await page
     .locator("nav")
     .first()
     .getByRole("button", { name: /Switch language/i })
     .click();
-  const englishTabs = page.getByRole("tablist", { name: "Project content" });
-  await expect(englishTabs.getByRole("tab", { name: "Overview" })).toBeVisible();
-  await expect(englishTabs.getByRole("tab", { name: "Deep detail" })).toBeVisible();
-  await expect(englishTabs.getByRole("tab", { name: "Technology" })).toBeVisible();
+  await expect(
+    brief.getByRole("heading", { name: "Project summary" }),
+  ).toBeVisible();
+  await expect(brief.locator(".project-facts")).toContainText("Category");
+  await expect(brief.locator(".project-facts")).toContainText("Ownership");
+  await expect(brief.getByText("Technology stack")).toBeVisible();
 
-  await page.setViewportSize({ width: 390, height: 844 });
-  await expect(englishTabs).toBeVisible();
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect(brief).toBeVisible();
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
 });
 
 test("project detail lazily embeds a chat grounded to that project (#132)", async ({

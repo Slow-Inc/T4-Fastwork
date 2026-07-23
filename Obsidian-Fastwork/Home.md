@@ -38,6 +38,8 @@ current behavior; this vault captures reusable reasoning and operating knowledge
   deployment architecture.
 - [[Delivery and Quality Index]] — TDD, evidence, layered verification, post-mortems, and change
   records.
+- [[Frontend Verification Must Use the Current Build]] — verify screenshots and E2E against the
+  active branch's CSS rather than a stale server.
 - [[Knowledge Management Index]] — truth hierarchy, ADR lifecycle, vocabulary, surveys, and
   handoffs.
 - [[Security and Reliability Index]] — diagnosis, trust boundaries, authorization, privacy,
