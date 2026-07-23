@@ -9,6 +9,8 @@ import { GithubGenerateModule } from './github/github-generate.module';
 import { CaseStudySimpleModule } from './github/case-study-simple.module';
 import { ProjectOverviewModule } from './github/project-overview.module';
 import { TechUsedForModule } from './github/tech-used-for.module';
+import { TaxonomyGenerateModule } from './github/taxonomy-generate.module';
+import { LiveUrlModule } from './github/live-url.module';
 import { GithubCurateModule } from './github/github-curate.module';
 import { GithubMemberSyncModule } from './github/github-member-sync.module';
 import { CaseStudyModule } from './github/github-case-study.module';
@@ -30,6 +32,8 @@ import { RankModule } from './rank/rank.module';
     CaseStudySimpleModule,
     ProjectOverviewModule,
     TechUsedForModule,
+    TaxonomyGenerateModule,
+    LiveUrlModule,
     GithubCurateModule,
     GithubMemberSyncModule,
     CaseStudyModule,

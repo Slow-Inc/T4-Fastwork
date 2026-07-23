@@ -7,23 +7,46 @@ import type {
   CurrentContent,
 } from './github-generate';
 import { sqlTextArray } from './sql-text-array';
+import { taxonomySlug } from './taxonomy-ensure';
+import type { TaxonomyProject, TaxonomyStore } from './taxonomy-generate';
 
 /**
  * Postgres-backed GenerateStore over the Drizzle pooler (mirrors PgRankStore).
- * Reads a github-sourced project's per-field provenance + readme sha, and applies
- * a generated patch to the AUTO-owned scalar copy fields.
- *
- * Persists the scalar copy (title/titleEn/description/content) + readme_sha +
- * generated_at, AND the generated taxonomy: category (category_id FK) resolved from
- * the existing `categories`, and tags/technologies replaced in the project_tags /
- * project_technologies M2M (resolved to the existing taxonomy; unknown names dropped).
- * All in one transaction. Every write is guarded by its `*_owner = 'auto'` predicate,
- * so a concurrent human edit is never clobbered. Only rows with source='github' are
- * touched, so curated CMS content is never rewritten by generation.
+ * Also implements TaxonomyStore (#159) for capped category/tech/tags backfill.
  */
 @Injectable()
-export class PgGenerateStore implements GenerateStore {
+export class PgGenerateStore implements GenerateStore, TaxonomyStore {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+
+  async listPublishedNeedingTaxonomy(): Promise<TaxonomyProject[]> {
+    const rows = (await this.db.execute(
+      sql`select id, slug, gh_owner, gh_repo, description, category_id,
+                 category_owner, tags_owner, technologies_owner, readme_sha
+          from projects
+          where source = 'github'
+            and status = 'published'
+            and published_at is not null
+            and gh_owner is not null
+            and gh_repo is not null
+            and category_id is null
+            and category_owner = 'auto'
+          order by is_featured desc, published_at desc, id`,
+    )) as Array<Record<string, unknown>>;
+    const owner = (v: unknown): 'auto' | 'human' =>
+      v === 'auto' ? 'auto' : 'human';
+    return rows.map((r) => ({
+      id: Number(r.id),
+      slug: String(r.slug),
+      ghOwner: r.gh_owner == null ? null : String(r.gh_owner),
+      ghRepo: r.gh_repo == null ? null : String(r.gh_repo),
+      description: typeof r.description === 'string' ? r.description : null,
+      categoryId: r.category_id == null ? null : Number(r.category_id),
+      categoryOwner: owner(r.category_owner),
+      tagsOwner: owner(r.tags_owner),
+      technologiesOwner: owner(r.technologies_owner),
+      readmeSha: typeof r.readme_sha === 'string' ? r.readme_sha : null,
+    }));
+  }
 
   async getContent(
     slug: string,
@@ -53,6 +76,39 @@ export class PgGenerateStore implements GenerateStore {
 
   async applyPatch(slug: string, patch: ContentPatch): Promise<void> {
     await this.db.transaction(async (tx) => {
+      // #159 — ensure taxonomy rows exist before FK / M2M resolve.
+      if (patch.category !== undefined && patch.category.trim()) {
+        const name = patch.category.trim();
+        const slugCat = taxonomySlug(name);
+        await tx.execute(
+          sql`insert into public.categories (name, slug)
+              values (${name}, ${slugCat})
+              on conflict (slug) do nothing`,
+        );
+      }
+      if (patch.tags?.length) {
+        for (const raw of patch.tags) {
+          const name = raw.trim();
+          if (!name) continue;
+          await tx.execute(
+            sql`insert into public.tags (name, slug)
+                values (${name}, ${taxonomySlug(name)})
+                on conflict (slug) do nothing`,
+          );
+        }
+      }
+      if (patch.technologies?.length) {
+        for (const raw of patch.technologies) {
+          const name = raw.trim();
+          if (!name) continue;
+          await tx.execute(
+            sql`insert into public.technologies (name, slug)
+                values (${name}, ${taxonomySlug(name)})
+                on conflict (slug) do nothing`,
+          );
+        }
+      }
+
       // readme_sha + generated_at are generation bookkeeping (not human-ownable) —
       // always recorded so the delta-gate/cache knows this readme was processed.
       const sets = [
@@ -79,13 +135,12 @@ export class PgGenerateStore implements GenerateStore {
         sets.push(
           sql`content = case when content_owner = 'auto' then ${patch.content} else content end`,
         );
-      // category → category_id, resolved from the EXISTING taxonomy (name or slug),
-      // owner-guarded like the copy fields. An unknown category resolves to NULL.
+      // category → category_id (create-or-select above), owner-guarded.
       if (patch.category !== undefined)
         sets.push(
           sql`category_id = case when category_owner = 'auto'
               then (select id from public.categories
-                    where lower(name) = lower(${patch.category}) or slug = ${patch.category}
+                    where lower(name) = lower(${patch.category}) or slug = ${taxonomySlug(patch.category)}
                     limit 1)
               else category_id end`,
         );
@@ -95,9 +150,7 @@ export class PgGenerateStore implements GenerateStore {
       );
 
       // tags / technologies M2M: replace the auto-owned project's links with the
-      // generated set, resolved to the EXISTING taxonomy (unknown names are dropped).
-      // Owner-guarded in the WHERE, so a human-flagged field is never rewritten; an
-      // empty list clears the links (delete only, no insert).
+      // generated set (rows ensured above). Owner-guarded in the WHERE.
       if (patch.tags !== undefined) {
         await tx.execute(
           sql`delete from project_tags where project_id in (

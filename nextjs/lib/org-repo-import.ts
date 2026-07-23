@@ -6,6 +6,7 @@
  * but binds team ownership (`owner_type='team'`, `owner_login=Slow-Inc`).
  */
 import { slugifyRepo } from './member-repo-import';
+import { normalizeHomepageToLiveUrl } from './live-url';
 
 /** Canonical org login for team-owned showcase imports (mirrors nest GITHUB_ORG). */
 export const SLOW_INC_ORG = 'Slow-Inc';
@@ -14,6 +15,8 @@ export interface OrgRepoInput {
   name: string;
   htmlUrl: string;
   description: string | null;
+  /** GitHub Website field (may be scheme-less); mapped to `live_url`. */
+  homepage?: string | null;
 }
 
 export interface OrgProjectInsert {
@@ -26,6 +29,7 @@ export interface OrgProjectInsert {
   gh_owner: string;
   gh_repo: string;
   gh_html_url: string;
+  live_url: string | null;
   owner_type: 'team';
   owner_login: string;
   is_featured: false;
@@ -66,6 +70,7 @@ export function orgRepoToProjectInsert(
     gh_owner: org,
     gh_repo: repo.name,
     gh_html_url: repo.htmlUrl,
+    live_url: normalizeHomepageToLiveUrl(repo.homepage),
     owner_type: 'team',
     owner_login: org,
     is_featured: false,
@@ -123,6 +128,7 @@ function narrowOrgRepo(raw: unknown, expectedOrg: string): OrgRepoInput | null {
     name: r.name,
     htmlUrl: r.html_url,
     description: typeof r.description === 'string' ? r.description : null,
+    homepage: typeof r.homepage === 'string' ? r.homepage : null,
   };
 }
 

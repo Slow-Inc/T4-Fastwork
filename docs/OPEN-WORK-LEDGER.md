@@ -5,7 +5,15 @@
 - Branch `feat/160-content-backfill`: `shouldGenerateCaseStudy` allows gen when
   README sha unchanged but `content` empty + `content_owner=auto`; list prefers
   empty content; revalidate projects after apply.
-- Open PRs: #162 live_url · #163 missing-readme · #164 taxonomy · (this) content
+
+## 2026-07-24 — Epic #156 project enrichment (PRD + D1–D3 merged)
+
+- **PRD:** `docs/prd/2026-07-24-project-enrichment.md`
+- **Epic:** [#156](https://github.com/Slow-Inc/T4-Fastwork/issues/156)
+- **Children:** #157 live_url · #158 README · #159 taxonomy · #160 content · #161 snapshot
+- **MERGED:** #162/#157 · #163/#158 · #164/#159.
+- **In progress:** #165 / #160 content; then prod dry-run + capped apply; D5 parked until live_urls.
+- Prod capped `apply:true` for enrichment endpoints: authorized by "ทำตามนั้น" after dry-run.
 
 ## 2026-07-24 — Epic #127 CLOSED; D3/D4 backfill done (reachable set)
 

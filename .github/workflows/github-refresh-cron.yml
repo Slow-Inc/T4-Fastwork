@@ -45,10 +45,39 @@ jobs:
           echo
           # 2xx = refreshed or single-flight-skipped (both fine). Anything else
           # (401 bad secret, 5xx backend down) is a real failure worth surfacing.
-          case "$code" in
-            2*) exit 0 ;;
+          case "$code" in 2*) exit 0 ;;
             *) echo "::error::refresh failed with HTTP $code"; exit 1 ;;
           esac
+
+      # #157 — fill null projects.live_url from GitHub homepage in list snapshots.
+      # No LLM; default cap 50. Fail-soft. Needs org/member list refresh above first.
+      - name: Fill missing live_url from GitHub homepage
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          [ -z "$REFRESH_SECRET" ] && { echo "secret unset — skip"; exit 0; }
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" -H "Content-Type: application/json" \
+            -d '{"apply":true}' "$BACKEND_URL/github/fill-live-urls")
+          echo "POST $BACKEND_URL/github/fill-live-urls -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
+          case "$code" in 2*) : ;; *) echo "::warning::fill-live-urls failed HTTP $code (non-blocking)" ;; esac
+
+      # #158 — capped missing-README backfill (default 1 repo/run). Prefer this over
+      # raising the broad refresh detail budget; fail-soft so a GitHub hiccup never
+      # reds the cron. Runs BEFORE case-study gen so newly synced READMEs can feed it
+      # on a later hourly pass (same run may still miss if detail just landed).
+      - name: Backfill missing README detail snapshots
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          [ -z "$REFRESH_SECRET" ] && { echo "secret unset — skip"; exit 0; }
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" -H "Content-Type: application/json" \
+            -d '{"apply":true}' "$BACKEND_URL/github/refresh/missing-readme")
+          echo "POST $BACKEND_URL/github/refresh/missing-readme -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
+          case "$code" in 2*) : ;; *) echo "::warning::missing-readme backfill failed HTTP $code (non-blocking)" ;; esac
 
       # After a successful refresh, chain the showcase pipeline (Phase 1 automation):
       # cached snapshots -> draft projects (curate) -> member repo choices (sync) ->
@@ -95,6 +124,20 @@ jobs:
             -d '{"apply":true}' "$BACKEND_URL/github/generate-case-studies")
           echo "POST $BACKEND_URL/github/generate-case-studies -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
           case "$code" in 2*) : ;; *) echo "::warning::case-study gen failed HTTP $code (non-blocking)" ;; esac
+
+      # #159 — AI taxonomy (category select/create + tech/tags) for published github
+      # projects with null category_id. Cap default 1 (LLM). Fail-soft.
+      - name: Generate taxonomy for projects missing category
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          [ -z "$REFRESH_SECRET" ] && { echo "secret unset — skip"; exit 0; }
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" -H "Content-Type: application/json" \
+            -d '{"apply":true}' "$BACKEND_URL/github/generate-taxonomy")
+          echo "POST $BACKEND_URL/github/generate-taxonomy -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
+          case "$code" in 2*) : ;; *) echo "::warning::taxonomy gen failed HTTP $code (non-blocking)" ;; esac
 
       - name: Refresh AI display-rank
         env:

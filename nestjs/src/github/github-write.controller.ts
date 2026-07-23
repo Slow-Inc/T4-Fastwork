@@ -11,6 +11,7 @@
  */
 import {
   BadRequestException,
+  Body,
   Controller,
   Headers,
   Post,
@@ -31,6 +32,7 @@ import { DrizzleSnapshotStore } from './drizzle-snapshot.store';
 import { RagIngestService } from '../ingestion/rag-ingest.service';
 import { RevalidateService } from '../revalidate/revalidate.service';
 import { PgShowcaseRepoStore } from './pg-showcase-repos.store';
+import { selectReposMissingReadme } from './missing-readme-backfill';
 
 @Controller('github')
 export class GithubWriteController {
@@ -111,6 +113,101 @@ export class GithubWriteController {
       repo: parsed.repo,
       projectSlug,
       ...outcome.result,
+    };
+  }
+
+  /**
+   * Capped backfill of published GitHub projects missing a README snapshot
+   * (#158). Dry-run by default; `apply: true` calls existing `refreshRepoDetail`
+   * up to README_BACKFILL_MAX_PER_RUN (default 1).
+   */
+  @Post('refresh/missing-readme')
+  async doRefreshMissingReadme(
+    @Headers('x-refresh-secret') secret: string | undefined,
+    @Body() body: { apply?: boolean } | undefined,
+  ): Promise<{
+    candidates: number;
+    planned: number;
+    synced: number;
+    failed: number;
+    applied: boolean;
+    capped: boolean;
+    repos: { owner: string; repo: string; slug: string }[];
+  }> {
+    const expected = process.env.GITHUB_REFRESH_SECRET;
+    if (!expected || !constantTimeEqual(secret, expected)) {
+      throw new UnauthorizedException();
+    }
+    const apply = body?.apply === true;
+    const configured = Number(process.env.README_BACKFILL_MAX_PER_RUN);
+    const maxPerRun =
+      Number.isFinite(configured) && configured >= 1
+        ? Math.floor(configured)
+        : 1;
+
+    const [candidates, existingKeys] = await Promise.all([
+      this.projects.listPublishedGithubForReadmeBackfill(),
+      this.projects.listExistingReadmeKeys(),
+    ]);
+    const planned = selectReposMissingReadme(
+      candidates,
+      existingKeys,
+      maxPerRun,
+    );
+    const missingCount = selectReposMissingReadme(
+      candidates,
+      existingKeys,
+    ).length;
+
+    if (!apply) {
+      return {
+        candidates: missingCount,
+        planned: planned.length,
+        synced: 0,
+        failed: 0,
+        applied: false,
+        capped: missingCount > planned.length,
+        repos: planned,
+      };
+    }
+
+    const outcome = await this.store.runExclusive(
+      'github-refresh-missing-readme',
+      async () => {
+        let synced = 0;
+        let failed = 0;
+        for (const r of planned) {
+          const summary = await this.refresh.refreshRepoDetail(r.owner, r.repo);
+          if (summary.failed.length) failed++;
+          else {
+            synced++;
+            void this.revalidate.revalidateProject(r.slug).catch(() => {});
+          }
+        }
+        return { synced, failed };
+      },
+    );
+
+    if (!outcome.ran) {
+      return {
+        candidates: missingCount,
+        planned: planned.length,
+        synced: 0,
+        failed: 0,
+        applied: true,
+        capped: missingCount > planned.length,
+        repos: planned,
+      };
+    }
+
+    return {
+      candidates: missingCount,
+      planned: planned.length,
+      synced: outcome.result.synced,
+      failed: outcome.result.failed,
+      applied: true,
+      capped: missingCount > planned.length,
+      repos: planned,
     };
   }
 
