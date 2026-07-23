@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Headers,
@@ -9,6 +10,7 @@ import {
 import { constantTimeEqual } from './webhook-verify';
 import {
   ContentGenerateService,
+  filterReviewedPatch,
   type ContentPatch,
   type GenerateContext,
   type GenerateStore,
@@ -24,9 +26,9 @@ export const GENERATE_CLIENT = Symbol('GENERATE_CLIENT');
  * (constant-time, fail-closed).
  *
  * **Dry-run by default** — returns the reconciled patch WITHOUT writing, so an admin
- * reviews the generated copy before it lands. `apply: true` persists (auto-owned
- * scalar fields) via the store. Context (README/languages) is supplied in the body
- * for now; auto-assembly from stored snapshots is a follow-up.
+ * reviews the generated copy before it lands. `apply: true` + the reviewed `patch`
+ * persists without a second LLM call (#75). Context (README/languages) is supplied
+ * in the body for dry-run; auto-assembly from stored snapshots is a follow-up.
  */
 @Controller('github')
 export class GithubGenerateController {
@@ -39,7 +41,13 @@ export class GithubGenerateController {
   async generate(
     @Headers('x-refresh-secret') secret: string | undefined,
     @Body()
-    body: { slug: string; context: GenerateContext; apply?: boolean },
+    body: {
+      slug: string;
+      context: GenerateContext;
+      apply?: boolean;
+      /** Required when `apply: true` — the dry-run patch the admin reviewed. */
+      patch?: ContentPatch;
+    },
   ): Promise<{
     generated: boolean;
     applied: boolean;
@@ -50,24 +58,37 @@ export class GithubGenerateController {
       throw new UnauthorizedException();
     }
 
-    // Dry-run: swap in a store whose applyPatch captures the patch instead of
-    // writing, so the pure ContentGenerateService flow is reused unchanged.
+    if (body.apply === true) {
+      if (!body.patch || typeof body.patch !== 'object') {
+        throw new BadRequestException(
+          'apply:true requires the reviewed dry-run patch',
+        );
+      }
+      const current = await this.store.getContent(body.slug);
+      if (!current) {
+        return { generated: false, applied: false };
+      }
+      const safe = filterReviewedPatch(current, body.patch);
+      if (!safe.generatedAt) safe.generatedAt = new Date();
+      await this.store.applyPatch(body.slug, safe);
+      return { generated: false, applied: true };
+    }
+
+    // Dry-run: capture the patch instead of writing.
     let captured: ContentPatch | null = null;
-    const store: GenerateStore = body.apply
-      ? this.store
-      : {
-          getContent: (s) => this.store.getContent(s),
-          applyPatch: async (_s, patch) => {
-            captured = patch;
-          },
-        };
+    const store: GenerateStore = {
+      getContent: (s) => this.store.getContent(s),
+      applyPatch: async (_s, patch) => {
+        captured = patch;
+      },
+    };
 
     const svc = new ContentGenerateService(store, this.llm);
     const res = await svc.generateForRepo(body.slug, body.context);
     return {
       generated: res.generated,
-      applied: Boolean(body.apply),
-      patch: body.apply ? undefined : captured,
+      applied: false,
+      patch: captured,
     };
   }
 }

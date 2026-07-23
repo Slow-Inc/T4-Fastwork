@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import {
   reconcile,
+  filterReviewedPatch,
   validateTechnologies,
   ContentGenerateService,
   type GeneratedContent,
@@ -54,6 +55,32 @@ describe('reconcile', () => {
       technologiesOwner: 'human',
     };
     expect(reconcile(allHuman, generated)).toEqual({});
+  });
+});
+
+describe('filterReviewedPatch (#75)', () => {
+  it('keeps only auto-owned fields from a reviewed patch', () => {
+    const current: CurrentContent = {
+      titleOwner: 'auto',
+      titleEnOwner: 'auto',
+      descriptionOwner: 'human',
+      contentOwner: 'auto',
+      categoryOwner: 'human',
+      tagsOwner: 'auto',
+      technologiesOwner: 'auto',
+    };
+    const patch = filterReviewedPatch(current, {
+      title: 'T',
+      description: 'should-drop',
+      category: 'should-drop',
+      tags: ['a'],
+      readmeSha: 'sha',
+    });
+    expect(patch).toEqual({
+      title: 'T',
+      tags: ['a'],
+      readmeSha: 'sha',
+    });
   });
 });
 
