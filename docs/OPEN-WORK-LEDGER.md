@@ -1,5 +1,16 @@
 # Open-Work Ledger
 
+## 2026-07-24 — #133 D6 human-authored blog MERGED
+
+- **MERGED:** PR #150 squash → `master` `53db3a8`. Remote feature branch deleted (auto).
+- Public `getPosts` / `getPostBySlug` exclude `kind='case_study'`; case-study rows stay in DB.
+- Admin new-post accepts `.md` (require suffix; 200KB fail-closed on parse + form path);
+  article body uses safe `MarkdownContent`.
+- **Verified:** unit 9/9 (blog-repo + markdown-upload); production build; Chromium e2e **62/62**
+  (incl. `/blog/resume-web-case-study` → 404). Scrutinize + security comments on PR HEAD `778c388`.
+- **Epic #127:** D6 done. Next non-DB queue: #143 / #135, #75, #69, #126, #118+#120.
+  D3/D4 (#130/#131) still parked for explicit prod-DB authz.
+
 ## 2026-07-24 — #147 Admin Slow-Inc bulk import READY for PR
 
 - **Branch:** `feat/admin-slow-inc-bulk-import` after #146/#148 merged (`33a7be2`).
@@ -33,10 +44,9 @@
 - **REWRITTEN + `ready-for-agent`:** #69 residual only (Nest service chat-card title/description
   enrichment; optional static-seed delete after parity). #75 residual only (`apply:true` must not
   re-run LLM on `/github/generate`).
-- **Still open (unchanged priority):** #127/#133 (D6 blog), #130/#131 (D3/D4 parked for prod DB),
-  #135/#143/#126 (GitHub refresh reliability), #145–#147 (Admin Slow-Inc import), #118+#120
-  (bilingual scrutinize), #110 (v3 art direction).
-- **Knowledge:** [[Do Not Implement Superseded ADR 0009 Tickets]]
+- **Still open (unchanged priority):** #127 (epic; D6 closed), #130/#131 (D3/D4 parked for prod DB),
+  #135/#143/#126 (GitHub refresh reliability), #118+#120
+  (bilingual scrutinize), #110 (v3 art direction). #145–#147 Admin Slow-Inc import shipped.- **Knowledge:** [[Do Not Implement Superseded ADR 0009 Tickets]]
 
 ## 2026-07-23 — MangaDock GitHub binding repaired on production
 
