@@ -1,5 +1,13 @@
 # Open-Work Ledger
 
+## 2026-07-24 — AFK queue cleared (agent-capable)
+
+- **Shipped this run:** #143/#151, #75/#152, #126+#135+#69/#153, #118/#120.
+- **Parked `ready-for-human` (cannot AFK):** #130 D3, #131 D4 (prod DB write authz),
+  #110 v3 art direction (design scope).
+- **Epic still open:** #127 — only blocked on parked D3/D4; all other children done.
+- **No open `ready-for-agent` issues remain.**
+
 ## 2026-07-24 — #75 generate apply:true no second LLM MERGED
 
 - **MERGED:** PR #152 squash → `master`. `apply:true` requires reviewed `patch`;
