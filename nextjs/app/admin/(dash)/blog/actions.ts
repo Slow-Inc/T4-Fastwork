@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/server';
 import { assertAdmin } from '@/lib/admin-access';
 import { contentRevalidationTargets } from '@/lib/revalidate';
-import { markdownFileToPostFields } from '@/lib/markdown-upload';
+import { markdownFileToPostFields, MAX_MARKDOWN_BYTES } from '@/lib/markdown-upload';
 
 function revalidatePublicBlog() {
   for (const target of contentRevalidationTargets('blog')) revalidatePath(target.path, target.type);
@@ -97,6 +97,12 @@ export async function createPost(_prev: PostFormState, formData: FormData): Prom
   await assertAdmin();
   const fields = await fieldsFromForm(formData);
   if ('error' in fields) return { error: fields.error };
+  if (
+    fields.content &&
+    new TextEncoder().encode(fields.content).length > MAX_MARKDOWN_BYTES
+  ) {
+    return { error: 'เนื้อหายาวเกิน 200KB' };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.from('blog_posts').insert({
