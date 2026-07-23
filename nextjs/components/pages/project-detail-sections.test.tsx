@@ -49,6 +49,28 @@ describe('project detail sections', () => {
     );
   });
 
+  test('renders the D3 structured overview card when present', () => {
+    const withOverview: Project = {
+      ...project,
+      overview: {
+        summary: 'ระบบแปลมังงะ',
+        highlights: 'OCR + RAG',
+        goodFor: 'สตูดิโอที่อยากสเกล',
+        summaryEn: 'Manga translation',
+        highlightsEn: 'OCR + RAG',
+        goodForEn: 'Studios scaling up',
+      },
+    };
+    const { container } = render(
+      <ProjectBrief project={withOverview} detail={detail} en={false} />,
+    );
+    const card = container.querySelector('.project-overview-card');
+    expect(card?.textContent).toContain('ระบบแปลมังงะ');
+    expect(card?.textContent).toContain('OCR + RAG');
+    expect(card?.textContent).toContain('สตูดิโอที่อยากสเกล');
+    expect(card?.textContent).toContain('เหมาะกับใคร');
+  });
+
   test('keeps deep detail and README collapsed by default', () => {
     const { container } = render(
       <ProjectDetailDisclosures

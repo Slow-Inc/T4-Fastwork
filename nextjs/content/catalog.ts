@@ -12,6 +12,15 @@ export interface Project {
   titleEn: string;
   description: string;
   descriptionEn?: string;
+  /** D3 structured AI overview — falls back to `description` when absent. */
+  overview?: {
+    summary: string;
+    highlights: string;
+    goodFor: string;
+    summaryEn?: string;
+    highlightsEn?: string;
+    goodForEn?: string;
+  };
   /** Full rich description, one paragraph per entry. */
   content: string[];
   category: string;

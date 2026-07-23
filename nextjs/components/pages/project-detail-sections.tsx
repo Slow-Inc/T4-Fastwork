@@ -15,6 +15,22 @@ export function ProjectBrief({
   const t = (th: string, english: string) => (en ? english : th);
   const description =
     en && project.descriptionEn ? project.descriptionEn : project.description;
+  const overview = project.overview;
+  const summary = overview
+    ? en && overview.summaryEn
+      ? overview.summaryEn
+      : overview.summary
+    : description;
+  const highlights = overview
+    ? en && overview.highlightsEn
+      ? overview.highlightsEn
+      : overview.highlights
+    : null;
+  const goodFor = overview
+    ? en && overview.goodForEn
+      ? overview.goodForEn
+      : overview.goodFor
+    : null;
   const ownerLabel =
     project.ownerLabel ??
     (project.ownerType === 'personal' ? project.title : 'T4 Labs');
@@ -32,7 +48,24 @@ export function ProjectBrief({
         <h2 id="project-summary-heading">
           {t('สรุปโปรเจกต์', 'Project summary')}
         </h2>
-        <p className="project-brief__lead">{description}</p>
+        {overview ? (
+          <div className="project-overview-card">
+            <div>
+              <h3 className="t-meta">{t('ภาพรวม', 'Overview')}</h3>
+              <p className="project-brief__lead">{summary}</p>
+            </div>
+            <div>
+              <h3 className="t-meta">{t('สรุป 30 วินาที', '30-second highlights')}</h3>
+              <p>{highlights}</p>
+            </div>
+            <div>
+              <h3 className="t-meta">{t('เหมาะกับใคร', 'Good for')}</h3>
+              <p>{goodFor}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="project-brief__lead">{description}</p>
+        )}
 
         <dl className="project-facts">
           <div>

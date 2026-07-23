@@ -28,6 +28,12 @@ export interface DbProjectRow {
   gh_repo?: string | null;
   owner_type?: string | null;
   owner_login?: string | null;
+  overview_summary?: string | null;
+  overview_highlights?: string | null;
+  overview_good_for?: string | null;
+  overview_summary_en?: string | null;
+  overview_highlights_en?: string | null;
+  overview_good_for_en?: string | null;
   category: { name: string } | null;
   project_technologies: { technologies: { name: string } | null }[];
   project_tags: { tags: { name: string } | null }[];
@@ -59,5 +65,19 @@ export function mapDbProject(row: DbProjectRow): Project {
       ? { ownerType: row.owner_type }
       : {}),
     ...(row.owner_login ? { ownerLabel: row.owner_login } : {}),
+    ...(row.overview_summary &&
+    row.overview_highlights &&
+    row.overview_good_for
+      ? {
+          overview: {
+            summary: row.overview_summary,
+            highlights: row.overview_highlights,
+            goodFor: row.overview_good_for,
+            summaryEn: row.overview_summary_en ?? undefined,
+            highlightsEn: row.overview_highlights_en ?? undefined,
+            goodForEn: row.overview_good_for_en ?? undefined,
+          },
+        }
+      : {}),
   };
 }
