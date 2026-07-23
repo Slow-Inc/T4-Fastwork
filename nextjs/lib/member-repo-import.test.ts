@@ -32,6 +32,7 @@ describe('memberRepoToProjectInsert', () => {
         url: 'https://github.com/xenodeve/resume_web',
         description: 'portfolio site',
         ownerLogin: 'xenodeve',
+        homepage: 'resume.example',
       },
       NOW,
     );
@@ -43,9 +44,23 @@ describe('memberRepoToProjectInsert', () => {
     expect(row.gh_owner).toBe('xenodeve');
     expect(row.gh_repo).toBe('resume_web');
     expect(row.gh_html_url).toBe('https://github.com/xenodeve/resume_web');
+    expect(row.live_url).toBe('https://resume.example');
     expect(row.owner_type).toBe('personal');
     expect(row.owner_login).toBe('xenodeve');
     expect(row.is_featured).toBe(false);
+  });
+
+  test('maps missing homepage to null live_url', () => {
+    const row = memberRepoToProjectInsert(
+      {
+        name: 'Resume Web',
+        url: 'https://github.com/xenodeve/resume_web',
+        description: null,
+        ownerLogin: 'xenodeve',
+      },
+      NOW,
+    );
+    expect(row.live_url).toBeNull();
   });
   test('falls back to ownerLogin when the url is unparseable', () => {
     const row = memberRepoToProjectInsert(

@@ -49,6 +49,20 @@ jobs:
             *) echo "::error::refresh failed with HTTP $code"; exit 1 ;;
           esac
 
+      # #157 — fill null projects.live_url from GitHub homepage in list snapshots.
+      # No LLM; default cap 50. Fail-soft. Needs org/member list refresh above first.
+      - name: Fill missing live_url from GitHub homepage
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          [ -z "$REFRESH_SECRET" ] && { echo "secret unset — skip"; exit 0; }
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" -H "Content-Type: application/json" \
+            -d '{"apply":true}' "$BACKEND_URL/github/fill-live-urls")
+          echo "POST $BACKEND_URL/github/fill-live-urls -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
+          case "$code" in 2*) : ;; *) echo "::warning::fill-live-urls failed HTTP $code (non-blocking)" ;; esac
+
       # #158 — capped missing-README backfill (default 1 repo/run). Prefer this over
       # raising the broad refresh detail budget; fail-soft so a GitHub hiccup never
       # reds the cron. Runs BEFORE case-study gen so newly synced READMEs can feed it

@@ -7,11 +7,14 @@
 - Pure `selectReposMissingReadme` + store list ports on `PgShowcaseRepoStore`.
 - Does not raise broad refresh budget; missing-first path avoids 504-prone bulk.
 
-## 2026-07-24 — Epic #156 project enrichment (tracker)
+## 2026-07-24 — Epic #156 project enrichment (PRD + issues + D1 merged)
 
-- **Epic:** [#156](https://github.com/Slow-Inc/T4-Fastwork/issues/156) — children #157–#161
-- **D1 PR:** [#162](https://github.com/Slow-Inc/T4-Fastwork/pull/162) (live_url) — separate branch
-- PRD lands with #157 / #162 when that PR merges.
+- **PRD:** `docs/prd/2026-07-24-project-enrichment.md`
+- **Epic:** [#156](https://github.com/Slow-Inc/T4-Fastwork/issues/156)
+- **Children:** #157 live_url · #158 README · #159 taxonomy · #160 content · #161 snapshot
+- **MERGED:** [#162](https://github.com/Slow-Inc/T4-Fastwork/pull/162) / #157 — homepage→`live_url` + fill-live-urls cron.
+- **In progress:** #158 / #163 merge after cron reconcile with #162.
+- Prod capped `apply:true` for enrichment endpoints: authorized by "ทำตามนั้น" after dry-run.
 
 ## 2026-07-24 — Epic #127 CLOSED; D3/D4 backfill done (reachable set)
 
