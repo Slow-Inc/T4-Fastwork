@@ -1,5 +1,18 @@
 # Open-Work Ledger
 
+## 2026-07-23 — Project-detail AI composer D8 ready for review
+
+- **D8 #140 READY:** replace the ambiguous project AI activation CTA with an immediately visible,
+  project-grounded composer. Mounting must remain request-free; only visitor submission may call
+  the chat stream, and the reply stays inline.
+- **Verified:** red-first production-build E2E, targeted ESLint, 319/319 frontend unit tests,
+  60/60 Chromium E2E, desktop browser geometry, and 375 px overflow coverage. Full-page grounded
+  chat retains its existing auto-question behavior.
+- **MangaDock GitHub binding diagnosed, write not authorized:** it is the only one of 47 published
+  projects missing `gh_owner` / `gh_repo`. The verified source is public
+  `Slow-Inc/MangaDock`, whose GitHub languages endpoint returns data. Production binding and
+  snapshot sync remain paused pending explicit authorization.
+
 ## 2026-07-23 — AI-rich project detail D7 ready for merge
 
 - **D7 #138 READY via PR #139:** project detail now presents the existing summary, key facts,

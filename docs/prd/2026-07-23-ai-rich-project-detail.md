@@ -52,6 +52,10 @@ Reference: the dev's two screenshots — (1) the chat's structured project overv
 - **D7 — Decision-first project brief** ([#138](https://github.com/Slow-Inc/T4-Fastwork/issues/138);
   existing summary/facts/tech/tags/languages visible first, deep narrative and README disclosed on
   demand; presentation-only, no production data write).
+- **D8 — Immediately visible project AI composer**
+  ([#140](https://github.com/Slow-Inc/T4-Fastwork/issues/140); project-grounded input visible
+  without an activation click, zero passive LLM request, inline reply, full-page chat remains a
+  secondary path).
 
 ## 7. Sequencing
 
@@ -77,3 +81,18 @@ Acceptance:
 - the language chart includes visible names and numeric percentages, so color is not the only cue;
 - deep detail and README are collapsed by default, keyboard operable, and announce expanded state;
 - the first-view layout remains readable at 375 px and desktop widths in both Thai and English.
+
+## 10. D8 — Immediately visible project AI composer
+
+Replace the project-page chat activation gate with the existing recognizable AI composer. The
+project context is ready at first paint, but mounting the embedded client must not auto-send a
+prompt or call the LLM. The first request happens only when the visitor submits their own message,
+and the answer stays inline on the project page.
+
+Acceptance:
+
+- the composer is visible without pressing a “start” button;
+- page load produces zero chat-stream requests;
+- submit sends exactly one request containing the current project slug and visitor-authored text;
+- the inline conversation and full-page project-chat link remain available;
+- Thai/English headings, keyboard interaction, and 375 px layout remain usable.
