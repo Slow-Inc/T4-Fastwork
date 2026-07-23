@@ -1,19 +1,26 @@
 # Open-Work Ledger
 
+## 2026-07-24 — #161 D5 snapshot OG fallback (in progress)
+
+- Branch `feat/161-snapshot-og-fallback`: wire `og:image` fallback into
+  `nextjs/scripts/screenshot-projects.ts` when Playwright capture fails;
+  pure `selectSnapshotTargets` / `resolveOgFallbackUrl` + unit tests.
+- Existing Action `.github/workflows/screenshot-projects.yml` (6h + dispatch).
+
+## 2026-07-24 — Epic #156 D1–D4 MERGED + first capped prod apply
+
+- **MERGED:** #162/#157 · #163/#158 · #164/#159 · #165/#160 → master.
+- **Prod apply** (Nest; dry-run then `apply:true`; user "ทำตามนั้น"):
+  - fill-live-urls: **9** filled
+  - missing-readme: **1** synced (`narze`); ~27 remain for hourly cron
+  - generate-taxonomy: **0** candidates (no null category + auto this pass)
+  - generate-case-studies: **1** generated
+- **Next:** #161 D5 snapshot (unblocked — live_urls present).
+- Issues #157–#160 closed with PR evidence.
+
 ## 2026-07-24 — #160 D4 empty-content case-study backfill
 
-- Branch `feat/160-content-backfill`: `shouldGenerateCaseStudy` allows gen when
-  README sha unchanged but `content` empty + `content_owner=auto`; list prefers
-  empty content; revalidate projects after apply.
-
-## 2026-07-24 — Epic #156 project enrichment (PRD + D1–D3 merged)
-
-- **PRD:** `docs/prd/2026-07-24-project-enrichment.md`
-- **Epic:** [#156](https://github.com/Slow-Inc/T4-Fastwork/issues/156)
-- **Children:** #157 live_url · #158 README · #159 taxonomy · #160 content · #161 snapshot
-- **MERGED:** #162/#157 · #163/#158 · #164/#159.
-- **In progress:** #165 / #160 content; then prod dry-run + capped apply; D5 parked until live_urls.
-- Prod capped `apply:true` for enrichment endpoints: authorized by "ทำตามนั้น" after dry-run.
+- Shipped via #165: empty content + `content_owner=auto` may gen when README sha unchanged.
 
 ## 2026-07-24 — Epic #127 CLOSED; D3/D4 backfill done (reachable set)
 

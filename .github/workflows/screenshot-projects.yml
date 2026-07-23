@@ -1,8 +1,10 @@
-# Screenshot worker for the project showcase (spec 2026-07-14, P4).
+# Screenshot worker for the project showcase (spec 2026-07-14, P4 / #161).
 # Playwright can't run inside the Vercel serverless request path, so cover-image
 # capture runs here: on a schedule (and on demand) it screenshots each published
 # project's live_url that has no snapshot_image yet, uploads to Supabase Storage,
-# and writes the URL back to the projects row.
+# and writes the URL back to the projects row. On capture failure, the script
+# falls back to the page's og:image / twitter:image URL (interim cover).
+
 #
 # Gated: needs repo Actions secrets SUPABASE_URL + SUPABASE_SECRET_KEY
 # (SUPABASE_SECRET_KEY = a Supabase secret key, new `sb_secret_...` or a legacy service_role).

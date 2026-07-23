@@ -1,16 +1,25 @@
 /**
- * Screenshot worker (spec 2026-07-14, P4). Run by the `screenshot-projects`
+ * Screenshot worker (spec 2026-07-14, P4 / #161). Run by the `screenshot-projects`
  * GitHub Action (NOT in the serverless path — Playwright needs a real browser).
  *
  * For each published project that has a `live_url` but no `snapshot_image`, it
  * loads the site in Chromium, captures a cover screenshot, uploads it to the
  * Supabase Storage `project-shots` bucket, and writes the public URL back to the
- * row. Validation (HTTP ok, min size) guards against blank/broken captures; the
- * prior image is kept on failure. No-ops (exit 0) when env is unset so the
- * scheduled job is harmless until secrets are configured.
+ * row. When capture fails (bad HTTP, blank, exception), falls back to the page's
+ * `og:image` / `twitter:image` URL so cards are not empty forever. Validation
+ * (HTTP ok, min size) guards against blank/broken captures; the prior image is
+ * kept on failure with no OG. No-ops (exit 0) when env is unset so the scheduled
+ * job is harmless until secrets are configured.
+ *
+ * AFK / cron: `.github/workflows/screenshot-projects.yml` every 6h + workflow_dispatch.
  */
 import { chromium } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
+import {
+  isCaptureUsable,
+  resolveOgFallbackUrl,
+  selectSnapshotTargets,
+} from '../lib/snapshot-cover';
 
 // The project URL (not secret) — reuse the app's NEXT_PUBLIC_SUPABASE_URL locally
 // so it isn't duplicated; CI sets the SUPABASE_URL repo secret, which wins.
@@ -44,6 +53,50 @@ async function revalidateProject(slug: string): Promise<void> {
   }
 }
 
+async function writeSnapshot(
+  db: ReturnType<typeof createClient>,
+  row: { id: number; slug: string },
+  url: string,
+  via: 'playwright' | 'og',
+): Promise<void> {
+  await db.from('projects').update({ snapshot_image: url }).eq('id', row.id);
+  await revalidateProject(row.slug);
+  console.log(`[screenshot] ${row.slug}: ${via} → ${url}`);
+}
+
+async function fetchHtml(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      redirect: 'follow',
+      headers: {
+        'user-agent':
+          'Mozilla/5.0 (compatible; T4LabsSnapshotBot/1.0; +https://t4labs.dev)',
+        accept: 'text/html',
+      },
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  }
+}
+
+async function applyOgFallback(
+  db: ReturnType<typeof createClient>,
+  row: { id: number; slug: string; live_url: string },
+  html: string | null,
+): Promise<boolean> {
+  const og = resolveOgFallbackUrl({
+    captureUsable: false,
+    html,
+    pageUrl: row.live_url,
+  });
+  if (!og) return false;
+  await writeSnapshot(db, row, og, 'og');
+  return true;
+}
+
 async function main(): Promise<void> {
   if (!SUPABASE_URL || !SECRET_KEY) {
     console.log('[screenshot] SUPABASE_URL / secret key not set — skipping.');
@@ -53,12 +106,21 @@ async function main(): Promise<void> {
 
   const { data: rows, error } = await db
     .from('projects')
-    .select('id, slug, live_url')
+    .select('id, slug, status, live_url, snapshot_image')
     .eq('status', 'published')
     .not('live_url', 'is', null)
     .is('snapshot_image', null);
   if (error) throw error;
-  if (!rows?.length) {
+  const targets = selectSnapshotTargets(
+    (rows ?? []) as {
+      id: number;
+      slug: string;
+      status: string;
+      live_url: string | null;
+      snapshot_image: string | null;
+    }[],
+  );
+  if (!targets.length) {
     console.log('[screenshot] nothing to capture.');
     return;
   }
@@ -75,7 +137,7 @@ async function main(): Promise<void> {
         '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       locale: 'en-US',
     });
-    for (const row of rows as { id: number; slug: string; live_url: string }[]) {
+    for (const row of targets) {
       try {
         const page = await ctx.newPage();
         // `networkidle` is unreliable on a live app — polling/analytics/long-lived
@@ -89,17 +151,28 @@ async function main(): Promise<void> {
         });
         if (!res || !res.ok()) {
           console.warn(
-            `[screenshot] ${row.slug}: bad response (status=${res?.status() ?? 'none'}) — keeping prior.`,
+            `[screenshot] ${row.slug}: bad response (status=${res?.status() ?? 'none'}) — trying OG.`,
           );
           await page.close();
+          const html = await fetchHtml(row.live_url);
+          if (!(await applyOgFallback(db, row, html))) {
+            console.warn(`[screenshot] ${row.slug}: no OG fallback.`);
+          }
           continue;
         }
         await page.waitForLoadState('load', { timeout: 15_000 }).catch(() => {});
         await page.waitForTimeout(2_500);
         const shot = await page.screenshot({ type: 'jpeg', quality: 80 });
+        const html = await page.content().catch(() => null);
         await page.close();
-        if (shot.byteLength < MIN_BYTES) {
-          console.warn(`[screenshot] ${row.slug}: blank capture, skipping.`);
+
+        if (!isCaptureUsable(shot, MIN_BYTES)) {
+          console.warn(
+            `[screenshot] ${row.slug}: blank capture — trying OG.`,
+          );
+          if (!(await applyOgFallback(db, row, html))) {
+            console.warn(`[screenshot] ${row.slug}: no OG fallback.`);
+          }
           continue;
         }
 
@@ -110,14 +183,17 @@ async function main(): Promise<void> {
         if (up.error) throw up.error;
 
         const { data: pub } = db.storage.from(BUCKET).getPublicUrl(path);
-        await db
-          .from('projects')
-          .update({ snapshot_image: pub.publicUrl })
-          .eq('id', row.id);
-        await revalidateProject(row.slug);
-        console.log(`[screenshot] ${row.slug}: captured → ${pub.publicUrl}`);
+        await writeSnapshot(db, row, pub.publicUrl, 'playwright');
       } catch (err) {
         console.warn(`[screenshot] ${row.slug}: failed —`, err);
+        try {
+          const html = await fetchHtml(row.live_url);
+          if (!(await applyOgFallback(db, row, html))) {
+            console.warn(`[screenshot] ${row.slug}: no OG fallback.`);
+          }
+        } catch (ogErr) {
+          console.warn(`[screenshot] ${row.slug}: OG fallback failed —`, ogErr);
+        }
       }
     }
   } finally {
