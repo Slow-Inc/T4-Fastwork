@@ -1,5 +1,33 @@
 # Open-Work Ledger
 
+## 2026-07-24 — #146 Admin Slow-Inc single-repo import READY for PR
+
+- **Branch:** `feat/admin-slow-inc-repo-import` (D1 of epic #145). #147 remains blocked until merge.
+- **Seams shipped (red→green):** `nextjs/lib/org-repo-import.ts` — map → published team row,
+  available-set by slug+gh identity, snapshot resolve (forged owner/repo fail-closed), parse
+  `/github/team` org payload. Admin page `/admin/projects/from-org` + `importOrgRepo` Server
+  Action re-resolves against snapshot; `assertAdmin` + RLS; no service-role; no migration.
+- **Verified:** org-import unit 8/8; production `bun run build` exit 0; Chromium e2e **61/61**
+  (includes signed-out `/admin/projects/from-org` → login; fixed #138 strict-mode when both
+  live+GitHub links exist).
+- **Do not** start #147 until this PR merges. No production DB write performed.
+
+## 2026-07-24 — ADR 0009 tracker debt retired
+
+- **CLOSED (not planned / ADR 0013):** #62 epic, #66 P3 GitHub App+worker, #67 P4 revisions,
+  #68 P5 full safety-gate ticket, #70 chunkBlog+audiences, #81 map-reduce persistence wiring.
+  Agents must not implement those bodies; simplified README case-study path + ADR 0011 validation
+  remain the source of truth.
+- **CLOSED (completed):** #71 per-project FR-09 chat (delivered via #127 D5/D8); #92 direct-DB
+  revalidation (screenshot + rank + sync + case-study blog revalidate wired in code).
+- **REWRITTEN + `ready-for-agent`:** #69 residual only (Nest service chat-card title/description
+  enrichment; optional static-seed delete after parity). #75 residual only (`apply:true` must not
+  re-run LLM on `/github/generate`).
+- **Still open (unchanged priority):** #127/#133 (D6 blog), #130/#131 (D3/D4 parked for prod DB),
+  #135/#143/#126 (GitHub refresh reliability), #145–#147 (Admin Slow-Inc import), #118+#120
+  (bilingual scrutinize), #110 (v3 art direction).
+- **Knowledge:** [[Do Not Implement Superseded ADR 0009 Tickets]]
+
 ## 2026-07-23 — MangaDock GitHub binding repaired on production
 
 - **AUTHORIZED + COMPLETE:** production `projects.slug='mangadock'` now binds to

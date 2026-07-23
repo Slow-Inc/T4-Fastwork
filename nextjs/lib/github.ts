@@ -162,3 +162,19 @@ export async function getMemberLiveUser(
     return null;
   }
 }
+
+/**
+ * Durable `/github/team` payload (org + members snapshots). Server-side only —
+ * never hits GitHub. Returns `null` on any failure so Admin can fail safely.
+ */
+export async function getTeamSnapshotPayload(): Promise<unknown | null> {
+  try {
+    const res = await fetch(`${API_BASE}/github/team`, {
+      next: { revalidate: 60, tags: ['gh:team'] },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}

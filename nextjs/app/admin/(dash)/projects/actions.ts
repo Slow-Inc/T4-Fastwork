@@ -9,6 +9,12 @@ import {
   availableToImport,
   type MemberRepoInput,
 } from '@/lib/member-repo-import';
+import {
+  orgRepoToProjectInsert,
+  resolveOrgRepoFromSnapshot,
+  SLOW_INC_ORG,
+} from '@/lib/org-repo-import';
+import { getTeamSnapshotPayload } from '@/lib/github';
 
 export interface ProjectFormState {
   error?: string;
@@ -157,6 +163,44 @@ export async function importAllMemberRepos() {
       .from('projects')
       .upsert(rows, { onConflict: 'slug', ignoreDuplicates: true });
   }
+  revalidatePath('/admin/projects');
+  revalidatePath('/projects');
+  redirect('/admin/projects');
+}
+
+/**
+ * Promote one Slow-Inc org repo from the durable team snapshot into `projects`.
+ * Form fields are untrusted — the action re-resolves owner/repo against the
+ * snapshot and fail-closes when the identity is missing or forged.
+ */
+export async function importOrgRepo(formData: FormData) {
+  await assertAdmin();
+  const owner = formData.get('owner')?.toString().trim() ?? '';
+  const repo = formData.get('repo')?.toString().trim() ?? '';
+  if (!owner || !repo) return;
+
+  const team = await getTeamSnapshotPayload();
+  const orgData =
+    team && typeof team === 'object'
+      ? (team as { org?: { data?: unknown } | null }).org?.data
+      : null;
+  const resolved = resolveOrgRepoFromSnapshot(
+    orgData,
+    owner,
+    repo,
+    SLOW_INC_ORG,
+  );
+  if (!resolved) return;
+
+  const row = orgRepoToProjectInsert(
+    resolved,
+    new Date().toISOString(),
+    SLOW_INC_ORG,
+  );
+  const supabase = await createClient();
+  await supabase
+    .from('projects')
+    .upsert(row, { onConflict: 'slug', ignoreDuplicates: true });
   revalidatePath('/admin/projects');
   revalidatePath('/projects');
   redirect('/admin/projects');
