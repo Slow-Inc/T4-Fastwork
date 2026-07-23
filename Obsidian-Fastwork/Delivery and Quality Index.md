@@ -13,6 +13,7 @@ source: Engineering knowledge migration from MangaDock
 - [[Small Reversible Delivery]]
 - [[Evidence Before Completion]]
 - [[Layered Verification]]
+- [[Stable E2E Assertions]]
 - [[Validated Blameless Postmortems]]
 - [[Change Impact Records]]
 - [[Baselines Before Optimization]]
