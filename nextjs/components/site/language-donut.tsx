@@ -100,6 +100,24 @@ export function LanguageDonut({ languages, en }: Props) {
             transform="rotate(-90 50 50)"
           />
         ))}
+        <text
+          x="50"
+          y="48"
+          textAnchor="middle"
+          className="lang-donut__center-value"
+          aria-hidden="true"
+        >
+          {entries.length}
+        </text>
+        <text
+          x="50"
+          y="59"
+          textAnchor="middle"
+          className="lang-donut__center-label"
+          aria-hidden="true"
+        >
+          {en ? (entries.length === 1 ? 'language' : 'languages') : 'ภาษา'}
+        </text>
       </svg>
       <ul className="lang-donut__legend">
         {slices.map((s) => (

@@ -57,3 +57,20 @@ D1 + D2 are independent and can land first (grounded, visible). D3/D4 depend on 
 ## 8. Acceptance (per deliverable, verified in the running app)
 
 Each deliverable: `bun run e2e` green (add a case where it adds UI), the widget renders on a real repo-backed project (`/projects/<slug>`) on prod after deploy, and no console/hydration errors. Any prod DB write (new generation fields, seeds) STOPs for explicit authz per CLAUDE.md.
+## 9. D7 — Decision-first project brief
+
+Make the existing description, key facts, tech stack, tags, and GitHub language mix visible
+without interaction. Move the long narrative and README behind accessible progressive
+disclosure. This is a presentation-only bridge to D3/D4 and must not add generated fields,
+migrations, or production data writes.
+
+D7 follows D1/D2 and can ship without D3/D4 because it only reorganizes existing project and
+GitHub snapshot data.
+
+Acceptance:
+
+- summary, year/category/ownership, links, tech stack, tags, and language percentages are visible
+  before any disclosure control is activated;
+- the language chart includes visible names and numeric percentages, so color is not the only cue;
+- deep detail and README are collapsed by default, keyboard operable, and announce expanded state;
+- the first-view layout remains readable at 375 px and desktop widths in both Thai and English.

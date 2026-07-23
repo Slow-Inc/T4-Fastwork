@@ -20,5 +20,13 @@ describe('ProjectTechnologyPanel', () => {
     expect(
       container.querySelector('svg[aria-label^="สัดส่วนภาษา:"]'),
     ).not.toBeNull();
+    expect(
+      container.querySelector('.lang-donut__center-value')?.textContent,
+    ).toBe('2');
+    expect(
+      Array.from(container.querySelectorAll('.lang-donut__pct')).map(
+        (element) => element.textContent,
+      ),
+    ).toEqual(['75.0%', '25.0%']);
   });
 });
