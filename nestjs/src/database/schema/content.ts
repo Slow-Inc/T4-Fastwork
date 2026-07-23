@@ -69,13 +69,15 @@ export const projects = pgTable('projects', {
 
   // Per-field provenance ('auto' | 'human'). A human CMS edit flips a field to
   // 'human'; regeneration only rewrites 'auto'-owned fields.
+  // AI-fillable fields default to 'auto' so GitHub imports that omit owners stay
+  // eligible for enrichment (#170 / #167). Titles/description stay CMS-first.
   titleOwner: text('title_owner').notNull().default('human'),
   titleEnOwner: text('title_en_owner').notNull().default('human'),
   descriptionOwner: text('description_owner').notNull().default('human'),
-  contentOwner: text('content_owner').notNull().default('human'),
-  categoryOwner: text('category_owner').notNull().default('human'),
-  tagsOwner: text('tags_owner').notNull().default('human'),
-  technologiesOwner: text('technologies_owner').notNull().default('human'),
+  contentOwner: text('content_owner').notNull().default('auto'),
+  categoryOwner: text('category_owner').notNull().default('auto'),
+  tagsOwner: text('tags_owner').notNull().default('auto'),
+  technologiesOwner: text('technologies_owner').notNull().default('auto'),
 
   // Reconciliation metadata
   readmeSha: text('readme_sha'),

@@ -7,6 +7,16 @@
   pure `selectSnapshotTargets` / `resolveOgFallbackUrl` + unit tests.
 - Existing Action `.github/workflows/screenshot-projects.yml` (6h + dispatch).
 
+## 2026-07-24 — #167 unblock enrichment (owner defaults)
+
+- **Epic:** [#167](https://github.com/Slow-Inc/T4-Fastwork/issues/167) — audit: 46/47 empty
+  category/content blocked by `*_owner=human` (schema default).
+- **#168 CLOSED:** prod SQL empty-field owners → `auto` (MangaDock untouched).
+- **#169 in progress:** first wave taxonomy×5 + case-study×5; **Hype-Macro_Store** now has
+  category + tech + tags + content. Cron continues.
+- **#170 open:** change column defaults to `auto` for new imports.
+- Vault: `Obsidian-Fastwork/Empty Project Fields Must Stay Auto-Owned.md`.
+
 ## 2026-07-24 — Epic #156 D1–D4 MERGED + first capped prod apply
 
 - **MERGED:** #162/#157 · #163/#158 · #164/#159 · #165/#160 → master.

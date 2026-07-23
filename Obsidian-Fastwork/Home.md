@@ -30,6 +30,8 @@ current behavior; this vault captures reusable reasoning and operating knowledge
   performance and surgical changes.
 - [[Frontend SSE Card Contract]] — direct card payload shape shared by the Nest chat endpoint and
   Next chat client.
+- [[Do Not Implement Superseded ADR 0009 Tickets]] — closed ADR 0009 pipeline issues are not
+  backlog; use ADR 0013 + residual #69/#75.
 
 ## Knowledge Maps
 
@@ -40,6 +42,8 @@ current behavior; this vault captures reusable reasoning and operating knowledge
   records.
 - [[Frontend Verification Must Use the Current Build]] — verify screenshots and E2E against the
   active branch's CSS rather than a stale server.
+- [[Empty Project Fields Must Stay Auto-Owned]] — empty AI-fillable project fields must stay
+  `*_owner=auto` or enrichment generators skip forever (audit #167).
 - [[Targeted GitHub Snapshot Repairs]] — repair one project's GitHub binding safely; verify partial
   writes after Vercel timeout instead of blindly retrying a broad refresh.
 - [[Knowledge Management Index]] — truth hierarchy, ADR lifecycle, vocabulary, surveys, and
