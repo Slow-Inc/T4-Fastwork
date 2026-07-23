@@ -234,3 +234,66 @@ describe('SnapshotOwnerRefresher.refreshOwner', () => {
     expect(calls[0].url).toContain('/users/xenodeve/repos');
   });
 });
+
+describe('GithubRefreshService.refreshRepoDetail (#143)', () => {
+  it('syncs only one repo detail and never touches org/member lists', async () => {
+    const listCalls: string[] = [];
+    const syncer: ResourceSyncer = {
+      syncResource: async (key) => {
+        listCalls.push(key);
+        return { changed: false, data: [] };
+      },
+    };
+    const repos: string[] = [];
+    const detail: DetailSyncer = {
+      syncUserProfile: async () => {
+        throw new Error('must not sync profiles');
+      },
+      syncRepoDetail: async (owner, repo) => {
+        repos.push(`${owner}/${repo}`);
+        return { readmeSha: 'abc' };
+      },
+    };
+    const svc = new GithubRefreshService(
+      syncer,
+      ['xenodeve'],
+      'Slow-Inc',
+      detail,
+    );
+
+    const r = await svc.refreshRepoDetail('Slow-Inc', 'MangaDock');
+
+    expect(listCalls).toEqual([]);
+    expect(repos).toEqual(['Slow-Inc/MangaDock']);
+    expect(r.synced).toEqual([
+      'repo:Slow-Inc/MangaDock:contributors',
+      'repo:Slow-Inc/MangaDock:pulls',
+      'languages:Slow-Inc/MangaDock',
+      'repo:Slow-Inc/MangaDock:readme',
+    ]);
+    expect(r.failed).toEqual([]);
+    expect(r.readmeSha).toBe('abc');
+  });
+
+  it('records failure without calling list sync', async () => {
+    const listCalls: string[] = [];
+    const syncer: ResourceSyncer = {
+      syncResource: async (key) => {
+        listCalls.push(key);
+        return { changed: false, data: [] };
+      },
+    };
+    const detail: DetailSyncer = {
+      syncUserProfile: async () => {},
+      syncRepoDetail: async () => {
+        throw new Error('429');
+      },
+    };
+    const svc = new GithubRefreshService(syncer, [], 'Slow-Inc', detail);
+    const r = await svc.refreshRepoDetail('a', 'b');
+    expect(listCalls).toEqual([]);
+    expect(r.synced).toEqual([]);
+    expect(r.failed).toEqual(['repo:a/b:contributors']);
+    expect(r.readmeSha).toBeNull();
+  });
+});

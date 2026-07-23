@@ -24,16 +24,19 @@ export interface RevalidateDeps {
 export type ContentRevalidationKind =
   'faq' | 'service' | 'certificate' | 'blog';
 
-/** Fire a bulk project revalidation at the frontend. Returns whether the POST
- * was attempted+succeeded; never throws. */
+/** Fire a project revalidation at the frontend. With `slug`, targets that
+ * detail page only (#143); without, bulk `/projects` + every detail. Returns
+ * whether the POST was attempted+succeeded; never throws. */
 export async function postProjectRevalidation(
   deps: RevalidateDeps,
+  slug?: string | null,
 ): Promise<boolean> {
   const { fetchImpl, frontendOrigin, secret } = deps;
   if (!secret) return false;
   const origin = parseAllowedOrigins(frontendOrigin)[0];
+  const qs = slug ? `?slug=${encodeURIComponent(slug)}` : '';
   try {
-    await fetchImpl(`${origin}/api/revalidate`, {
+    await fetchImpl(`${origin}/api/revalidate${qs}`, {
       method: 'POST',
       headers: { 'x-refresh-secret': secret },
     });

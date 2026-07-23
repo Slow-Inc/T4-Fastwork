@@ -60,6 +60,24 @@ export const githubUrl = {
     `https://api.github.com/repos/${login}/${login}/readme`,
 };
 
+/** GitHub login/org: alphanumeric + hyphen. Repo: also dot and underscore. */
+const OWNER_RE = /^[A-Za-z0-9-]+$/;
+const REPO_RE = /^[A-Za-z0-9._-]+$/;
+
+/**
+ * Validate owner/repo for targeted refresh (#143). Keeps api.github.com URL
+ * shape fixed — rejects path/query injection characters. Returns null when
+ * either segment is missing or unsafe.
+ */
+export function parseSafeGithubOwnerRepo(
+  owner: string | undefined,
+  repo: string | undefined,
+): { owner: string; repo: string } | null {
+  if (!owner || !repo) return null;
+  if (!OWNER_RE.test(owner) || !REPO_RE.test(repo)) return null;
+  return { owner, repo };
+}
+
 /**
  * Reverse a snapshot key to the GitHub URL that heals it (spec ADR 0004, R1).
  * `readme: true` means the payload is a `/readme` response that must be decoded

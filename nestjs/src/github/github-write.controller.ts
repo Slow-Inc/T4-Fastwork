@@ -4,10 +4,13 @@
  *   - POST /github/refresh — cron-triggered; `x-refresh-secret` compared in
  *     constant time; wrapped in a single-flight advisory lock so overlapping
  *     crons never double-fetch GitHub.
+ *   - POST /github/refresh/repo-detail — targeted one-repo detail sync (#143);
+ *     same secret + per-repo single-flight; no org/member list or RAG re-ingest.
  *   - POST /github/webhook — GitHub delivery; HMAC-verified over the RAW body
  *     (needs `rawBody: true` in main.ts), deduplicated, then a targeted refresh.
  */
 import {
+  BadRequestException,
   Controller,
   Headers,
   Post,
@@ -23,10 +26,11 @@ import { GithubRefreshService } from './github-refresh.service';
 import { GithubWebhookService } from './github-webhook.service';
 import { GithubHealService } from './github-heal.service';
 import { parseReadme } from './github-detail.service';
-import { resolveHealTarget } from './github.config';
+import { parseSafeGithubOwnerRepo, resolveHealTarget } from './github.config';
 import { DrizzleSnapshotStore } from './drizzle-snapshot.store';
 import { RagIngestService } from '../ingestion/rag-ingest.service';
 import { RevalidateService } from '../revalidate/revalidate.service';
+import { PgShowcaseRepoStore } from './pg-showcase-repos.store';
 
 @Controller('github')
 export class GithubWriteController {
@@ -37,6 +41,7 @@ export class GithubWriteController {
     private readonly store: DrizzleSnapshotStore,
     private readonly rag: RagIngestService,
     private readonly revalidate: RevalidateService,
+    private readonly projects: PgShowcaseRepoStore,
   ) {}
 
   @Post('refresh')
@@ -65,6 +70,48 @@ export class GithubWriteController {
     return outcome.ran
       ? outcome.result
       : { skipped: 'a refresh is already running' };
+  }
+
+  /**
+   * One-repository detail snapshot refresh (#143). Fits the Vercel window by
+   * skipping org/member lists and RAG re-ingestion; revalidates only the
+   * matching published project slug when one exists.
+   */
+  @Post('refresh/repo-detail')
+  async doRefreshRepoDetail(
+    @Headers('x-refresh-secret') secret: string | undefined,
+    @Query('owner') owner: string | undefined,
+    @Query('repo') repo: string | undefined,
+  ): Promise<unknown> {
+    const expected = process.env.GITHUB_REFRESH_SECRET;
+    if (!expected || !constantTimeEqual(secret, expected)) {
+      throw new UnauthorizedException();
+    }
+    const parsed = parseSafeGithubOwnerRepo(owner, repo);
+    if (!parsed) throw new BadRequestException('invalid owner or repo');
+
+    const lock = `github-refresh-repo-detail:${parsed.owner.toLowerCase()}/${parsed.repo.toLowerCase()}`;
+    const outcome = await this.store.runExclusive(lock, () =>
+      this.refresh.refreshRepoDetail(parsed.owner, parsed.repo),
+    );
+    if (!outcome.ran) {
+      return { skipped: 'a refresh for this repo is already running' };
+    }
+
+    const projectSlug = await this.projects.findPublishedSlugByGithub(
+      parsed.owner,
+      parsed.repo,
+    );
+    if (projectSlug) {
+      void this.revalidate.revalidateProject(projectSlug).catch(() => {});
+    }
+
+    return {
+      owner: parsed.owner,
+      repo: parsed.repo,
+      projectSlug,
+      ...outcome.result,
+    };
   }
 
   /**

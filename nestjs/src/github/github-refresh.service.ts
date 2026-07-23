@@ -51,6 +51,11 @@ export interface RefreshSummary {
   failed: string[];
 }
 
+/** Outcome of a single-repo detail refresh (#143). */
+export interface RepoDetailRefreshSummary extends RefreshSummary {
+  readmeSha: string | null;
+}
+
 export class GithubRefreshService {
   constructor(
     private readonly syncer: ResourceSyncer,
@@ -150,6 +155,40 @@ export class GithubRefreshService {
           summary.failed.push(key);
         }
       }
+    }
+    return summary;
+  }
+
+  /**
+   * Targeted detail sync for one owner/repo (#143). Does not refresh org/member
+   * repo lists or member profiles — only contributors, pulls, languages, README.
+   */
+  async refreshRepoDetail(
+    owner: string,
+    repo: string,
+  ): Promise<RepoDetailRefreshSummary> {
+    const keys = [
+      snapshotKey.repoContributors(owner, repo),
+      snapshotKey.repoPulls(owner, repo),
+      snapshotKey.repoLanguages(owner, repo),
+      snapshotKey.repoReadme(owner, repo),
+    ];
+    const summary: RepoDetailRefreshSummary = {
+      synced: [],
+      changed: [],
+      failed: [],
+      readmeSha: null,
+    };
+    if (!this.detail) {
+      summary.failed.push(keys[0]);
+      return summary;
+    }
+    try {
+      const r = await this.detail.syncRepoDetail(owner, repo);
+      summary.synced.push(...keys);
+      summary.readmeSha = r.readmeSha;
+    } catch {
+      summary.failed.push(keys[0]);
     }
     return summary;
   }

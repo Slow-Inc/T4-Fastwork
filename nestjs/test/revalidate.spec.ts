@@ -30,6 +30,20 @@ describe('postProjectRevalidation (#92 backend → frontend revalidate)', () => 
     ).toBe('s3cr3t');
   });
 
+  it('POSTs ?slug= when a project slug is provided (#143 targeted revalidate)', async () => {
+    const { fn, calls } = mockFetch();
+    const ok = await postProjectRevalidation(
+      {
+        fetchImpl: fn,
+        frontendOrigin: 'https://t4labs.dev',
+        secret: 's',
+      },
+      'mangadock',
+    );
+    expect(ok).toBe(true);
+    expect(calls[0].url).toBe('https://t4labs.dev/api/revalidate?slug=mangadock');
+  });
+
   it('targets the FIRST origin of a comma-separated FRONTEND_ORIGIN (the primary site)', async () => {
     const { fn, calls } = mockFetch();
     await postProjectRevalidation({
