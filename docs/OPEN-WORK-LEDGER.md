@@ -1,5 +1,17 @@
 # Open-Work Ledger
 
+## 2026-07-23 — AI-rich project detail D2 shipped
+
+- **D2 #129 SHIPPED** via PR #136 (squash merge `a69574e`): project detail now has accessible
+  Overview / Deep detail (`projects.content`) / Technology tabs. Technology contains tech chips,
+  tags, and the D1 language donut; tabs support TH/EN labels, ArrowLeft/ArrowRight/Home/End,
+  visible focus, reduced motion, and narrow screens.
+- **Verified:** targeted red-first Playwright test, ESLint, 316 frontend unit tests, deterministic
+  Technology-panel donut coverage, and full Chromium E2E 59/59. Production
+  `/projects/mangadock` returned 200 with all three tab panels after the Vercel deployment.
+- **Epic #127 next:** D5 #132 (embed existing project-grounded chat). D3/D4 remain parked behind
+  explicit authorization for their production DB writes; D6 #133 remains independent.
+
 - **🔴 Migration tracking drift (2026-07-23):** `supabase_migrations.schema_migrations` is current only
   to **0022** (ts 20260717222128). **0023/0024/0025** (flat-authz, prior session) **and 0026/0027**
   (faqs/services `_en` + certificates `is_featured`, this session) were all applied to prod out-of-band
