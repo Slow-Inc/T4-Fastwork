@@ -88,6 +88,14 @@ describe('PgGenerateStore.applyPatch — persists generated taxonomy (#12)', () 
     // never rewrites a human-owned field's M2M
     expect(all).toContain("tags_owner = 'auto'");
     expect(all).toContain("technologies_owner = 'auto'");
+    // #126 — any(...) must use array[...]::text[], not bare ${jsArray}::text[]
+    expect(all).toContain('array[');
+    expect(all).toContain('::text[]');
+    const insertTags = captured.find((c) =>
+      c.text.includes('insert into project_tags'),
+    );
+    expect(insertTags?.params).toContain('ai');
+    expect(insertTags?.params).toContain('ocr');
   });
 
   it('omits all M2M writes when tags/technologies are not in the patch', async () => {

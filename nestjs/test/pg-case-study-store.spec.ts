@@ -113,6 +113,10 @@ describe('PgCaseStudyStore (#81 P2 persistence)', () => {
     expect(q).toContain("'case_study'");
     expect(q).toContain("'github'");
     expect(q).toContain("'auto'");
+    // #126 — tags must be array[...]::text[], not a bare expanded tuple
+    expect(q).toContain('array[');
+    expect(q).toContain('::text[]');
+    expect(calls[0].params).toContain('a');
   });
 
   it('isJobDone returns true only when a done row exists', async () => {
