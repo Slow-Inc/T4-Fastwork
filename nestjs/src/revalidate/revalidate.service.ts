@@ -21,6 +21,18 @@ export class RevalidateService {
     });
   }
 
+  /** Revalidate `/projects` + one detail page (#143). */
+  async revalidateProject(slug: string): Promise<boolean> {
+    return postProjectRevalidation(
+      {
+        fetchImpl: globalThis.fetch,
+        frontendOrigin: process.env.FRONTEND_ORIGIN,
+        secret: process.env.GITHUB_REFRESH_SECRET,
+      },
+      slug,
+    );
+  }
+
   async revalidateContent(kind: ContentRevalidationKind): Promise<boolean> {
     return postContentRevalidation(
       {

@@ -3,6 +3,14 @@ import { sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../database/database.module';
 import type { ShowcaseRepoProvider } from './github-refresh.service';
 
+/** Lookup a published project slug from its GitHub identity (#143). */
+export interface ProjectGithubSlugLookup {
+  findPublishedSlugByGithub(
+    owner: string,
+    repo: string,
+  ): Promise<string | null>;
+}
+
 /**
  * Postgres-backed ShowcaseRepoProvider over the Drizzle pooler (mirrors
  * PgGenerateStore / PgRankStore). Returns the `{owner, repo}` set the refresh
@@ -11,7 +19,9 @@ import type { ShowcaseRepoProvider } from './github-refresh.service';
  * rows are excluded, so unpublished repos never leak a live overlay.
  */
 @Injectable()
-export class PgShowcaseRepoStore implements ShowcaseRepoProvider {
+export class PgShowcaseRepoStore
+  implements ShowcaseRepoProvider, ProjectGithubSlugLookup
+{
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   async listShowcaseRepos(): Promise<{ owner: string; repo: string }[]> {
@@ -35,5 +45,24 @@ export class PgShowcaseRepoStore implements ShowcaseRepoProvider {
         (r) => typeof r.gh_owner === 'string' && typeof r.gh_repo === 'string',
       )
       .map((r) => ({ owner: String(r.gh_owner), repo: String(r.gh_repo) }));
+  }
+
+  async findPublishedSlugByGithub(
+    owner: string,
+    repo: string,
+  ): Promise<string | null> {
+    const rows = (await this.db.execute(
+      sql`select slug
+          from projects
+          where source = 'github'
+            and status = 'published'
+            and published_at is not null
+            and lower(gh_owner) = lower(${owner})
+            and lower(gh_repo) = lower(${repo})
+          order by is_featured desc, published_at desc, id
+          limit 1`,
+    )) as Array<Record<string, unknown>>;
+    const slug = rows[0]?.slug;
+    return typeof slug === 'string' ? slug : null;
   }
 }
