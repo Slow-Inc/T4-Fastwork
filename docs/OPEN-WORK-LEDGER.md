@@ -1,13 +1,12 @@
 # Open-Work Ledger
 
-## 2026-07-24 — #131 D4 tech used-for IN PROGRESS (code)
+## 2026-07-24 — #131 D4 tech used-for CODE MERGED (prod migration parked)
 
-- **Branch:** `feat/tech-used-for-d4-131`. Issue #131 = `ready-for-agent`.
-- Migration `0030_tech_used_for.sql` (additive on `technologies`); Nest
-  `POST /github/generate-tech-used-for`; Next panel shows used-for under chips;
-  SELECT attempt ladder for missing D3/D4 columns.
-- **Verified:** nest 11/11 + build; frontend unit; e2e **62/62**.
-- **HARD STOP:** do not apply `0030` to prod until explicit OK.
+- **MERGED:** PR [#155](https://github.com/Slow-Inc/T4-Fastwork/pull/155) squash → `master`.
+- Migration `0030` in-repo; Nest `POST /github/generate-tech-used-for`; panel blurbs;
+  SELECT attempt ladder.
+- **Verified:** nest 11/11 + build; frontend unit; e2e **62/62**; scrutinize + security on HEAD `8d8df81`.
+- **Parked `ready-for-human`:** apply `0030` to prod + schema reload + first gen — needs OK.
 
 ## 2026-07-24 — #130 D3 prod migration + first overview APPLIED
 
