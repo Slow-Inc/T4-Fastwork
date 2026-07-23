@@ -29,4 +29,22 @@ describe('ProjectTechnologyPanel', () => {
       ),
     ).toEqual(['75.0%', '25.0%']);
   });
+
+  test('renders D4 used-for blurbs under each technology (#131)', () => {
+    const { container } = render(
+      <ProjectTechnologyPanel
+        technologies={['Next.js']}
+        technologyDetails={[
+          {
+            name: 'Next.js',
+            usedFor: 'ใช้สร้าง App Router frontend',
+            usedForEn: 'Powers the App Router frontend',
+          },
+        ]}
+        tags={[]}
+      />,
+    );
+    expect(container.textContent).toContain('Next.js');
+    expect(container.textContent).toContain('ใช้สร้าง App Router frontend');
+  });
 });

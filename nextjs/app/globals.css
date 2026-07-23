@@ -1420,6 +1420,28 @@ footer {
 .chip-muted {
   color: var(--muted);
 }
+.tech-used-for-list {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.tech-used-for-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+}
+.tech-used-for-item__name {
+  font-weight: 650;
+}
+.tech-used-for-item__blurb {
+  color: var(--muted);
+  font-family: var(--sans, inherit);
+  font-size: 13px;
+  letter-spacing: 0;
+  line-height: 1.45;
+  text-transform: none;
+}
 .detail-cta {
   display: flex;
   flex-wrap: wrap;

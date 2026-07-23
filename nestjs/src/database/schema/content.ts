@@ -25,6 +25,10 @@ export const technologies = pgTable('technologies', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
   slug: varchar('slug', { length: 160 }).notNull().unique(),
+  // D4 (#131) — global "used for" blurb; owner-guarded regeneration.
+  usedFor: text('used_for'),
+  usedForEn: text('used_for_en'),
+  usedForOwner: text('used_for_owner').notNull().default('auto'),
 });
 
 export const tags = pgTable('tags', {
