@@ -53,8 +53,14 @@ async function revalidateProject(slug: string): Promise<void> {
   }
 }
 
+// Untyped Supabase client — this Action script has no generated Database
+// schema; `createClient()` without generics makes `.update()` expect `never`.
+// Keep the worker script operational rather than inventing a schema package.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ShotDb = any;
+
 async function writeSnapshot(
-  db: ReturnType<typeof createClient>,
+  db: ShotDb,
   row: { id: number; slug: string },
   url: string,
   via: 'playwright' | 'og',
@@ -63,7 +69,6 @@ async function writeSnapshot(
   await revalidateProject(row.slug);
   console.log(`[screenshot] ${row.slug}: ${via} → ${url}`);
 }
-
 async function fetchHtml(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
@@ -83,7 +88,7 @@ async function fetchHtml(url: string): Promise<string | null> {
 }
 
 async function applyOgFallback(
-  db: ReturnType<typeof createClient>,
+  db: ShotDb,
   row: { id: number; slug: string; live_url: string },
   html: string | null,
 ): Promise<boolean> {
@@ -102,7 +107,7 @@ async function main(): Promise<void> {
     console.log('[screenshot] SUPABASE_URL / secret key not set — skipping.');
     return;
   }
-  const db = createClient(SUPABASE_URL, SECRET_KEY);
+  const db = createClient(SUPABASE_URL, SECRET_KEY) as ShotDb;
 
   const { data: rows, error } = await db
     .from('projects')
