@@ -41,9 +41,25 @@ export interface ShowcaseRepoProvider {
   listShowcaseRepos(): Promise<{ owner: string; repo: string }[]>;
 }
 
-/** Cap on the number of repos whose detail is fetched per refresh — bounds the
- *  sequential GitHub calls well under the secondary-rate limit. */
-const SHOWCASE_REPO_CAP = 50;
+/** Cap on repos whose detail is fetched per refresh (#135) — keeps the
+ *  sequential GitHub calls under Vercel's ~60s window. Cron converges via
+ *  hourly rotation across the full showcase set + ETag 304s. */
+export const SHOWCASE_REPO_DETAIL_BUDGET = 8;
+
+/**
+ * Pick up to `budget` repos for this run, rotating the window hourly so every
+ * published github project eventually gets detail sync (#135).
+ */
+export function selectReposForDetailSync(
+  repos: readonly { owner: string; repo: string }[],
+  budget: number = SHOWCASE_REPO_DETAIL_BUDGET,
+  nowMs: number = Date.now(),
+): { owner: string; repo: string }[] {
+  if (repos.length <= budget) return [...repos];
+  const offset = Math.floor(nowMs / 3_600_000) % repos.length;
+  const rotated = [...repos.slice(offset), ...repos.slice(0, offset)];
+  return rotated.slice(0, budget);
+}
 
 export interface RefreshSummary {
   synced: string[];
@@ -78,11 +94,12 @@ export class GithubRefreshService {
 
   /** The effective repos to detail-sync: the static constant unioned with the
    *  DB-derived set (deduped, constant first so MangaDock is always covered),
-   *  capped at SHOWCASE_REPO_CAP. Falls back to the constant if the DB read
-   *  fails — a provider outage never blocks the refresh (serve-stale). */
-  private async resolveShowcaseRepos(): Promise<
-    { owner: string; repo: string }[]
-  > {
+   *  then rotated+capped at SHOWCASE_REPO_DETAIL_BUDGET (#135). Falls back to
+   *  the constant if the DB read fails — a provider outage never blocks the
+   *  refresh (serve-stale). */
+  private async resolveShowcaseRepos(
+    nowMs: number = Date.now(),
+  ): Promise<{ owner: string; repo: string }[]> {
     let candidates: { owner: string; repo: string }[] = [...this.showcaseRepos];
     if (this.showcaseRepoProvider) {
       try {
@@ -99,13 +116,7 @@ export class GithubRefreshService {
       seen.add(k);
       deduped.push(r);
     }
-    if (deduped.length > SHOWCASE_REPO_CAP) {
-      console.warn(
-        `[github-refresh] showcase repo set truncated ${deduped.length} → ${SHOWCASE_REPO_CAP}`,
-      );
-      return deduped.slice(0, SHOWCASE_REPO_CAP);
-    }
-    return deduped;
+    return selectReposForDetailSync(deduped, SHOWCASE_REPO_DETAIL_BUDGET, nowMs);
   }
 
   async refreshAll(): Promise<RefreshSummary> {

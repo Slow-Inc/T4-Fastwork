@@ -12,18 +12,9 @@ import { ConversationLogService } from './conversation-log.service';
 import { ProjectContextService } from './project-context.service';
 import type { ProjectContextRecord } from './project-context';
 import type { ChatEvent, ChatInput } from './chat.types';
+import { enrichCard } from './enrich-card';
 
 const MODEL = process.env.CUSTOM_OPENAI_MODEL ?? 'qwen3.6-35b-a3b';
-
-function enrichCard(card: CardRef, retrieved: RetrievedItem[]): CardRef {
-  if (card.kind !== 'service') return card;
-  const item = retrieved.find(
-    (candidate) => candidate.kind === 'service' && candidate.ref === card.id,
-  );
-  return item
-    ? { ...card, title: item.title, description: item.summary }
-    : card;
-}
 
 /**
  * Orchestrates a chat turn: retrieve context → build the system prompt →

@@ -2,6 +2,8 @@ import { describe, it, expect } from 'bun:test';
 import {
   GithubRefreshService,
   SnapshotOwnerRefresher,
+  selectReposForDetailSync,
+  SHOWCASE_REPO_DETAIL_BUDGET,
   type ResourceSyncer,
   type DetailSyncer,
 } from '../src/github/github-refresh.service';
@@ -130,7 +132,7 @@ describe('GithubRefreshService.refreshAll', () => {
     expect(detail.repos).toEqual(['Slow-Inc/MangaDock']);
   });
 
-  it('caps the showcase repo set at 50 to bound sequential GitHub calls (T2.4)', async () => {
+  it('caps + rotates the showcase detail set per run (#135)', async () => {
     const syncer = recordingSyncer();
     const detail = recordingDetail();
     const many = Array.from({ length: 60 }, (_, i) => ({
@@ -149,7 +151,7 @@ describe('GithubRefreshService.refreshAll', () => {
 
     await svc.refreshAll();
 
-    expect(detail.repos.length).toBe(50);
+    expect(detail.repos.length).toBe(SHOWCASE_REPO_DETAIL_BUDGET);
   });
 
   it('records a profile/detail failure without aborting the batch', async () => {
@@ -232,6 +234,26 @@ describe('SnapshotOwnerRefresher.refreshOwner', () => {
     );
     expect(calls[0].key).toBe('repos:xenodeve');
     expect(calls[0].url).toContain('/users/xenodeve/repos');
+  });
+});
+
+describe('selectReposForDetailSync (#135)', () => {
+  const repos = Array.from({ length: 10 }, (_, i) => ({
+    owner: 'o',
+    repo: `r${i}`,
+  }));
+
+  it('returns all repos when under budget', () => {
+    expect(selectReposForDetailSync(repos.slice(0, 3), 8)).toEqual(
+      repos.slice(0, 3),
+    );
+  });
+
+  it('rotates the window by hour so different slices are covered', () => {
+    const hour0 = selectReposForDetailSync(repos, 3, 0);
+    const hour1 = selectReposForDetailSync(repos, 3, 3_600_000);
+    expect(hour0.map((r) => r.repo)).toEqual(['r0', 'r1', 'r2']);
+    expect(hour1.map((r) => r.repo)).toEqual(['r1', 'r2', 'r3']);
   });
 });
 

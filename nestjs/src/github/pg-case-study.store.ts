@@ -7,6 +7,7 @@ import type {
   CaseStudy,
 } from './github-case-study';
 import type { CaseStudyStore } from './github-case-study-persist';
+import { sqlTextArray } from './sql-text-array';
 
 /** A stored jsonb `extract` is only reused if it is a well-formed FileExtract —
  * a partial/corrupt cached blob is dropped so the file is re-mapped instead. */
@@ -91,11 +92,12 @@ export class PgCaseStudyStore implements CaseStudyStore {
     await this.db.transaction(async (tx) => {
       for (const s of studies) {
         const slug = `${projectSlug}-${s.audience}`;
+        const tags = sqlTextArray(s.tags);
         await tx.execute(
           sql`insert into blog_posts
               (slug, title, excerpt, content, tags, project_id, audience, kind, source, owner, published_at)
             values
-              (${slug}, ${s.title}, ${s.description}, ${s.content}, ${s.tags}, ${projectId}, ${s.audience}, 'case_study', 'github', 'auto', null)
+              (${slug}, ${s.title}, ${s.description}, ${s.content}, ${tags}, ${projectId}, ${s.audience}, 'case_study', 'github', 'auto', null)
             on conflict (project_id, audience) where kind = 'case_study'
             do update set
               title = case when blog_posts.owner = 'auto' then excluded.title else blog_posts.title end,

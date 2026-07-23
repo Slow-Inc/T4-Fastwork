@@ -6,6 +6,7 @@ import type {
   ContentPatch,
   CurrentContent,
 } from './github-generate';
+import { sqlTextArray } from './sql-text-array';
 
 /**
  * Postgres-backed GenerateStore over the Drizzle pooler (mirrors PgRankStore).
@@ -108,7 +109,9 @@ export class PgGenerateStore implements GenerateStore {
             sql`insert into project_tags (project_id, tag_id)
                 select p.id, t.id from projects p
                 join public.tags t
-                  on lower(t.name) = any(${patch.tags.map((s) => s.toLowerCase())}::text[])
+                  on lower(t.name) = any(${sqlTextArray(
+                    patch.tags.map((s) => s.toLowerCase()),
+                  )})
                 where p.slug = ${slug} and p.source = 'github' and p.tags_owner = 'auto'`,
           );
       }
@@ -123,7 +126,9 @@ export class PgGenerateStore implements GenerateStore {
             sql`insert into project_technologies (project_id, technology_id)
                 select p.id, t.id from projects p
                 join public.technologies t
-                  on lower(t.name) = any(${patch.technologies.map((s) => s.toLowerCase())}::text[])
+                  on lower(t.name) = any(${sqlTextArray(
+                    patch.technologies.map((s) => s.toLowerCase()),
+                  )})
                 where p.slug = ${slug} and p.source = 'github' and p.technologies_owner = 'auto'`,
           );
       }
