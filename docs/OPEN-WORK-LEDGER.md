@@ -1,5 +1,12 @@
 # Open-Work Ledger
 
+## 2026-07-24 — #159 D3 AI taxonomy create-or-select + backfill
+
+- Branch `feat/159-taxonomy-ai`: `PgGenerateStore` create-or-select categories/tags/techs;
+  `POST /github/generate-taxonomy` (dry-run / `apply:true`, cap 1); cron fail-soft.
+- Eligibility: published github, `category_id` null, `category_owner=auto`; no readme delta-gate.
+- Open PRs also: #162 (live_url), #163 (missing-readme).
+
 ## 2026-07-24 — Epic #127 CLOSED; D3/D4 backfill done (reachable set)
 
 - **CLOSED:** [#127](https://github.com/Slow-Inc/T4-Fastwork/issues/127) — all epic deliverables shipped.
