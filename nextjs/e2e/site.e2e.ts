@@ -1295,3 +1295,26 @@ test("admin Slow-Inc org import requires auth — redirects to login when signed
   await expect(page).toHaveURL(/\/admin\/login$/);
   expect(errors).toEqual([]);
 });
+
+test("team showcase MangaDock stays on /projects — member sync must not remove org work (#181)", async ({
+  page,
+}) => {
+  await page.goto("/projects", { waitUntil: "networkidle" });
+  const slugs = await page.$$eval(".pcard a.pcard-shot", (as) =>
+    as.map((a) => (a.getAttribute("href") ?? "").split("/").pop()),
+  );
+  expect(slugs, "team flagship must remain listed").toContain("mangadock");
+  const ok = await page.goto("/projects/mangadock", { waitUntil: "networkidle" });
+  expect(ok?.status()).toBeLessThan(400);
+  await expect(page.locator("h1").first()).toBeVisible();
+});
+
+test("admin member project-selection sync endpoint stays behind login (#181)", async ({
+  page,
+}) => {
+  // Full deselect→hide flow needs an authenticated admin session; signed-out
+  // visitors must not reach the editor that drives profile↔ผลงาน sync.
+  await page.goto("/admin/members/1/edit", { waitUntil: "networkidle" });
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page.getByText(/ผลงานถ้ามี|นำออกจากโปรไฟล์/)).toHaveCount(0);
+});
