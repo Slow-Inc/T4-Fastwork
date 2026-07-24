@@ -15,6 +15,37 @@ interface Props {
   en?: boolean;
 }
 
+function hasUsedFor(item: TechItem): boolean {
+  return Boolean(item.usedFor || item.usedForEn);
+}
+
+/** Keep first occurrence; upgrade if a later duplicate carries used-for copy. */
+function dedupeTechItems(items: TechItem[]): TechItem[] {
+  const byName = new Map<string, TechItem>();
+  for (const item of items) {
+    const existing = byName.get(item.name);
+    if (!existing) {
+      byName.set(item.name, item);
+      continue;
+    }
+    if (!hasUsedFor(existing) && hasUsedFor(item)) {
+      byName.set(item.name, item);
+    }
+  }
+  return [...byName.values()];
+}
+
+function dedupeNames(names: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const name of names) {
+    if (seen.has(name)) continue;
+    seen.add(name);
+    out.push(name);
+  }
+  return out;
+}
+
 export function ProjectTechnologyPanel({
   technologies,
   technologyDetails,
@@ -22,10 +53,12 @@ export function ProjectTechnologyPanel({
   languages,
   en = false,
 }: Props) {
-  const items: TechItem[] =
+  const items: TechItem[] = dedupeTechItems(
     technologyDetails && technologyDetails.length > 0
       ? technologyDetails
-      : technologies.map((name) => ({ name }));
+      : technologies.map((name) => ({ name })),
+  );
+  const uniqueTags = dedupeNames(tags);
 
   return (
     <>
@@ -59,7 +92,7 @@ export function ProjectTechnologyPanel({
       <div className="meta-block">
         <span className="t-meta">{en ? 'Tags' : 'แท็ก'}</span>
         <ul className="chip-row">
-          {tags.map((tag) => (
+          {uniqueTags.map((tag) => (
             <li key={tag} className="chip chip-muted">
               {tag}
             </li>
