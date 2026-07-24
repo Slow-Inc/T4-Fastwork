@@ -1,5 +1,15 @@
 # Open-Work Ledger
 
+## 2026-07-24 — Epic #178 member profile ↔ ผลงาน sync (in progress)
+
+- **PRD:** [#178](https://github.com/Slow-Inc/T4-Fastwork/issues/178)
+- **Children:** #179 planner · #180 toggle+sync · #181 E2E · #182 reconcile
+- **Branch:** `feat/178-member-showcase-sync` (from `origin/master`)
+- **Behavior:** deselect personal imported repo → `projects.status=hidden`; reselect →
+  `published`. Team/Slow-Inc never touched. No auto-create on first select.
+- **Note:** `#172` WIP stashed as `wip-172-enrichment` on
+  `feat/172-visitor-ready-enrichment`.
+
 ## 2026-07-24 — #161 D5 snapshot OG fallback (in progress)
 
 - Branch `feat/161-snapshot-og-fallback`: wire `og:image` fallback into
