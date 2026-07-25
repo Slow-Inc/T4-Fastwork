@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../database/database.module';
 import type { ShowcaseRepoProvider } from './github-refresh.service';
+import type { ReadmeSnapshotState } from './missing-readme-backfill';
 
 /** Lookup a published project slug from its GitHub identity (#143). */
 export interface ProjectGithubSlugLookup {
@@ -11,12 +12,24 @@ export interface ProjectGithubSlugLookup {
   ): Promise<string | null>;
 }
 
-/** Ports for #158 missing-README backfill (list + existing snapshot keys). */
+/** A `checkedAt` that is absent or unparseable yields null, which the TTL treats as expired. */
+function parseCheckedAt(value: unknown): Date | null {
+  if (typeof value !== 'string') return null;
+  const at = new Date(value);
+  return Number.isNaN(at.getTime()) ? null : at;
+}
+
+/** Ports for #158 missing-README backfill (list + stored snapshot state). */
 export interface MissingReadmeStore {
   listPublishedGithubForReadmeBackfill(): Promise<
     { owner: string; repo: string; slug: string }[]
   >;
-  listExistingReadmeKeys(): Promise<Set<string>>;
+  /**
+   * Every stored readme snapshot with enough state to judge whether it still counts as checked.
+   * Returns the state rather than a bare key set (#215): a #177 missing-marker is a readme key
+   * too, and treating it as permanently authoritative excluded its repo from this backfill forever.
+   */
+  listReadmeSnapshotStates(): Promise<ReadmeSnapshotState[]>;
 }
 
 /**
@@ -82,17 +95,37 @@ export class PgShowcaseRepoStore
       }));
   }
 
-  async listExistingReadmeKeys(): Promise<Set<string>> {
+  async listReadmeSnapshotStates(): Promise<ReadmeSnapshotState[]> {
+    // Both fields come from the #177 marker shape; a real README snapshot has neither, so it reads
+    // as `missing: false` and the TTL never applies to it. Projected rather than selecting `data`,
+    // because that would pull every README's full markdown on every backfill run.
+    //
+    // `->>` yields text or null, and the comparison happens in TS on purpose: asking Postgres for a
+    // boolean would make this depend on how the driver maps one, and a driver that returned `'t'`
+    // would read the marker as a real snapshot — silently restoring the permanent exclusion #215
+    // removes. Text has one representation.
     const rows = (await this.db.execute(
-      sql`select key from github_snapshots where key like ${'repo:%:readme'}`,
+      sql`select key,
+                 data->>'missing' as missing_flag,
+                 data->>'checkedAt' as checked_at
+          from github_snapshots
+          where key like ${'repo:%:readme'}`,
     )) as Array<Record<string, unknown>>;
-    const keys = new Set<string>();
+    const states: ReadmeSnapshotState[] = [];
     for (const r of rows) {
-      if (typeof r.key === 'string' && /^repo:[^/]+\/[^:]+:readme$/i.test(r.key)) {
-        keys.add(r.key);
+      if (
+        typeof r.key !== 'string' ||
+        !/^repo:[^/]+\/[^:]+:readme$/i.test(r.key)
+      ) {
+        continue;
       }
+      states.push({
+        key: r.key,
+        missing: r.missing_flag === 'true',
+        checkedAt: parseCheckedAt(r.checked_at),
+      });
     }
-    return keys;
+    return states;
   }
 
   async findPublishedSlugByGithub(

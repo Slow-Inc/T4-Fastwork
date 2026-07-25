@@ -2,7 +2,7 @@
  * A 404 README must leave a durable marker (#177).
  *
  * `syncRepoDetail` swallowed the 404 and wrote nothing, while `refreshRepoDetail` still pushed
- * the readme key into `synced`. So `listExistingReadmeKeys` never saw the key, the same repo was
+ * the readme key into `synced`. So the backfill's snapshot listing never saw the key, the same repo was
  * re-selected by the backfill forever, and taxonomy/case-study stayed blocked behind a candidate
  * that can never generate.
  */
