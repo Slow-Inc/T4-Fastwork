@@ -1,5 +1,38 @@
 # Open-Work Ledger
 
+## 2026-07-25 (AFK) — #211 root-caused + #215 shipped; #178 reviewed and parked
+
+- **#211 root cause (not what the issue guessed):** `Slow-Inc/T4-Fastwork` has **no README** on
+  GitHub (`GET /repos/.../readme` → 404), so both generators return at
+  `taxonomy-generate.ts:97` / `case-study-simple.ts:97`. The skip is correct (no LLM call, does not
+  consume the cap) but was indistinguishable from the benign skips, so the row was passed over on
+  every run while the run reported success. Correlation is exact: of 46 published github rows,
+  `readme_sha is null` for one, and that row is the only one missing category + content.
+- **Shipped #214 → `21f5c7d`:** both generators return `noReadme`, both controllers return
+  `noReadmeSlugs` + warn. Committed the README the repo never had. ⚠️ Two spec files' prettier drift
+  went in with it — disclosed on the PR, not reverted.
+- **Shipped #216 → `762184b` (#215):** a `{missing:true}` marker now expires
+  (`README_MARKER_TTL_MS` 6 h) instead of excluding its repo from the missing-README backfill
+  forever. `listExistingReadmeKeys` → `listReadmeSnapshotStates`; the policy is pure
+  (`authoritativeReadmeKeys`), not SQL, so it is tested behaviourally.
+- **#211 stays OPEN.** It auto-closed on `Closes #211` in PR #214's body and was **reopened** — AC 2
+  (row filled via the automated path) and AC 3 (#175 E2E against it) are unverified. Measured
+  `18:37Z`: `readme_sha`/`category_id`/`content` all still null; the marker is still the 15:56 one.
+  Propagation is via the hourly refresh's rotating **8-repo** detail budget
+  (`github-refresh.service.ts:47,53-62`), **not** the deploy — the earlier inference from a
+  22-second timestamp coincidence was wrong and is corrected on the issue.
+- **Filed #217 + #218** — the automation path for the two parked human steps (org PAT for
+  `SCREENSHOT_DISPATCH_TOKEN`; the Vercel deploy webhook), which the North Star corollary requires.
+  #218's point: creating the webhook is scriptable via the Vercel API today.
+- **#178 branch reviewed, merge PARKED** (`feat/178-member-showcase-sync` @ `7f6143d`) — it edits an
+  admin-write path, so the AFK boundary sends it to a human. Verified: `assertAdmin()` first, cookie
+  client under RLS (no service_role), dry-run on the bulk repair, and **`status = 'hidden'` is
+  load-bearing** — `'draft'` would make `project-automation-sync.ts:132` re-publish a deselected row
+  in a loop. One finding: the two writes are not atomic, and the failure mode is exactly the drift
+  #182 repairs. Full bilingual review on #178.
+- **Still parked, unchanged:** prod migrations `0032`/`0033`; the PAT; the webhook; closing #172;
+  #110.
+
 ## 2026-07-25 — #175 D3 enrichment E2E MERGED; epic #172 left open on one residual
 
 - **Shipped:** [#175](https://github.com/Slow-Inc/T4-Fastwork/issues/175) via PR #212, squashed as
