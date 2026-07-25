@@ -1472,9 +1472,18 @@ test(`the /projects listing shows the same enriched category as the detail page 
     has: page.locator(`a[href="/projects/${ENRICHED_SLUG}"]`),
   });
   await expect(card).toHaveCount(1);
-  await expect(
-    card.locator(".pcard-badges .badge", { hasText: category }).first(),
-  ).toBeVisible();
+
+  // Compare case-normalised: `.badge` is text-transform: uppercase (globals.css:1227)
+  // while the detail eyebrow `.t-idx` is not (globals.css:94), so the two render the same
+  // stored value differently. Matching the full badge text rather than a substring keeps a
+  // different badge on the card — owner, featured, visibility — from satisfying this.
+  const badges = (
+    await card.locator(".pcard-badges .badge").allInnerTexts()
+  ).map((text) => text.trim().toLowerCase());
+  expect(
+    badges,
+    "the listing card shows no badge matching the detail page category",
+  ).toContain(category.toLowerCase());
 
   expect(errors, "console errors across detail + listing").toEqual([]);
 });
