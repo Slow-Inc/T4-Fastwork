@@ -183,23 +183,54 @@ export class PgPipelineSyncStore
     atIso: string,
     error: string | null,
   ): Promise<void> {
+    await this.writeSyncOutcome(
+      sql`update projects
+             set last_synced_at = ${atIso}::timestamptz,
+                 last_sync_error = ${error}
+           where id = ${id}`,
+      `project ${id}`,
+    );
+  }
+
+  /**
+   * Same record, keyed by GitHub identity, for the hourly refresh's detail loop (#223) — that loop
+   * has no project id. Case-insensitive on both parts: `projects.gh_repo` casing can differ from what
+   * the refresh was handed, and an exact match would update zero rows, leaving a healthy repo looking
+   * permanently unreached.
+   */
+  async recordSyncOutcomeByRepo(
+    owner: string,
+    repo: string,
+    atIso: string,
+    error: string | null,
+  ): Promise<void> {
+    await this.writeSyncOutcome(
+      sql`update projects
+             set last_synced_at = ${atIso}::timestamptz,
+                 last_sync_error = ${error}
+           where source = 'github'
+             and lower(gh_owner) = lower(${owner})
+             and lower(gh_repo) = lower(${repo})`,
+      `${owner}/${repo}`,
+    );
+  }
+
+  private async writeSyncOutcome(
+    statement: ReturnType<typeof sql>,
+    subject: string,
+  ): Promise<void> {
     try {
-      await this.db.execute(
-        sql`update projects
-               set last_synced_at = ${atIso}::timestamptz,
-                   last_sync_error = ${error}
-             where id = ${id}`,
-      );
+      await this.db.execute(statement);
     } catch (err) {
       if (isMissingColumnError(err)) {
         // Pre-0034 there is nowhere to write; the report reads null and says `never` (#198).
         this.logger.warn(
-          `sync-health columns not present yet — outcome not recorded for project ${id}`,
+          `sync-health columns not present yet — outcome not recorded for ${subject}`,
         );
         return;
       }
       this.logger.error(
-        `recording the sync outcome for project ${id} failed: ${
+        `recording the sync outcome for ${subject} failed: ${
           err instanceof Error ? err.message : String(err)
         }`,
       );

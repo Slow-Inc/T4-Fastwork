@@ -18,7 +18,16 @@ export interface ProjectSyncHealth {
   slug: string;
   /** Last run that reached this project; null when it has never been synced. */
   lastSyncedAt: Date | null;
-  /** The last run's error for this project, or null when it succeeded. */
+  /**
+   * The last run's error for this project, or null when it succeeded.
+   *
+   * **One slot, most recent writer wins.** Two paths write it — the pipeline (a push or a Vercel
+   * deploy, #221) and the hourly detail loop (#223) — so a cron pass that succeeds erases a
+   * push-time action failure from earlier in the same hour. That is what "last error" means, but it
+   * makes this column unable to *remember* a failure, so it must not be the durable detector for a
+   * failed enrichment. #222's content invariant is: it reads the outcome (the field is still empty)
+   * rather than who last failed.
+   */
   lastSyncError: string | null;
 }
 
@@ -47,12 +56,15 @@ export const STUCK_AFTER_REVISITS = 3;
  * @param revisitIntervalMs How often a *single* project is expected to be RECORDED — **not** the
  *   cron period. Passing the 1-hour cron period would report almost every healthy project as stuck.
  *
- *   ⚠️ **`stuck` is not alertable yet.** Only `runPipelineSync` records (see
- *   `PipelineSyncRecorder`), and that runs on a push or a Vercel deploy — not on the hourly cron,
- *   whose `refreshAll` → `syncRepoDetail` path (`github-refresh.service.ts:162-169`) writes no
- *   project row. So a repo that simply has not been pushed to reads stale no matter how healthy it
- *   is, and an alert on `stuck` today would fire on every quiet project. The `error` and `never`
- *   reasons are unaffected. Wiring the cron path to record is the precondition for that alert.
+ *   Both writers are now wired: the pipeline on a push or Vercel deploy (`PipelineSyncRecorder`,
+ *   #221) and the hourly detail loop (`RepoSyncOutcomeRecorder`, #223). So the interval to pass is
+ *   how often the *detail rotation* revisits one repo — `refreshAll` covers a budget of 8 repos per
+ *   hourly run over ~47 (`github-refresh.service.ts:47,53-62`), i.e. roughly every 6 hours.
+ *
+ *   ⚠️ **Nothing is recorded in production yet:** `last_synced_at` / `last_sync_error` ship in
+ *   migration `0034`, which is deliberately unapplied. Until it is applied every project reads
+ *   `never`, so an alert must treat "the columns do not exist" as *not assessable* rather than as
+ *   47 stuck projects.
  */
 export function isSyncUnhealthy(
   project: ProjectSyncHealth,

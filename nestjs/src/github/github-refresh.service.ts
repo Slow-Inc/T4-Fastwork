@@ -61,6 +61,24 @@ export function selectReposForDetailSync(
   return rotated.slice(0, budget);
 }
 
+/**
+ * Records that a refresh run REACHED one repo's project row (#223), keyed by GitHub identity because
+ * this loop has no project id. Complements `PipelineSyncRecorder`, which only sees the event-driven
+ * paths (a push, a Vercel deploy) — without this, a repo nobody pushed to reads stale however healthy
+ * its sync is, and `isSyncUnhealthy`'s `stuck` reason fires for every quiet project.
+ *
+ * **Implementations must not throw**; the refresh guards against it anyway, because bookkeeping must
+ * never cost a refresh that already did its work.
+ */
+export interface RepoSyncOutcomeRecorder {
+  recordSyncOutcomeByRepo(
+    owner: string,
+    repo: string,
+    atIso: string,
+    error: string | null,
+  ): Promise<void>;
+}
+
 export interface RefreshSummary {
   synced: string[];
   changed: string[];
@@ -92,6 +110,9 @@ export class GithubRefreshService {
      *  github-backed repos are unioned with `showcaseRepos` (the constant always
      *  included) so detail is fetched beyond the hardcoded MangaDock. */
     private readonly showcaseRepoProvider?: ShowcaseRepoProvider,
+    /** #223 — records that this run reached each repo, so a quiet repo is distinguishable from an
+     *  unreached one. Optional: the repo-list refresh and its tests work unchanged without it. */
+    private readonly outcomes?: RepoSyncOutcomeRecorder,
   ) {}
 
   /** The effective repos to detail-sync: the static constant unioned with the
@@ -161,11 +182,28 @@ export class GithubRefreshService {
       const repos = await this.resolveShowcaseRepos();
       for (const { owner, repo } of repos) {
         const key = snapshotKey.repoContributors(owner, repo);
+        let error: string | null = null;
         try {
           await this.detail.syncRepoDetail(owner, repo);
           summary.synced.push(key);
-        } catch {
+        } catch (err) {
           summary.failed.push(key);
+          error = err instanceof Error ? err.message : String(err);
+        }
+        // Recorded on EVERY pass, including one where nothing changed: `syncResource` skips the
+        // upsert on a 304, so a snapshot timestamp means "content changed", not "a run reached
+        // this repo" (#223). Guarded because a bookkeeping failure must not fail the refresh.
+        if (this.outcomes) {
+          try {
+            await this.outcomes.recordSyncOutcomeByRepo(
+              owner,
+              repo,
+              new Date().toISOString(),
+              error,
+            );
+          } catch {
+            // Degrades to a stale row, which the health predicate reports as `stuck` — loud.
+          }
         }
       }
     }
