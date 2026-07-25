@@ -64,6 +64,8 @@ export const projects = pgTable('projects', {
   ghOwner: text('gh_owner'),
   ghRepo: text('gh_repo'),
   ghHtmlUrl: text('gh_html_url'),
+  /** Last-synced GitHub `private` flag (#194). Null for CMS / unknown. */
+  ghPrivate: boolean('gh_private'),
   ownerType: text('owner_type').notNull().default('team'), // 'team' | 'personal'
   ownerLogin: text('owner_login'),
 
@@ -99,6 +101,14 @@ export const projects = pgTable('projects', {
   overviewHighlightsEn: text('overview_highlights_en'),
   overviewGoodForEn: text('overview_good_for_en'),
   overviewOwner: text('overview_owner').notNull().default('auto'),
+
+  // --- Event-driven cover recapture (#190 / epic #185) ----------------------
+  // Idempotency token (`deploy:<id>` | `push:<sha>` | `manual`) + last dispatch
+  // time for the 2-minute cooldown. Additive / nullable.
+  lastCaptureTrigger: text('last_capture_trigger'),
+  lastCaptureDispatchAt: timestamp('last_capture_dispatch_at', {
+    withTimezone: true,
+  }),
 });
 
 // Many-to-many: projects ↔ technologies / tags.

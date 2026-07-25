@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { LlmModule } from '../llm/llm.module';
 import { RevalidateModule } from '../revalidate/revalidate.module';
@@ -14,7 +14,12 @@ import {
 } from './taxonomy-generate.controller';
 
 @Module({
-  imports: [DatabaseModule, LlmModule, RevalidateModule, GithubModule],
+  imports: [
+    DatabaseModule,
+    LlmModule,
+    RevalidateModule,
+    forwardRef(() => GithubModule),
+  ],
   controllers: [TaxonomyGenerateController],
   providers: [
     PgGenerateStore,
@@ -22,5 +27,6 @@ import {
     { provide: TAXONOMY_README, useExisting: GithubReadService },
     { provide: TAXONOMY_LLM, useExisting: LlmService },
   ],
+  exports: [TAXONOMY_STORE, TAXONOMY_README, TAXONOMY_LLM, PgGenerateStore],
 })
 export class TaxonomyGenerateModule {}

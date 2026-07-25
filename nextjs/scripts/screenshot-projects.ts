@@ -20,6 +20,7 @@ import {
   resolveOgFallbackUrl,
   selectSnapshotTargets,
 } from '../lib/snapshot-cover';
+import { isMissingProjectColumnError } from '../lib/projects-select';
 
 // The project URL (not secret) — reuse the app's NEXT_PUBLIC_SUPABASE_URL locally
 // so it isn't duplicated; CI sets the SUPABASE_URL repo secret, which wins.
@@ -64,8 +65,14 @@ async function writeSnapshot(
   row: { id: number; slug: string },
   url: string,
   via: 'playwright' | 'og',
+  trigger?: string,
 ): Promise<void> {
-  await db.from('projects').update({ snapshot_image: url }).eq('id', row.id);
+  // The worker is the ONLY writer of last_capture_trigger, and only here — after a capture has
+  // actually produced an image. Writing it at dispatch time made the next event look already
+  // handled and killed recapture entirely (#197).
+  const patch: Record<string, string> = { snapshot_image: url };
+  if (trigger) patch.last_capture_trigger = trigger;
+  await db.from('projects').update(patch).eq('id', row.id);
   await revalidateProject(row.slug);
   console.log(`[screenshot] ${row.slug}: ${via} → ${url}`);
 }
@@ -91,6 +98,7 @@ async function applyOgFallback(
   db: ShotDb,
   row: { id: number; slug: string; live_url: string },
   html: string | null,
+  trigger?: string,
 ): Promise<boolean> {
   const og = resolveOgFallbackUrl({
     captureUsable: false,
@@ -98,7 +106,7 @@ async function applyOgFallback(
     pageUrl: row.live_url,
   });
   if (!og) return false;
-  await writeSnapshot(db, row, og, 'og');
+  await writeSnapshot(db, row, og, 'og', trigger);
   return true;
 }
 
@@ -109,13 +117,49 @@ async function main(): Promise<void> {
   }
   const db = createClient(SUPABASE_URL, SECRET_KEY) as ShotDb;
 
-  const { data: rows, error } = await db
-    .from('projects')
-    .select('id, slug, status, live_url, snapshot_image')
-    .eq('status', 'published')
-    .not('live_url', 'is', null)
-    .is('snapshot_image', null);
-  if (error) throw error;
+  const slugFilter = process.env.SNAPSHOT_SLUG?.trim() || undefined;
+  const force = process.env.SNAPSHOT_FORCE === 'true';
+  const trigger = process.env.SNAPSHOT_TRIGGER?.trim() || undefined;
+
+  // `last_capture_trigger` only exists once migration 0032 is authorized, and this worker runs
+  // against production before then — so fall back to the pre-migration column set instead of
+  // killing the screenshot job (#198).
+  const buildQuery = (columns: string) => {
+    let q = db
+      .from('projects')
+      .select(columns)
+      .eq('status', 'published')
+      .not('live_url', 'is', null);
+
+    // Cron gap-fill: only rows still missing a cover. Targeted dispatch (slug set)
+    // loads that row even when an image already exists so trigger/force can recapture.
+    if (!slugFilter && !force && !trigger) {
+      q = q.is('snapshot_image', null);
+    }
+    if (slugFilter) {
+      q = q.eq('slug', slugFilter);
+    }
+    return q;
+  };
+
+  let rows: unknown[] | null = null;
+  let lastError: { code?: string; message?: string } | null = null;
+  for (const columns of [
+    'id, slug, status, live_url, snapshot_image, last_capture_trigger',
+    'id, slug, status, live_url, snapshot_image',
+  ]) {
+    const res = await buildQuery(columns);
+    if (!res.error) {
+      rows = res.data as unknown[];
+      break;
+    }
+    lastError = res.error as { code?: string; message?: string };
+    if (!isMissingProjectColumnError(lastError)) throw res.error;
+    console.warn(
+      `[screenshot] select without last_capture_trigger (${lastError.message ?? lastError.code})`,
+    );
+  }
+  if (rows == null) throw lastError ?? new Error('projects select failed');
   const targets = selectSnapshotTargets(
     (rows ?? []) as {
       id: number;
@@ -123,7 +167,9 @@ async function main(): Promise<void> {
       status: string;
       live_url: string | null;
       snapshot_image: string | null;
+      last_capture_trigger?: string | null;
     }[],
+    { slug: slugFilter, force, trigger },
   );
   if (!targets.length) {
     console.log('[screenshot] nothing to capture.');
@@ -160,7 +206,7 @@ async function main(): Promise<void> {
           );
           await page.close();
           const html = await fetchHtml(row.live_url);
-          if (!(await applyOgFallback(db, row, html))) {
+          if (!(await applyOgFallback(db, row, html, trigger))) {
             console.warn(`[screenshot] ${row.slug}: no OG fallback.`);
           }
           continue;
@@ -175,7 +221,7 @@ async function main(): Promise<void> {
           console.warn(
             `[screenshot] ${row.slug}: blank capture — trying OG.`,
           );
-          if (!(await applyOgFallback(db, row, html))) {
+          if (!(await applyOgFallback(db, row, html, trigger))) {
             console.warn(`[screenshot] ${row.slug}: no OG fallback.`);
           }
           continue;
@@ -188,12 +234,12 @@ async function main(): Promise<void> {
         if (up.error) throw up.error;
 
         const { data: pub } = db.storage.from(BUCKET).getPublicUrl(path);
-        await writeSnapshot(db, row, pub.publicUrl, 'playwright');
+        await writeSnapshot(db, row, pub.publicUrl, 'playwright', trigger);
       } catch (err) {
         console.warn(`[screenshot] ${row.slug}: failed —`, err);
         try {
           const html = await fetchHtml(row.live_url);
-          if (!(await applyOgFallback(db, row, html))) {
+          if (!(await applyOgFallback(db, row, html, trigger))) {
             console.warn(`[screenshot] ${row.slug}: no OG fallback.`);
           }
         } catch (ogErr) {

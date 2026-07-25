@@ -115,4 +115,48 @@ describe('selectSnapshotTargets', () => {
       },
     ]);
   });
+
+  it('recaptures when trigger differs even if snapshot_image exists (#190)', () => {
+    const rows = [
+      {
+        id: 1,
+        slug: 'demo',
+        status: 'published',
+        live_url: 'https://demo.example',
+        snapshot_image: 'https://cdn/old.png',
+        last_capture_trigger: 'push:old',
+      },
+    ];
+    expect(
+      selectSnapshotTargets(rows, { trigger: 'push:new' }),
+    ).toEqual([
+      { id: 1, slug: 'demo', live_url: 'https://demo.example' },
+    ]);
+    expect(
+      selectSnapshotTargets(rows, { trigger: 'push:old' }),
+    ).toEqual([]);
+  });
+
+  it('force + slug bypasses image/trigger gates', () => {
+    const rows = [
+      {
+        id: 1,
+        slug: 'demo',
+        status: 'published',
+        live_url: 'https://demo.example',
+        snapshot_image: 'https://cdn/old.png',
+        last_capture_trigger: 'push:same',
+      },
+      {
+        id: 2,
+        slug: 'other',
+        status: 'published',
+        live_url: 'https://other.example',
+        snapshot_image: null,
+      },
+    ];
+    expect(
+      selectSnapshotTargets(rows, { slug: 'demo', force: true }),
+    ).toEqual([{ id: 1, slug: 'demo', live_url: 'https://demo.example' }]);
+  });
 });

@@ -28,6 +28,7 @@ const draft: DraftProject = {
   ghOwner: 'Slow-Inc',
   ghRepo: 'newproj',
   ghHtmlUrl: 'https://github.com/Slow-Inc/newproj',
+  ghPrivate: false,
   liveUrl: 'https://newproj.dev',
   ownerType: 'team',
   ownerLogin: 'Slow-Inc',
@@ -67,6 +68,7 @@ describe('PgProjectDraftStore.insertDraft', () => {
       'gh_owner',
       'gh_repo',
       'gh_html_url',
+      'gh_private',
       'live_url',
       'owner_type',
       'owner_login',
@@ -92,5 +94,35 @@ describe('PgProjectDraftStore.insertDraft', () => {
     ]) {
       expect(captured[0].params).toContain(v);
     }
+  });
+});
+
+describe('PgProjectDraftStore.syncGhPrivateBatch (#194 / #198)', () => {
+  it('updates matching github identities in one statement per visibility value', async () => {
+    const { store, captured } = captureStore();
+
+    await store.syncGhPrivateBatch([
+      { owner: 'Slow-Inc', repo: 'newproj', ghPrivate: true },
+      { owner: 'Slow-Inc', repo: 'secondproj', ghPrivate: true },
+      { owner: 'Slow-Inc', repo: 'openproj', ghPrivate: false },
+    ]);
+
+    // Two statements for three repos — not one per repo per pass.
+    expect(captured).toHaveLength(2);
+    for (const c of captured) {
+      expect(c.text).toContain('update projects');
+      expect(c.text).toContain('gh_private');
+    }
+    expect(captured[0].params).toContain(true);
+    expect(captured[0].params).toContain('slow-inc/newproj');
+    expect(captured[0].params).toContain('slow-inc/secondproj');
+    expect(captured[1].params).toContain(false);
+    expect(captured[1].params).toContain('slow-inc/openproj');
+  });
+
+  it('does not touch the database for an empty batch', async () => {
+    const { store, captured } = captureStore();
+    await store.syncGhPrivateBatch([]);
+    expect(captured).toHaveLength(0);
   });
 });

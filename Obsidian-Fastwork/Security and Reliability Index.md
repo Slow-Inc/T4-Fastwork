@@ -17,6 +17,7 @@ source: Engineering knowledge migration from MangaDock
 - [[End-to-End Cancellation]]
 - [[Atomic State Transitions and TOCTOU]]
 - [[Idempotent Event Processing]]
+- [[Completion Markers Belong to the Completer]]
 - [[Retry Taxonomy and Dead Letters]]
 - [[Explicit State Lifetimes]]
 - [[Async Cleanup and Idempotent Shutdown]]

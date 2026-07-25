@@ -50,6 +50,20 @@
       "when": 1784113676114,
       "tag": "0006_smart_green_goblin",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784890000000,
+      "tag": "0007_project_capture_trigger",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784891000000,
+      "tag": "0008_project_gh_private",
+      "breakpoints": true
     }
   ]
 }

@@ -35,6 +35,8 @@ export interface DraftProject {
   ghOwner: string;
   ghRepo: string;
   ghHtmlUrl: string;
+  /** Mirrors GitHub `private` at last sync (#194). */
+  ghPrivate: boolean;
   /** Normalized `homepage` → `projects.live_url` (null when the repo has none). */
   liveUrl: string | null;
   ownerType: 'team' | 'personal';
@@ -51,6 +53,13 @@ export interface DraftProject {
 export interface ProjectDraftStore {
   existsBySlug(slug: string): Promise<boolean>;
   insertDraft(row: DraftProject): Promise<void>;
+  /**
+   * Refresh stored visibility for existing github-linked rows in one batch (#194 / #198).
+   * Rows that are not tracked are simply not matched.
+   */
+  syncGhPrivateBatch?(
+    entries: Array<{ owner: string; repo: string; ghPrivate: boolean }>,
+  ): Promise<void>;
 }
 
 const MAX_AGE_MONTHS = 18;
@@ -141,6 +150,7 @@ export function repoToDraftProject(repo: CurateRepo): DraftProject {
     ghOwner: repo.owner.login,
     ghRepo: repo.name,
     ghHtmlUrl: repo.html_url,
+    ghPrivate: repo.private,
     liveUrl: mapRepoMetadata({ homepageUrl: repo.homepage }).liveUrl,
     ownerType: deriveOwnerType(repo.owner.login),
     ownerLogin: repo.owner.login,
@@ -167,6 +177,29 @@ export class CurateService {
   async curate(repos: CurateRepo[]): Promise<{ inserted: string[] }> {
     const now = this.now();
     const inserted: string[] = [];
+
+    // Refresh stored visibility for linked rows (public↔private flips) once for the whole
+    // pass, and never let it fail the run — before migration 0033 the column may not exist
+    // yet, and curating repos matters more than the badge (#198).
+    if (this.store.syncGhPrivateBatch) {
+      try {
+        await this.store.syncGhPrivateBatch(
+          repos.map((r) => ({
+            owner: r.owner.login,
+            repo: r.name,
+            ghPrivate: r.private,
+          })),
+        );
+      } catch (err) {
+        // Framework-free module — plain console so the skip is still visible in the logs.
+        console.warn(
+          `[curate] visibility sync skipped: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      }
+    }
+
     for (const repo of repos) {
       if (!isEligibleRepo(repo, now)) continue;
       const draft = repoToDraftProject(repo);

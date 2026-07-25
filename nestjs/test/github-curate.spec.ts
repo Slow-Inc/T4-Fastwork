@@ -82,11 +82,16 @@ describe('repoToDraftProject', () => {
     expect(d.status).toBe('draft');
     expect(d.ghOwner).toBe('Slow-Inc');
     expect(d.ghRepo).toBe('mangadock');
+    expect(d.ghPrivate).toBe(false);
     expect(d.ownerType).toBe('team');
     expect(d.ownerLogin).toBe('Slow-Inc');
     expect(d.titleOwner).toBe('auto');
     expect(d.descriptionOwner).toBe('auto');
     expect(d.technologiesOwner).toBe('auto');
+  });
+
+  it('persists ghPrivate=true when the source repo is private (#194)', () => {
+    expect(repoToDraftProject(repo({ private: true })).ghPrivate).toBe(true);
   });
 
   it('slugifies a personal repo name and marks owner_type personal', () => {

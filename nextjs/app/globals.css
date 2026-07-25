@@ -2000,6 +2000,10 @@ footer {
 /* Project detail — owner chip + contributors (spec P6) */
 .detail-owner {
   margin: 6px 0 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 .owner-chip {
   display: inline-block;
@@ -2011,6 +2015,17 @@ footer {
 }
 .owner-personal {
   background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.owner-public,
+.badge-public {
+  border-color: color-mix(in srgb, var(--ink) 35%, transparent);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.owner-private,
+.badge-private {
+  border-color: color-mix(in srgb, var(--ink) 55%, transparent);
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  opacity: 0.92;
 }
 .detail-contributors,
 .detail-readme {

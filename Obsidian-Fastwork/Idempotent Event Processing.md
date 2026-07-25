@@ -14,4 +14,4 @@ Webhook, queue message และ callback ต้องถือว่าอา�
 - duplicate ต้องคืนผลที่สอดคล้องโดยไม่ทำ side effect ซ้ำ
 - เก็บ audit trail สำหรับเหตุการณ์ที่ reject, retry และ replay
 
-Related: [[Atomic State Transitions and TOCTOU]] · [[Retry Taxonomy and Dead Letters]]
+Related: [[Atomic State Transitions and TOCTOU]] · [[Retry Taxonomy and Dead Letters]] · [[Completion Markers Belong to the Completer]]

@@ -45,10 +45,7 @@ export function buildHomepageIndex(
     for (const raw of list) {
       const repo = toCurateRepo(raw);
       if (!repo) continue;
-      idx.set(
-        identityKey(repo.owner.login, repo.name),
-        repo.homepage ?? null,
-      );
+      idx.set(identityKey(repo.owner.login, repo.name), repo.homepage ?? null);
     }
   }
   return idx;
@@ -79,7 +76,16 @@ export function planLiveUrlFills(
 export async function runLiveUrlFill(
   store: LiveUrlStore,
   snapshots: LiveUrlSnapshotReader,
-  opts: { apply: boolean; maxPerRun: number },
+  opts: {
+    apply: boolean;
+    maxPerRun: number;
+    /**
+     * Restrict the pass to one project id. The event-driven pipeline plans a single project, so
+     * a push must not sweep every other row that happens to need a live_url (#201). Omit for the
+     * cron / manual bulk pass.
+     */
+    onlyProjectId?: number;
+  },
 ): Promise<{
   candidates: number;
   filled: number;
@@ -87,7 +93,20 @@ export async function runLiveUrlFill(
   capped: boolean;
   patches: LiveUrlFill[];
 }> {
-  const candidates = await store.listPublishedGithubNeedingLiveUrl();
+  const all = await store.listPublishedGithubNeedingLiveUrl();
+  const candidates =
+    opts.onlyProjectId == null
+      ? all
+      : all.filter((c) => c.id === opts.onlyProjectId);
+  if (!candidates.length) {
+    return {
+      candidates: 0,
+      filled: 0,
+      applied: opts.apply,
+      capped: false,
+      patches: [],
+    };
+  }
   const lists = await snapshots.readRepoLists();
   const idx = buildHomepageIndex(lists);
   const patches = planLiveUrlFills(candidates, idx, opts.maxPerRun);

@@ -26,6 +26,7 @@ export interface DbProjectRow {
   published_at: string | null;
   gh_owner?: string | null;
   gh_repo?: string | null;
+  gh_private?: boolean | null;
   owner_type?: string | null;
   owner_login?: string | null;
   overview_summary?: string | null;
@@ -75,6 +76,9 @@ export function mapDbProject(row: DbProjectRow): Project {
     year: row.published_at ? row.published_at.slice(0, 4) : '',
     ...(row.gh_owner && row.gh_repo
       ? { github: { owner: row.gh_owner, repo: row.gh_repo } }
+      : {}),
+    ...(typeof row.gh_private === 'boolean'
+      ? { ghPrivate: row.gh_private }
       : {}),
     ...(row.owner_type === 'team' || row.owner_type === 'personal'
       ? { ownerType: row.owner_type }
