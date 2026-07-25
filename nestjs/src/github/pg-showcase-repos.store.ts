@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../database/database.module';
 import type { ShowcaseRepoProvider } from './github-refresh.service';
 import type { ReadmeSnapshotState } from './missing-readme-backfill';
+import type { CompletenessRow } from './project-completeness';
 
 /** Lookup a published project slug from its GitHub identity (#143). */
 export interface ProjectGithubSlugLookup {
@@ -10,6 +11,24 @@ export interface ProjectGithubSlugLookup {
     owner: string,
     repo: string,
   ): Promise<string | null>;
+}
+
+/** Ports for the #222 completeness report. */
+export interface ProjectCompletenessStore {
+  listPublishedGithubForCompleteness(): Promise<CompletenessRow[]>;
+  listReadmeSnapshotStates(): Promise<ReadmeSnapshotState[]>;
+}
+
+function asOwner(v: unknown): 'auto' | 'human' {
+  return v === 'human' ? 'human' : 'auto';
+}
+
+/**
+ * A projected `left(btrim(...), 1)`: `''` means the field is empty, one character means it is not.
+ * Mapped back to `null`/that character so the completeness predicate keeps one emptiness rule.
+ */
+function headOrNull(v: unknown): string | null {
+  return typeof v === 'string' && v !== '' ? v : null;
 }
 
 /** A `checkedAt` that is absent or unparseable yields null, which the TTL treats as expired. */
@@ -41,7 +60,11 @@ export interface MissingReadmeStore {
  */
 @Injectable()
 export class PgShowcaseRepoStore
-  implements ShowcaseRepoProvider, ProjectGithubSlugLookup, MissingReadmeStore
+  implements
+    ShowcaseRepoProvider,
+    ProjectGithubSlugLookup,
+    MissingReadmeStore,
+    ProjectCompletenessStore
 {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
@@ -92,6 +115,55 @@ export class PgShowcaseRepoStore
         slug: String(r.slug),
         owner: String(r.gh_owner),
         repo: String(r.gh_repo),
+      }));
+  }
+
+  /**
+   * Every published github row with the fields the completeness invariant reads (#222). The
+   * `*_owner` columns are selected on purpose: a blank field a human owns is an editorial decision,
+   * and without the owner the report cannot tell that from a generator that never ran.
+   */
+  async listPublishedGithubForCompleteness(): Promise<CompletenessRow[]> {
+    const rows = (await this.db.execute(
+      sql`select slug, gh_owner, gh_repo, status, source,
+                 category_id, category_owner,
+                 left(btrim(coalesce(content, '')), 1) as content_head,
+                 content_owner,
+                 left(btrim(coalesce(overview_summary, '')), 1) as overview_head,
+                 overview_owner
+          from projects
+          where source = 'github'
+            and status = 'published'
+            and published_at is not null
+            and gh_owner is not null
+            and gh_repo is not null
+          order by is_featured desc, published_at desc, id`,
+    )) as Array<Record<string, unknown>>;
+    return rows
+      .filter(
+        (r) =>
+          typeof r.slug === 'string' &&
+          typeof r.gh_owner === 'string' &&
+          typeof r.gh_repo === 'string',
+      )
+      .map((r) => ({
+        slug: String(r.slug),
+        ghOwner: String(r.gh_owner),
+        ghRepo: String(r.gh_repo),
+        // The query already constrains both, so this is a narrowing for the type, not a fallback.
+        status: 'published' as const,
+        source: 'github' as const,
+        categoryId: r.category_id == null ? null : Number(r.category_id),
+        categoryOwner: asOwner(r.category_owner),
+        // Only emptiness matters here, so the query returns the first character of the trimmed
+        // value and this maps "" back to null. Selecting `content` itself would drag every
+        // project's full case-study markdown across the pooler on every hourly run — the same
+        // reason `listReadmeSnapshotStates` projects instead of selecting `data`. `btrim` in SQL
+        // keeps the rule identical to the planner's `content.trim() === ''`.
+        content: headOrNull(r.content_head),
+        contentOwner: asOwner(r.content_owner),
+        overviewSummary: headOrNull(r.overview_head),
+        overviewOwner: asOwner(r.overview_owner),
       }));
   }
 
