@@ -4,6 +4,8 @@ import { DRIZZLE, type DrizzleDB } from '../database/database.module';
 import type { ShowcaseRepoProvider } from './github-refresh.service';
 import type { ReadmeSnapshotState } from './missing-readme-backfill';
 import type { CompletenessRow } from './project-completeness';
+import type { ProjectSyncHealth } from './sync-health';
+import { isMissingColumnError } from './missing-column';
 
 /** Lookup a published project slug from its GitHub identity (#143). */
 export interface ProjectGithubSlugLookup {
@@ -164,6 +166,45 @@ export class PgShowcaseRepoStore
         contentOwner: asOwner(r.content_owner),
         overviewSummary: headOrNull(r.overview_head),
         overviewOwner: asOwner(r.overview_owner),
+      }));
+  }
+
+  /**
+   * The sync-health rows `isSyncUnhealthy` reads (#193), or **null when the columns do not exist**.
+   *
+   * That distinction is the whole point: `0034` is parked behind the production-write gate, so this
+   * ships before its columns. Reading a missing column as "no data" would report all 47 projects as
+   * `never` on every run — the loudest possible alert at the moment it knows the least. A caller must
+   * treat null as *not assessable*. Any other failure rethrows, because swallowing a pooler outage
+   * would produce an empty unhealthy list, which reads as an all-clear.
+   */
+  async listProjectSyncHealth(): Promise<ProjectSyncHealth[] | null> {
+    let rows: Array<Record<string, unknown>>;
+    try {
+      rows = (await this.db.execute(
+        sql`select slug, last_synced_at, last_sync_error
+            from projects
+            where source = 'github'
+              and status = 'published'
+              and published_at is not null
+            order by is_featured desc, published_at desc, id`,
+      )) as Array<Record<string, unknown>>;
+    } catch (err) {
+      if (isMissingColumnError(err)) return null;
+      throw err;
+    }
+    return rows
+      .filter((r) => typeof r.slug === 'string')
+      .map((r) => ({
+        slug: String(r.slug),
+        lastSyncedAt:
+          r.last_synced_at instanceof Date
+            ? r.last_synced_at
+            : typeof r.last_synced_at === 'string'
+              ? new Date(r.last_synced_at)
+              : null,
+        lastSyncError:
+          typeof r.last_sync_error === 'string' ? r.last_sync_error : null,
       }));
   }
 

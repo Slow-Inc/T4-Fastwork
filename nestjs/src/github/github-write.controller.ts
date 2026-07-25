@@ -42,6 +42,12 @@ import {
   resolveReadmeMissing,
   type IncompleteProject,
 } from './project-completeness';
+import {
+  revisitIntervalMs,
+  unhealthyProjects,
+  type UnhealthyProject,
+} from './sync-health';
+import { SHOWCASE_REPO_DETAIL_BUDGET } from './github-refresh.service';
 
 @Controller('github')
 export class GithubWriteController {
@@ -124,6 +130,71 @@ export class GithubWriteController {
       repo: parsed.repo,
       projectSlug,
       ...outcome.result,
+    };
+  }
+
+  /**
+   * Report a project whose sync is failing or has stopped happening (#193 AC3).
+   *
+   * The notify path is the logs: #193 names `scripts/notify.ps1`, which does not exist in this repo,
+   * so "the existing notify path" can only mean what the repo actually does — a `logger.warn` the
+   * cron run surfaces, the same shape #214 / #216 / #222 use. A Slack or email channel would be new
+   * infrastructure this issue never asked for.
+   */
+  @Post('report-sync-health')
+  async doReportSyncHealth(
+    @Headers('x-refresh-secret') secret: string | undefined,
+    now: Date = new Date(),
+  ): Promise<{
+    assessable: boolean;
+    /** Present only when `assessable` is false. */
+    reason?: string;
+    scanned: number;
+    revisitHours: number;
+    unhealthy: UnhealthyProject[];
+  }> {
+    const expected = process.env.GITHUB_REFRESH_SECRET;
+    if (!expected || !constantTimeEqual(secret, expected)) {
+      throw new UnauthorizedException();
+    }
+
+    const rows = await this.projects.listProjectSyncHealth();
+    if (rows === null) {
+      // NOT "everything is stuck": the columns ship in migration 0034, which is deliberately
+      // unapplied. Reporting 47 stuck projects here would be the loudest possible alert at the
+      // moment it knows the least — the cry-wolf failure this issue exists to avoid.
+      this.logger.log(
+        'sync health not assessable — migration 0034 (last_synced_at / last_sync_error) is not applied',
+      );
+      return {
+        assessable: false,
+        reason: 'migration 0034 is not applied yet',
+        scanned: 0,
+        revisitHours: 0,
+        unhealthy: [],
+      };
+    }
+
+    // Derived, not guessed: the detail rotation reaches SHOWCASE_REPO_DETAIL_BUDGET repos per hourly
+    // run, so a single project waits ceil(count / budget) runs between visits.
+    const interval = revisitIntervalMs(
+      rows.length,
+      SHOWCASE_REPO_DETAIL_BUDGET,
+      3_600_000,
+    );
+    const unhealthy = unhealthyProjects(rows, interval, now);
+    if (unhealthy.length) {
+      this.logger.warn(
+        `unhealthy showcase sync (${unhealthy.length}): ${unhealthy
+          .map((u) => `${u.slug}[${u.reason}: ${u.detail}]`)
+          .join(', ')}`,
+      );
+    }
+    return {
+      assessable: true,
+      scanned: rows.length,
+      revisitHours: Math.round(interval / 3_600_000),
+      unhealthy,
     };
   }
 

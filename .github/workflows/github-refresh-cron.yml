@@ -190,3 +190,27 @@ jobs:
             2*) [ "$actionable" -gt 0 ] && echo "::warning::$actionable published project(s) still incomplete — see the body above" || echo "every published project is enriched" ;;
             *) echo "::warning::incomplete report failed HTTP $code (non-blocking)" ;;
           esac
+
+      # #193 AC3 — the alert. The notify path is the logs: #193 names `scripts/notify.ps1`, which
+      # does not exist in this repo, so "the existing notify path" is a warn the cron run surfaces.
+      # Reports NOT ASSESSABLE (not "47 stuck") while migration 0034 is unapplied.
+      - name: Report failing or stuck showcase syncs
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          [ -z "$REFRESH_SECRET" ] && { echo "secret unset — skip"; exit 0; }
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" "$BACKEND_URL/github/report-sync-health")
+          echo "POST $BACKEND_URL/github/report-sync-health -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
+          # "slug" appears only inside the unhealthy entries, so counting it needs no JSON parser —
+          # and `grep -o | wc -l` counts OCCURRENCES, where `grep -c` would count matching LINES and
+          # report 1 for any number of unhealthy projects on a single-line body.
+          bad=$(grep -o '"slug"' /tmp/body | wc -l | tr -d ' ')
+          [ -z "$bad" ] && bad=0
+          case "$code" in
+            2*) if grep -q '"assessable":false' /tmp/body; then echo "sync health not assessable yet (migration 0034 unapplied)";
+                elif [ "$bad" -gt 0 ]; then echo "::warning::$bad showcase project(s) failing or stuck — see the body above";
+                else echo "every showcase sync is healthy"; fi ;;
+            *) echo "::warning::sync-health report failed HTTP $code (non-blocking)" ;;
+          esac
