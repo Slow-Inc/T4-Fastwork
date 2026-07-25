@@ -99,8 +99,10 @@ certificates + articles as drafts → admin approve), and lead-gen flows. See th
   part of the flow.** When you genuinely must park one (a production DB write, a token, a dashboard
   action), file it as an issue that states the path to automating it away, and say so in the
   handoff. Handing a human a recurring chore without that issue is an incomplete deliverable.
-- This does **not** loosen the safety gates below. Destructive or authorization-changing actions
-  stay human-approved on purpose; the target is to make the *routine additive* work automatic.
+- This does **not** loosen anything in **Operating defaults (mandatory)** above — the delivery
+  pipeline, the pre-merge review gate, and especially the 🛑 production-DB-write stop. Destructive
+  or authorization-changing actions stay human-approved on purpose; the target is to make the
+  *routine additive* work automatic.
 
 Target stack per the spec (§7) — **now implemented**:
 
