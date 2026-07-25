@@ -46,6 +46,12 @@ function makeController(
   );
 }
 
+/**
+ * A marker checked a minute ago. Relative on purpose: an absolute date silently expires once the
+ * real clock passes the 6 h TTL, so a test written at 15:56 turns red at 21:56 with no code change.
+ */
+const freshlyChecked = () => new Date(Date.now() - 60_000);
+
 describe('POST /github/report-incomplete (#222)', () => {
   const prev = process.env.GITHUB_REFRESH_SECRET;
   beforeEach(() => {
@@ -88,7 +94,7 @@ describe('POST /github/report-incomplete (#222)', () => {
         {
           key: 'repo:Slow-Inc/Demo:readme',
           missing: true,
-          checkedAt: new Date('2026-07-25T15:56:56Z'),
+          checkedAt: freshlyChecked(),
         },
       ],
     );
@@ -119,7 +125,7 @@ describe('POST /github/report-incomplete (#222)', () => {
         {
           key: 'repo:Slow-Inc/NoReadme:readme',
           missing: true,
-          checkedAt: new Date('2026-07-25T15:56:56Z'),
+          checkedAt: freshlyChecked(),
         },
       ],
     ).doReportIncomplete('topsecret');

@@ -41,6 +41,28 @@ export interface UnhealthyProject {
 }
 
 /**
+ * How often the rotation is expected to come back to ONE project, derived rather than guessed
+ * (#193). `refreshAll` reaches `budget` repos per cron run, so with more repos than budget a given
+ * project waits several runs — passing the cron period instead is the mistake `isSyncUnhealthy`'s
+ * parameter doc warns about, and it would report almost every healthy project as stuck.
+ *
+ * Floors at one cron period on purpose: an empty or unreadable repo list must not collapse the
+ * threshold to zero, which would mark every project instantly stale on the one run where the query
+ * failed — the alert would be loudest exactly when it knows least.
+ */
+export function revisitIntervalMs(
+  repoCount: number,
+  budget: number,
+  cronPeriodMs: number,
+): number {
+  if (!Number.isFinite(repoCount) || !Number.isFinite(budget) || budget < 1) {
+    return cronPeriodMs;
+  }
+  const runs = Math.max(1, Math.ceil(repoCount / budget));
+  return runs * cronPeriodMs;
+}
+
+/**
  * How many expected revisits a project may miss before it counts as stuck.
  *
  * Three, because GitHub Actions schedules drift by tens of minutes — one or two missed revisits is
