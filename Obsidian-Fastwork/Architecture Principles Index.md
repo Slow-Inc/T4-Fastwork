@@ -12,6 +12,7 @@ source: Engineering knowledge migration from MangaDock
 - [[Feature Boundaries and Stable Seams]]
 - [[Safe Core Refactoring]]
 - [[Anti-Corruption Layers at External Boundaries]]
+- [[External Event Identity Must Be Exact]]
 - [[Cache Keys Encode Behavior]]
 - [[Externalize State from Ephemeral Compute]]
 - [[Remove Speculative Architecture]]
