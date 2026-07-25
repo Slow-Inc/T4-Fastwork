@@ -166,3 +166,27 @@ jobs:
             -H "x-refresh-secret: $REFRESH_SECRET" "$BACKEND_URL/rank/refresh")
           echo "POST $BACKEND_URL/rank/refresh -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
           case "$code" in 2*) : ;; *) echo "::warning::rank refresh failed HTTP $code (non-blocking)" ;; esac
+
+      # #222 — LAST, after every generator has had its turn this run: report any published
+      # project still serving an empty shell. Read-only; it exists so a visitor is never the
+      # detector (#211 was found that way). Ordered last on purpose — running it before the
+      # generators would report rows this same run was about to fill. The endpoint logs the
+      # actionable slugs, so the run output IS the notification; a `no-readme` row is reported
+      # but not counted as actionable, because nothing here can fill it.
+      - name: Report incomplete published projects
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          [ -z "$REFRESH_SECRET" ] && { echo "secret unset — skip"; exit 0; }
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" "$BACKEND_URL/github/report-incomplete")
+          echo "POST $BACKEND_URL/github/report-incomplete -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
+          # sed, not python/jq: neither is guaranteed on the runner, and an empty capture must
+          # read as 0 or a parse miss would warn on every healthy run.
+          actionable=$(sed -n 's/.*"actionable":[[:space:]]*\([0-9]\{1,\}\).*/\1/p' /tmp/body | head -1)
+          [ -z "$actionable" ] && actionable=0
+          case "$code" in
+            2*) [ "$actionable" -gt 0 ] && echo "::warning::$actionable published project(s) still incomplete — see the body above" || echo "every published project is enriched" ;;
+            *) echo "::warning::incomplete report failed HTTP $code (non-blocking)" ;;
+          esac

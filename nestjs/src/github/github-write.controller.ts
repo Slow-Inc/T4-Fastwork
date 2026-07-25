@@ -14,6 +14,7 @@ import {
   Body,
   Controller,
   Headers,
+  Logger,
   Post,
   Query,
   Req,
@@ -36,9 +37,16 @@ import {
   authoritativeReadmeKeys,
   selectReposMissingReadme,
 } from './missing-readme-backfill';
+import {
+  incompleteProjects,
+  resolveReadmeMissing,
+  type IncompleteProject,
+} from './project-completeness';
 
 @Controller('github')
 export class GithubWriteController {
+  private readonly logger = new Logger(GithubWriteController.name);
+
   constructor(
     private readonly refresh: GithubRefreshService,
     private readonly webhook: GithubWebhookService,
@@ -117,6 +125,53 @@ export class GithubWriteController {
       projectSlug,
       ...outcome.result,
     };
+  }
+
+  /**
+   * Report every published github row whose auto-filled fields are still empty (#222).
+   *
+   * Read-only on purpose — it changes nothing, it just makes the empty page findable. #211 was
+   * found because a visitor happened to open one, and the sync-health predicates (#193) cannot
+   * catch that class: a webhook defers the LLM actions every run, deferral is not a failure, so the
+   * row records a clean run while serving a shell. This reads the row instead.
+   *
+   * The result is logged as well as returned, so the cron run itself is the notification and nobody
+   * has to call this by hand.
+   */
+  @Post('report-incomplete')
+  async doReportIncomplete(
+    @Headers('x-refresh-secret') secret: string | undefined,
+  ): Promise<{
+    scanned: number;
+    /** Of `incomplete`: rows something in this codebase can actually fill. */
+    actionable: number;
+    incomplete: IncompleteProject[];
+  }> {
+    const expected = process.env.GITHUB_REFRESH_SECRET;
+    if (!expected || !constantTimeEqual(secret, expected)) {
+      throw new UnauthorizedException();
+    }
+
+    const [rows, states] = await Promise.all([
+      this.projects.listPublishedGithubForCompleteness(),
+      this.projects.listReadmeSnapshotStates(),
+    ]);
+    const incomplete = incompleteProjects(resolveReadmeMissing(rows, states));
+    // `no-readme` rows are excluded from the count an operator should act on: the generators cannot
+    // fill them at all, and #215's marker already re-checks whether the README appeared.
+    const actionable = incomplete.filter(
+      (i) => i.reason === 'never-reached',
+    ).length;
+
+    if (actionable > 0) {
+      this.logger.warn(
+        `incomplete published projects (${actionable} actionable): ${incomplete
+          .filter((i) => i.reason === 'never-reached')
+          .map((i) => `${i.slug}[${i.missing.join(',')}]`)
+          .join(', ')}`,
+      );
+    }
+    return { scanned: rows.length, actionable, incomplete };
   }
 
   /**

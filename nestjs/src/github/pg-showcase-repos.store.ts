@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../database/database.module';
 import type { ShowcaseRepoProvider } from './github-refresh.service';
 import type { ReadmeSnapshotState } from './missing-readme-backfill';
+import type { CompletenessRow } from './project-completeness';
 
 /** Lookup a published project slug from its GitHub identity (#143). */
 export interface ProjectGithubSlugLookup {
@@ -10,6 +11,16 @@ export interface ProjectGithubSlugLookup {
     owner: string,
     repo: string,
   ): Promise<string | null>;
+}
+
+/** Ports for the #222 completeness report. */
+export interface ProjectCompletenessStore {
+  listPublishedGithubForCompleteness(): Promise<CompletenessRow[]>;
+  listReadmeSnapshotStates(): Promise<ReadmeSnapshotState[]>;
+}
+
+function asOwner(v: unknown): 'auto' | 'human' {
+  return v === 'human' ? 'human' : 'auto';
 }
 
 /** A `checkedAt` that is absent or unparseable yields null, which the TTL treats as expired. */
@@ -41,7 +52,11 @@ export interface MissingReadmeStore {
  */
 @Injectable()
 export class PgShowcaseRepoStore
-  implements ShowcaseRepoProvider, ProjectGithubSlugLookup, MissingReadmeStore
+  implements
+    ShowcaseRepoProvider,
+    ProjectGithubSlugLookup,
+    MissingReadmeStore,
+    ProjectCompletenessStore
 {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
@@ -92,6 +107,49 @@ export class PgShowcaseRepoStore
         slug: String(r.slug),
         owner: String(r.gh_owner),
         repo: String(r.gh_repo),
+      }));
+  }
+
+  /**
+   * Every published github row with the fields the completeness invariant reads (#222). The
+   * `*_owner` columns are selected on purpose: a blank field a human owns is an editorial decision,
+   * and without the owner the report cannot tell that from a generator that never ran.
+   */
+  async listPublishedGithubForCompleteness(): Promise<CompletenessRow[]> {
+    const rows = (await this.db.execute(
+      sql`select slug, gh_owner, gh_repo, status, source,
+                 category_id, category_owner,
+                 content, content_owner,
+                 overview_summary, overview_owner
+          from projects
+          where source = 'github'
+            and status = 'published'
+            and published_at is not null
+            and gh_owner is not null
+            and gh_repo is not null
+          order by is_featured desc, published_at desc, id`,
+    )) as Array<Record<string, unknown>>;
+    return rows
+      .filter(
+        (r) =>
+          typeof r.slug === 'string' &&
+          typeof r.gh_owner === 'string' &&
+          typeof r.gh_repo === 'string',
+      )
+      .map((r) => ({
+        slug: String(r.slug),
+        ghOwner: String(r.gh_owner),
+        ghRepo: String(r.gh_repo),
+        // The query already constrains both, so this is a narrowing for the type, not a fallback.
+        status: 'published' as const,
+        source: 'github' as const,
+        categoryId: r.category_id == null ? null : Number(r.category_id),
+        categoryOwner: asOwner(r.category_owner),
+        content: typeof r.content === 'string' ? r.content : null,
+        contentOwner: asOwner(r.content_owner),
+        overviewSummary:
+          typeof r.overview_summary === 'string' ? r.overview_summary : null,
+        overviewOwner: asOwner(r.overview_owner),
       }));
   }
 
