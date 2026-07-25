@@ -6,6 +6,7 @@ import {
   Controller,
   Headers,
   Inject,
+  Logger,
   Post,
   Req,
   Res,
@@ -43,7 +44,9 @@ export function parseVercelDeployEvent(rawBody: string): {
   deploymentId: string;
   target: 'production' | 'preview' | 'other';
   url: string | null;
-  name: string | null;
+  /** From `deployment.meta` — the only exact project identifier in the payload (#204). */
+  githubOwner: string | null;
+  githubRepo: string | null;
 } | null {
   try {
     const payload = JSON.parse(rawBody) as {
@@ -53,6 +56,10 @@ export function parseVercelDeployEvent(rawBody: string): {
           id?: string;
           url?: string;
           name?: string;
+          meta?: {
+            githubCommitOrg?: string;
+            githubCommitRepo?: string;
+          };
         };
         target?: string;
       };
@@ -67,28 +74,27 @@ export function parseVercelDeployEvent(rawBody: string): {
         : rawTarget === 'preview'
           ? 'preview'
           : 'other';
+    const meta = payload.payload?.deployment?.meta;
+    const str = (v: unknown): string | null =>
+      typeof v === 'string' && v.trim() !== '' ? v : null;
     return {
       deploymentId,
       target,
-      url:
-        typeof payload.payload?.deployment?.url === 'string'
-          ? payload.payload.deployment.url
-          : null,
-      name:
-        typeof payload.payload?.deployment?.name === 'string'
-          ? payload.payload.deployment.name
-          : null,
+      url: str(payload.payload?.deployment?.url),
+      githubOwner: str(meta?.githubCommitOrg),
+      githubRepo: str(meta?.githubCommitRepo),
     };
   } catch {
     return null;
   }
 }
 
-/** Map a Vercel deployment URL/name to a showcase github owner/repo. */
+/** Map a Vercel deployment to a showcase github owner/repo — git metadata first, host second. */
 export interface VercelProjectMapper {
   resolve(deployment: {
     url: string | null;
-    name: string | null;
+    githubOwner: string | null;
+    githubRepo: string | null;
   }): Promise<{ owner: string; repo: string } | null>;
 }
 
@@ -96,6 +102,8 @@ export const VERCEL_PROJECT_MAPPER = Symbol('VERCEL_PROJECT_MAPPER');
 
 @Controller('vercel')
 export class VercelWebhookController {
+  private readonly logger = new Logger(VercelWebhookController.name);
+
   constructor(
     private readonly store: DrizzleSnapshotStore,
     @Inject(PIPELINE_STATE_LOADER)
@@ -142,9 +150,16 @@ export class VercelWebhookController {
 
     const mapped = await this.mapper.resolve({
       url: parsed.url,
-      name: parsed.name,
+      githubOwner: parsed.githubOwner,
+      githubRepo: parsed.githubRepo,
     });
     if (!mapped) {
+      // Warn, not silence: an unresolvable deploy used to look identical to a healthy no-op,
+      // which is how host-only matching hid the fact that it never matched anything (#204).
+      this.logger.warn(
+        `deployment ${parsed.deploymentId} not mapped to a showcase repo ` +
+          `(url=${parsed.url ?? 'none'}, repo=${parsed.githubOwner ?? '?'}/${parsed.githubRepo ?? '?'})`,
+      );
       res.status(200).json({ action: 'ignored-unmapped' });
       return;
     }

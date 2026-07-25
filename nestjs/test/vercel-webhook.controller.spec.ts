@@ -63,7 +63,36 @@ describe('verifyVercelSignature / parseVercelDeployEvent', () => {
       deploymentId: 'dpl_1',
       target: 'production',
       url: 'demo.example',
-      name: 'demo',
+      githubOwner: null,
+      githubRepo: null,
+    });
+  });
+
+  // Host equality alone can never match a real deployment URL against a custom-domain
+  // live_url — the git metadata is the only exact identifier in the payload (#204).
+  it('parses the git metadata Vercel attaches to a deployment', () => {
+    const raw = JSON.stringify({
+      type: 'deployment.succeeded',
+      payload: {
+        target: 'production',
+        deployment: {
+          id: 'dpl_2',
+          url: 'demo-git-master-slow-inc-abc123.vercel.app',
+          name: 'demo',
+          meta: {
+            githubCommitOrg: 'Slow-Inc',
+            githubCommitRepo: 'Demo',
+            githubCommitSha: 'abc123',
+          },
+        },
+      },
+    });
+    expect(parseVercelDeployEvent(raw)).toEqual({
+      deploymentId: 'dpl_2',
+      target: 'production',
+      url: 'demo-git-master-slow-inc-abc123.vercel.app',
+      githubOwner: 'Slow-Inc',
+      githubRepo: 'Demo',
     });
   });
 });
@@ -218,9 +247,9 @@ describe('VercelWebhookController (#191)', () => {
     };
     const c = new VercelWebhookController(
       store as never,
-      { loadByGithub: async () => state() } as never,
+      { loadByGithub: async () => state() },
       {} as never,
-      { resolve: async () => ({ owner: 'Slow-Inc', repo: 'Demo' }) } as never,
+      { resolve: async () => ({ owner: 'Slow-Inc', repo: 'Demo' }) },
     );
     return { c, seen };
   }
