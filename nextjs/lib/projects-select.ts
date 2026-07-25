@@ -6,6 +6,11 @@
 const PROJECT_COLS =
   'slug,title,title_en,description,content,live_url,snapshot_image,is_featured,published_at,' +
   'ai_rank,' +
+  'gh_owner,gh_repo,gh_private,owner_type,owner_login,';
+
+const PROJECT_COLS_NO_VIS =
+  'slug,title,title_en,description,content,live_url,snapshot_image,is_featured,published_at,' +
+  'ai_rank,' +
   'gh_owner,gh_repo,owner_type,owner_login,';
 
 const OVERVIEW_COLS =
@@ -22,8 +27,8 @@ const JOINS_WITH_USED_FOR =
   'project_technologies(technologies(name,used_for,used_for_en)),' +
   'project_tags(tags(name))';
 
-/** Pre-migration: no overview, no used_for. */
-export const SELECT_CORE = PROJECT_COLS + JOINS_CORE;
+/** Pre-migration: no overview, no used_for, no gh_private. */
+export const SELECT_CORE = PROJECT_COLS_NO_VIS + JOINS_CORE;
 
 /** D3 overview columns; tech names only. */
 export const SELECT_WITH_OVERVIEW =
@@ -39,15 +44,23 @@ export const SELECT_OVERVIEW_NO_USED_FOR = SELECT_WITH_OVERVIEW;
 /** used_for without overview (0029 missing, 0030 present — uncommon). */
 export const SELECT_USED_FOR_NO_OVERVIEW = PROJECT_COLS + JOINS_WITH_USED_FOR;
 
+/** Rich selects without gh_private (pre-#194). */
+export const SELECT_FULL_NO_VIS =
+  PROJECT_COLS_NO_VIS + OVERVIEW_COLS + JOINS_WITH_USED_FOR;
+export const SELECT_WITH_OVERVIEW_NO_VIS =
+  PROJECT_COLS_NO_VIS + OVERVIEW_COLS + JOINS_CORE;
+
 /** Ordered attempts: richest → poorest. Retry on unknown-column errors. */
 export const PROJECT_SELECT_ATTEMPTS = [
   SELECT_FULL,
   SELECT_WITH_OVERVIEW,
   SELECT_USED_FOR_NO_OVERVIEW,
+  SELECT_FULL_NO_VIS,
+  SELECT_WITH_OVERVIEW_NO_VIS,
   SELECT_CORE,
 ] as const;
 
-/** True when PostgREST does not know D3/D4 columns yet (pre-migration). */
+/** True when PostgREST does not know D3/D4/visibility columns yet. */
 export function isMissingProjectColumnError(error: {
   code?: string;
   message?: string;
@@ -55,7 +68,11 @@ export function isMissingProjectColumnError(error: {
   if (!error) return false;
   if (error.code === 'PGRST204' || error.code === '42703') return true;
   const msg = error.message ?? '';
-  return /overview_/i.test(msg) || /used_for/i.test(msg);
+  return (
+    /overview_/i.test(msg) ||
+    /used_for/i.test(msg) ||
+    /gh_private/i.test(msg)
+  );
 }
 
 /** @deprecated use isMissingProjectColumnError */

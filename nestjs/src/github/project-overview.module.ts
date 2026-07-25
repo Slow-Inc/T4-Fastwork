@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { LlmModule } from '../llm/llm.module';
 import { RevalidateModule } from '../revalidate/revalidate.module';
@@ -14,7 +14,12 @@ import {
 } from './project-overview.controller';
 
 @Module({
-  imports: [DatabaseModule, LlmModule, RevalidateModule, GithubModule],
+  imports: [
+    DatabaseModule,
+    LlmModule,
+    RevalidateModule,
+    forwardRef(() => GithubModule),
+  ],
   controllers: [ProjectOverviewController],
   providers: [
     PgOverviewStore,
@@ -22,5 +27,6 @@ import {
     { provide: OVERVIEW_README, useExisting: GithubReadService },
     { provide: OVERVIEW_LLM, useExisting: LlmService },
   ],
+  exports: [OVERVIEW_STORE, OVERVIEW_README, OVERVIEW_LLM, PgOverviewStore],
 })
 export class ProjectOverviewModule {}

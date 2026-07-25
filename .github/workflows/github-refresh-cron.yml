@@ -16,8 +16,10 @@
 name: github-refresh-cron
 
 on:
+  # Hourly. Stays hourly until the push/deploy webhook path (#192) is observed working in
+  # production — relaxing the cadence is a follow-up, not part of shipping the event path (#196).
   schedule:
-    - cron: '0 * * * *' # hourly safety-net; heal-on-read + webhook cover active traffic
+    - cron: '0 * * * *'
   workflow_dispatch: {} # manual "refresh now"
 
 concurrency:
@@ -138,6 +140,21 @@ jobs:
             -d '{"apply":true}' "$BACKEND_URL/github/generate-taxonomy")
           echo "POST $BACKEND_URL/github/generate-taxonomy -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
           case "$code" in 2*) : ;; *) echo "::warning::taxonomy gen failed HTTP $code (non-blocking)" ;; esac
+
+      # #199 — the endpoint existed but was never wired here. Now that the push/deploy webhooks
+      # DEFER the three LLM actions, this cron is what drains overviews; without this step a
+      # deferred overview would never be generated at all. Cap default 1 (LLM). Fail-soft.
+      - name: Generate overviews for projects missing one
+        env:
+          REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+        run: |
+          [ -z "$REFRESH_SECRET" ] && { echo "secret unset — skip"; exit 0; }
+          code=$(curl -sS -o /tmp/body -w '%{http_code}' -X POST \
+            -H "x-refresh-secret: $REFRESH_SECRET" -H "Content-Type: application/json" \
+            -d '{"apply":true}' "$BACKEND_URL/github/generate-overviews")
+          echo "POST $BACKEND_URL/github/generate-overviews -> HTTP $code"; cat /tmp/body 2>/dev/null || true; echo
+          case "$code" in 2*) : ;; *) echo "::warning::overview gen failed HTTP $code (non-blocking)" ;; esac
 
       - name: Refresh AI display-rank
         env:

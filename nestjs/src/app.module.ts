@@ -15,6 +15,7 @@ import { GithubCurateModule } from './github/github-curate.module';
 import { GithubMemberSyncModule } from './github/github-member-sync.module';
 import { CaseStudyModule } from './github/github-case-study.module';
 import { RankModule } from './rank/rank.module';
+import { PipelineSyncModule } from './github/pipeline-sync.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { RankModule } from './rank/rank.module';
     GithubMemberSyncModule,
     CaseStudyModule,
     RankModule,
+    PipelineSyncModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

@@ -1,10 +1,8 @@
-# Screenshot worker for the project showcase (spec 2026-07-14, P4 / #161).
+# Screenshot worker for the project showcase (spec 2026-07-14, P4 / #161 / #190).
 # Playwright can't run inside the Vercel serverless request path, so cover-image
-# capture runs here: on a schedule (and on demand) it screenshots each published
-# project's live_url that has no snapshot_image yet, uploads to Supabase Storage,
-# and writes the URL back to the projects row. On capture failure, the script
-# falls back to the page's og:image / twitter:image URL (interim cover).
-
+# capture runs here: on a schedule (and on demand) it screenshots published
+# projects' live_url that need a cover, uploads to Supabase Storage, and writes
+# the URL back. On capture failure, falls back to og:image / twitter:image.
 #
 # Gated: needs repo Actions secrets SUPABASE_URL + SUPABASE_SECRET_KEY
 # (SUPABASE_SECRET_KEY = a Supabase secret key, new `sb_secret_...` or a legacy service_role).
@@ -13,8 +11,22 @@ name: screenshot-projects
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # every 6h, aligned with the refresh cadence
-  workflow_dispatch: {} # manual "capture now" (e.g. after approving a project)
+    - cron: '0 */6 * * *' # every 6h, gap-fill for missing covers
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Single project slug to capture (optional)'
+        required: false
+        type: string
+      force:
+        description: 'Force recapture even if snapshot_image exists'
+        required: false
+        type: boolean
+        default: false
+      trigger:
+        description: 'Capture trigger token (deploy:… / push:…); recapture when different'
+        required: false
+        type: string
 
 concurrency:
   group: screenshot-projects
@@ -39,7 +51,7 @@ jobs:
       - name: Install Chromium
         run: bunx playwright install --with-deps chromium
 
-      - name: Capture missing project screenshots
+      - name: Capture project screenshots
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
@@ -47,4 +59,7 @@ jobs:
           # BACKEND_REFRESH_SECRET must equal the app's runtime GITHUB_REFRESH_SECRET.
           SITE_URL: ${{ vars.SITE_URL || 'https://t4labs.dev' }}
           BACKEND_REFRESH_SECRET: ${{ secrets.BACKEND_REFRESH_SECRET }}
+          SNAPSHOT_SLUG: ${{ inputs.slug }}
+          SNAPSHOT_FORCE: ${{ inputs.force }}
+          SNAPSHOT_TRIGGER: ${{ inputs.trigger }}
         run: bun run scripts/screenshot-projects.ts

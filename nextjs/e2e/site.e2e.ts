@@ -1295,3 +1295,80 @@ test("admin Slow-Inc org import requires auth — redirects to login when signed
   await expect(page).toHaveURL(/\/admin\/login$/);
   expect(errors).toEqual([]);
 });
+
+/**
+ * GitHub visibility badge (#194 / #202).
+ *
+ * The badge only renders when the row exposes a boolean `gh_private`, which exists once
+ * migration 0033 is applied. Set E2E_EXPECT_GH_BADGE=1 after it lands to make its presence
+ * mandatory; until then this asserts the invariants that a rendered badge must satisfy plus
+ * the layout/hydration contract, so a regression cannot slip in either state.
+ */
+const EXPECT_GH_BADGE = process.env.E2E_EXPECT_GH_BADGE === "1";
+
+for (const path of ["/projects", "/projects/mangadock"]) {
+  test(`gh visibility badge renders sanely on ${path} (#202)`, async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    page.on("pageerror", (e) => errors.push(String(e)));
+
+    await page.goto(path, { waitUntil: "networkidle" });
+    await expect(page.locator("h1").first()).toBeVisible();
+
+    const badges = page.locator('[data-testid="gh-visibility-badge"]');
+    const count = await badges.count();
+
+    if (EXPECT_GH_BADGE) {
+      expect(count).toBeGreaterThan(0);
+    }
+
+    // The site navbar is a bare fixed <nav>, not wrapped in a <header>.
+    const navBox = count > 0 ? await page.locator("nav").first().boundingBox() : null;
+    for (let i = 0; i < count; i++) {
+      const badge = badges.nth(i);
+      await expect(badge).toBeVisible();
+      // Exactly one of the two states, in whichever locale is active.
+      await expect(badge).toHaveText(
+        /^(Public|Private|สาธารณะ|ไม่สาธารณะ)$/,
+      );
+      const box = await badge.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeGreaterThan(0);
+      expect(box!.height).toBeGreaterThan(0);
+      // Must not be shoved under the fixed navbar (the "navbar ทับกัน" class of bug).
+      if (navBox) {
+        expect(box!.y).toBeGreaterThanOrEqual(navBox.y + navBox.height - 1);
+      }
+    }
+
+    expect(errors).toEqual([]);
+  });
+}
+
+test("gh visibility badge follows the language switch (#202)", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.goto("/projects", { waitUntil: "networkidle" });
+  const badge = page.locator('[data-testid="gh-visibility-badge"]').first();
+  const present = (await badge.count()) > 0;
+
+  if (EXPECT_GH_BADGE) {
+    expect(present).toBe(true);
+  }
+
+  if (present) {
+    await expect(badge).toHaveText(/^(สาธารณะ|ไม่สาธารณะ)$/);
+    const nav = page.locator("nav").first();
+    await nav.getByRole("button", { name: /Switch language/i }).click();
+    await expect(nav.getByRole("link", { name: "Work" })).toBeVisible();
+    await expect(badge).toHaveText(/^(Public|Private)$/);
+  }
+
+  expect(errors).toEqual([]);
+});

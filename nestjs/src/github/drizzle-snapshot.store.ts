@@ -27,6 +27,17 @@ export class DrizzleSnapshotStore
    * marker row (reusing `github_snapshots` with a `delivery:<id>` key). If the
    * insert is a no-op (row already there) the delivery was already processed.
    */
+  /**
+   * Release a `seenBefore` claim so the sender's redelivery can be processed again. Used when
+   * the work that the claim was taken for failed — a claim that stands after a failure loses
+   * that delivery permanently (#200).
+   */
+  async forget(deliveryId: string): Promise<void> {
+    await this.db
+      .delete(githubSnapshots)
+      .where(eq(githubSnapshots.key, `delivery:${deliveryId}`));
+  }
+
   async seenBefore(deliveryId: string): Promise<boolean> {
     const inserted = await this.db
       .insert(githubSnapshots)

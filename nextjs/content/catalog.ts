@@ -46,6 +46,11 @@ export interface Project {
   /** Whose project: the org (team) or a member (personal). */
   ownerType?: 'team' | 'personal';
   ownerLabel?: string;
+  /**
+   * Last-synced GitHub visibility (#194). `false` = public, `true` = private.
+   * Absent when unknown / CMS-only.
+   */
+  ghPrivate?: boolean;
 }
 
 export interface ProjectFilter {

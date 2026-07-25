@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { LlmModule } from '../llm/llm.module';
 import { LlmService } from '../llm/llm.service';
@@ -20,13 +20,24 @@ import {
  * trigger. Mirrors GithubGenerateModule. Registered in AppModule.imports.
  */
 @Module({
-  imports: [DatabaseModule, LlmModule, GithubModule, RevalidateModule],
+  imports: [
+    DatabaseModule,
+    LlmModule,
+    forwardRef(() => GithubModule),
+    RevalidateModule,
+  ],
   controllers: [CaseStudySimpleController],
   providers: [
     PgCaseStudySimpleStore,
     { provide: CASE_STUDY_SIMPLE_STORE, useExisting: PgCaseStudySimpleStore },
     { provide: CASE_STUDY_README, useExisting: GithubReadService },
     { provide: CASE_STUDY_LLM, useExisting: LlmService },
+  ],
+  exports: [
+    CASE_STUDY_SIMPLE_STORE,
+    CASE_STUDY_README,
+    CASE_STUDY_LLM,
+    PgCaseStudySimpleStore,
   ],
 })
 export class CaseStudySimpleModule {}

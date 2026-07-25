@@ -1,13 +1,46 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/server';
+import { isMissingProjectColumnError } from '@/lib/projects-select';
 import { deleteProject } from './actions';
 
-export default async function AdminProjects() {
+type AdminProjectRow = {
+  id: number;
+  slug: string;
+  title: string;
+  is_featured: boolean | null;
+  published_at: string | null;
+  source?: string | null;
+  gh_private?: boolean | null;
+};
+
+// Richest column set first, pre-migration shape second (#198). `gh_private` only exists once
+// migration 0033 is authorized, and the code deploys before that — without this the whole
+// admin projects list would come back empty with no visible reason.
+const ADMIN_PROJECT_SELECTS = [
+  'id, slug, title, is_featured, published_at, source, gh_private',
+  'id, slug, title, is_featured, published_at, source',
+];
+
+/** Rows, or `null` when the query genuinely failed (which is not the same as "no projects"). */
+async function loadAdminProjects(): Promise<AdminProjectRow[] | null> {
   const supabase = await createClient();
-  const { data: projects } = await supabase
-    .from('projects')
-    .select('id, slug, title, is_featured, published_at')
-    .order('sort_order', { ascending: true });
+  for (const columns of ADMIN_PROJECT_SELECTS) {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(columns)
+      .order('sort_order', { ascending: true });
+    if (!error) return (data ?? []) as unknown as AdminProjectRow[];
+    if (!isMissingProjectColumnError(error)) {
+      console.error('[admin/projects] select failed', error);
+      return null;
+    }
+  }
+  console.error('[admin/projects] every select attempt was rejected');
+  return null;
+}
+
+export default async function AdminProjects() {
+  const projects = await loadAdminProjects();
 
   return (
     <div className="admin-page">
@@ -25,13 +58,18 @@ export default async function AdminProjects() {
           </Link>
         </div>
       </div>
-      {projects && projects.length > 0 ? (
+      {projects === null ? (
+        <p className="admin-empty">
+          โหลดรายการผลงานไม่สำเร็จ — ลองรีเฟรชอีกครั้ง (ดูรายละเอียดใน log ของเซิร์ฟเวอร์)
+        </p>
+      ) : projects.length > 0 ? (
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
                 <th>ชื่อ</th>
                 <th>slug</th>
+                <th>GitHub</th>
                 <th>แนะนำ</th>
                 <th>สถานะ</th>
                 <th></th>
@@ -42,6 +80,15 @@ export default async function AdminProjects() {
                 <tr key={p.id}>
                   <td>{p.title}</td>
                   <td className="t-meta">{p.slug}</td>
+                  <td className="t-meta">
+                    {p.source !== 'github'
+                      ? '—'
+                      : typeof p.gh_private === 'boolean'
+                        ? p.gh_private
+                          ? 'Private'
+                          : 'Public'
+                        : '—'}
+                  </td>
                   <td>{p.is_featured ? '★' : '—'}</td>
                   <td>{p.published_at ? 'เผยแพร่' : 'ฉบับร่าง'}</td>
                   <td className="admin-row-actions">

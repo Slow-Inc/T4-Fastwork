@@ -10,7 +10,7 @@
  * AppModule now that the DB is configured. The GitHub token + endpoint secrets
  * are read from env at construction (fail-closed when unset).
  */
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { DrizzleSnapshotStore } from './drizzle-snapshot.store';
 import { PgShowcaseRepoStore } from './pg-showcase-repos.store';
@@ -27,9 +27,15 @@ import { GithubController } from './github.controller';
 import { GithubWriteController } from './github-write.controller';
 import { RagIngestService } from '../ingestion/rag-ingest.service';
 import { RevalidateModule } from '../revalidate/revalidate.module';
+import { PipelineSyncModule } from './pipeline-sync.module';
+import { PipelinePushRunner } from './pipeline-push-runner';
 
 @Module({
-  imports: [DatabaseModule, RevalidateModule],
+  imports: [
+    DatabaseModule,
+    RevalidateModule,
+    forwardRef(() => PipelineSyncModule),
+  ],
   controllers: [GithubController, GithubWriteController],
   providers: [
     DrizzleSnapshotStore,
@@ -86,13 +92,19 @@ import { RevalidateModule } from '../revalidate/revalidate.module';
       useFactory: (
         store: DrizzleSnapshotStore,
         refresher: SnapshotOwnerRefresher,
+        pipeline: PipelinePushRunner,
       ) =>
         new GithubWebhookService(
           process.env.GITHUB_WEBHOOK_SECRET ?? '',
           store,
           refresher,
+          pipeline,
         ),
-      inject: [DrizzleSnapshotStore, SnapshotOwnerRefresher],
+      inject: [
+        DrizzleSnapshotStore,
+        SnapshotOwnerRefresher,
+        PipelinePushRunner,
+      ],
     },
     {
       provide: GithubReadService,
@@ -102,6 +114,6 @@ import { RevalidateModule } from '../revalidate/revalidate.module';
     // #60 — re-ingest RAG when a refresh changes GitHub-sourced content.
     RagIngestService,
   ],
-  exports: [GithubReadService],
+  exports: [GithubReadService, DrizzleSnapshotStore],
 })
 export class GithubModule {}

@@ -1,5 +1,16 @@
 # Open-Work Ledger
 
+## 2026-07-24 — Epic #185 event-driven realtime showcase sync (in progress)
+
+- **Epic:** [#185](https://github.com/Slow-Inc/T4-Fastwork/issues/185) — hands-off automation;
+  push/deploy → pipeline ≤2m start / ≤10m complete.
+- **PRD:** `docs/prd/2026-07-24-event-driven-realtime-showcase-sync.md`
+- **Slices:** #186 planner · #187 pipeline-sync · #188 case-study · #189 auto-publish ·
+  #190 recapture trigger · #191 Vercel webhook · #192 push+cron · #193 ops/E2E.
+- **Branch:** `feat/186-plan-project-automation-sync` (accumulates S1–S8).
+- **Parked ready-for-human:** prod migration `0032_project_capture_trigger`;
+  `VERCEL_WEBHOOK_SECRET` + dashboard webhook; `SCREENSHOT_DISPATCH_TOKEN`.
+
 ## 2026-07-24 — #161 D5 snapshot OG fallback (in progress)
 
 - Branch `feat/161-snapshot-og-fallback`: wire `og:image` fallback into

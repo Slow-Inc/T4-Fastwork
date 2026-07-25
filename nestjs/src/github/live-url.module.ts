@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { RevalidateModule } from '../revalidate/revalidate.module';
 import { GithubModule } from './github.module';
@@ -11,7 +11,7 @@ import { PgLiveUrlStore } from './pg-live-url.store';
 import { LiveUrlSnapshotAdapter } from './live-url-snapshot.adapter';
 
 @Module({
-  imports: [DatabaseModule, RevalidateModule, GithubModule],
+  imports: [DatabaseModule, RevalidateModule, forwardRef(() => GithubModule)],
   controllers: [LiveUrlController],
   providers: [
     PgLiveUrlStore,
@@ -19,5 +19,6 @@ import { LiveUrlSnapshotAdapter } from './live-url-snapshot.adapter';
     { provide: LIVE_URL_STORE, useExisting: PgLiveUrlStore },
     { provide: LIVE_URL_SNAPSHOTS, useExisting: LiveUrlSnapshotAdapter },
   ],
+  exports: [LIVE_URL_STORE, LIVE_URL_SNAPSHOTS, PgLiveUrlStore],
 })
 export class LiveUrlModule {}

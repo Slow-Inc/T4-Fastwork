@@ -66,6 +66,16 @@ export function ProjectDetailContent({
               ? t('ส่วนตัว', 'Personal')
               : t('ทีม', 'Team')}
           </span>
+          {typeof p.ghPrivate === 'boolean' && (
+            <span
+              data-testid="gh-visibility-badge"
+              className={`owner-chip ${p.ghPrivate ? 'owner-private' : 'owner-public'}`}
+            >
+              {p.ghPrivate
+                ? t('ไม่สาธารณะ', 'Private')
+                : t('สาธารณะ', 'Public')}
+            </span>
+          )}
         </p>
         <p className="page-lead">{description}</p>
       </div>

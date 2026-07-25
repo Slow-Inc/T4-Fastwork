@@ -19,6 +19,20 @@ export function ProjectCardView({ project: p, en = false }: { project: Project; 
         <div className="pcard-badges">
           {p.isFeatured && <span className="badge badge-accent">{en ? 'Featured' : 'แนะนำ'}</span>}
           <span className="badge">{p.category}</span>
+          {typeof p.ghPrivate === 'boolean' && (
+            <span
+              data-testid="gh-visibility-badge"
+              className={`badge badge-visibility ${p.ghPrivate ? 'badge-private' : 'badge-public'}`}
+            >
+              {p.ghPrivate
+                ? en
+                  ? 'Private'
+                  : 'ไม่สาธารณะ'
+                : en
+                  ? 'Public'
+                  : 'สาธารณะ'}
+            </span>
+          )}
           {p.ownerType && (
             <span className={`badge owner-badge owner-${p.ownerType}`}>
               {(p.ownerLabel ?? 'T4 Labs') +

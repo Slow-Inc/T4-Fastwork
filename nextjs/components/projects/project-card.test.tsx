@@ -74,4 +74,25 @@ describe('ProjectCard', () => {
     render(<ProjectCardView project={sample} />);
     expect(screen.queryByText(/· ทีม|· ส่วนตัว/)).toBeNull();
   });
+
+  test('shows a Public visibility badge for github public repos (#194)', () => {
+    render(<ProjectCardView project={{ ...sample, ghPrivate: false }} />);
+    expect(screen.getByTestId('gh-visibility-badge').textContent).toBe(
+      'สาธารณะ',
+    );
+  });
+
+  test('shows a Private visibility badge (EN) for private repos (#194)', () => {
+    render(
+      <ProjectCardView project={{ ...sample, ghPrivate: true }} en />,
+    );
+    expect(screen.getByTestId('gh-visibility-badge').textContent).toBe(
+      'Private',
+    );
+  });
+
+  test('omits visibility badge when ghPrivate is unknown', () => {
+    render(<ProjectCardView project={sample} />);
+    expect(screen.queryByTestId('gh-visibility-badge')).toBeNull();
+  });
 });
