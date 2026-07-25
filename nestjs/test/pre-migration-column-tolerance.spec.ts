@@ -108,8 +108,7 @@ describe('pre-migration tolerance: gh_private missing (#198)', () => {
           inserted.push(row.slug);
           return Promise.resolve();
         },
-        syncGhPrivateBatch: () =>
-          Promise.reject(undefinedColumn('gh_private')),
+        syncGhPrivateBatch: () => Promise.reject(undefinedColumn('gh_private')),
       },
       () => new Date(),
     );
@@ -157,6 +156,18 @@ describe('pre-migration tolerance: gh_private missing (#198)', () => {
 });
 
 describe('pre-migration tolerance: last_capture_* missing (#198)', () => {
+  // The read ladder was the easy half. This write had no guard at all, so every event lost the
+  // cooldown and re-dispatched a capture whose own write then failed silently (#205).
+  it('recordCaptureDispatch degrades to a no-op instead of throwing', async () => {
+    const { db, attempts } = dbMissing('last_capture_dispatch_at');
+    const store = new PgPipelineSyncStore(db as never);
+
+    await store.recordCaptureDispatch(4, '2026-07-25T00:00:00.000Z');
+
+    expect(attempts).toHaveLength(1);
+    expect(attempts[0]).toContain('last_capture_dispatch_at');
+  });
+
   it('loadByGithub degrades when only the capture columns are missing', async () => {
     const { db } = dbMissing('last_capture_trigger', [
       {

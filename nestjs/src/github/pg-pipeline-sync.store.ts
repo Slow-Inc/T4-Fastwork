@@ -148,10 +148,19 @@ export class PgPipelineSyncStore implements PipelineStateLoader {
    * screenshot worker, which runs ~30-60s later and reads this row to decide what to do (#197).
    */
   async recordCaptureDispatch(id: number, atIso: string): Promise<void> {
-    await this.db.execute(
-      sql`update projects
-             set last_capture_dispatch_at = ${atIso}::timestamptz
-           where id = ${id}`,
-    );
+    try {
+      await this.db.execute(
+        sql`update projects
+               set last_capture_dispatch_at = ${atIso}::timestamptz
+             where id = ${id}`,
+      );
+    } catch (err) {
+      // Pre-0032 there is no cooldown column to write. Losing the cooldown costs a redundant
+      // capture; throwing here cost the whole sync action, so degrade instead (#205 / #198).
+      if (!isMissingColumnError(err)) throw err;
+      this.logger.warn(
+        `last_capture_dispatch_at not present yet — cooldown not recorded for project ${id}`,
+      );
+    }
   }
 }

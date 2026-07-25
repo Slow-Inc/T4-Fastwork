@@ -21,6 +21,7 @@ import {
   selectSnapshotTargets,
 } from '../lib/snapshot-cover';
 import { isMissingProjectColumnError } from '../lib/projects-select';
+import { writeSnapshotImage } from '../lib/snapshot-write';
 
 // The project URL (not secret) — reuse the app's NEXT_PUBLIC_SUPABASE_URL locally
 // so it isn't duplicated; CI sets the SUPABASE_URL repo secret, which wins.
@@ -66,15 +67,20 @@ async function writeSnapshot(
   url: string,
   via: 'playwright' | 'og',
   trigger?: string,
-): Promise<void> {
+): Promise<boolean> {
   // The worker is the ONLY writer of last_capture_trigger, and only here — after a capture has
   // actually produced an image. Writing it at dispatch time made the next event look already
-  // handled and killed recapture entirely (#197).
-  const patch: Record<string, string> = { snapshot_image: url };
-  if (trigger) patch.last_capture_trigger = trigger;
-  await db.from('projects').update(patch).eq('id', row.id);
+  // handled and killed recapture entirely (#197). The write itself lives in lib/snapshot-write
+  // so its pre-migration fallback is tested; never report a capture the row did not receive.
+  const res = await writeSnapshotImage(db, row.id, url, trigger);
+  if (!res.ok) {
+    console.warn(`[screenshot] ${row.slug}: cover write failed —`, res.error);
+    return false;
+  }
   await revalidateProject(row.slug);
-  console.log(`[screenshot] ${row.slug}: ${via} → ${url}`);
+  const note = res.degraded ? ' (no last_capture_trigger yet)' : '';
+  console.log(`[screenshot] ${row.slug}: ${via} → ${url}${note}`);
+  return true;
 }
 async function fetchHtml(url: string): Promise<string | null> {
   try {
@@ -106,8 +112,7 @@ async function applyOgFallback(
     pageUrl: row.live_url,
   });
   if (!og) return false;
-  await writeSnapshot(db, row, og, 'og', trigger);
-  return true;
+  return await writeSnapshot(db, row, og, 'og', trigger);
 }
 
 async function main(): Promise<void> {
