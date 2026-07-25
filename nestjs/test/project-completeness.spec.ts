@@ -193,9 +193,9 @@ describe('PgShowcaseRepoStore.listPublishedGithubForCompleteness (#222)', () => 
             source: 'github',
             category_id: null,
             category_owner: 'auto',
-            content: null,
+            content_head: '',
             content_owner: 'human',
-            overview_summary: 'x',
+            overview_head: 'x',
             overview_owner: 'auto',
           },
         ]);
@@ -215,6 +215,15 @@ describe('PgShowcaseRepoStore.listPublishedGithubForCompleteness (#222)', () => 
     ]) {
       expect(calls[0].text).toContain(col);
     }
+    // The report only needs to know whether the field is empty, so it must NOT pull every
+    // project's full case-study markdown across the pooler on every hourly run — the same reason
+    // `listReadmeSnapshotStates` projects instead of selecting `data`. `btrim` keeps the emptiness
+    // rule identical to the planner's `content.trim() === ''`.
+    expect(calls[0].text).toContain("left(btrim(coalesce(content, '')), 1)");
+    // Negative control: a bare `content` as its own select item would defeat the projection. Inside
+    // `coalesce(` it is preceded by a paren, so only the comma-delimited form matches here.
+    expect(calls[0].text).not.toMatch(/,\s*content\s*,/);
+    expect(calls[0].text).not.toMatch(/,\s*overview_summary\s*,/);
     expect(rows[0]).toEqual({
       slug: 'demo',
       ghOwner: 'Slow-Inc',

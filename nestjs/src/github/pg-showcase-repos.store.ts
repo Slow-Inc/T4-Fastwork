@@ -23,6 +23,14 @@ function asOwner(v: unknown): 'auto' | 'human' {
   return v === 'human' ? 'human' : 'auto';
 }
 
+/**
+ * A projected `left(btrim(...), 1)`: `''` means the field is empty, one character means it is not.
+ * Mapped back to `null`/that character so the completeness predicate keeps one emptiness rule.
+ */
+function headOrNull(v: unknown): string | null {
+  return typeof v === 'string' && v !== '' ? v : null;
+}
+
 /** A `checkedAt` that is absent or unparseable yields null, which the TTL treats as expired. */
 function parseCheckedAt(value: unknown): Date | null {
   if (typeof value !== 'string') return null;
@@ -119,8 +127,10 @@ export class PgShowcaseRepoStore
     const rows = (await this.db.execute(
       sql`select slug, gh_owner, gh_repo, status, source,
                  category_id, category_owner,
-                 content, content_owner,
-                 overview_summary, overview_owner
+                 left(btrim(coalesce(content, '')), 1) as content_head,
+                 content_owner,
+                 left(btrim(coalesce(overview_summary, '')), 1) as overview_head,
+                 overview_owner
           from projects
           where source = 'github'
             and status = 'published'
@@ -145,10 +155,14 @@ export class PgShowcaseRepoStore
         source: 'github' as const,
         categoryId: r.category_id == null ? null : Number(r.category_id),
         categoryOwner: asOwner(r.category_owner),
-        content: typeof r.content === 'string' ? r.content : null,
+        // Only emptiness matters here, so the query returns the first character of the trimmed
+        // value and this maps "" back to null. Selecting `content` itself would drag every
+        // project's full case-study markdown across the pooler on every hourly run — the same
+        // reason `listReadmeSnapshotStates` projects instead of selecting `data`. `btrim` in SQL
+        // keeps the rule identical to the planner's `content.trim() === ''`.
+        content: headOrNull(r.content_head),
         contentOwner: asOwner(r.content_owner),
-        overviewSummary:
-          typeof r.overview_summary === 'string' ? r.overview_summary : null,
+        overviewSummary: headOrNull(r.overview_head),
         overviewOwner: asOwner(r.overview_owner),
       }));
   }
