@@ -65,6 +65,24 @@ export function isSyncUnhealthy(
   return null;
 }
 
+/**
+ * The `lastSyncError` value for one run's failures — `null` when nothing failed, so a run that
+ * succeeds *clears* the column instead of leaving a fixed problem reported forever.
+ *
+ * Every failure is named, not just the first: the pipeline isolates actions so one throw does not
+ * cancel the rest (`pipeline-sync.ts:150-161`), so a run can genuinely break in two unrelated
+ * places and reporting one would hide the other behind the fix for it.
+ *
+ * Lives beside `isSyncUnhealthy` deliberately — this writes the column that predicate reads, and
+ * separating the writer from the reader is how the two formats drift apart.
+ */
+export function summarizeSyncFailures(
+  failures: readonly { action: string; error: string }[],
+): string | null {
+  if (!failures.length) return null;
+  return failures.map((f) => `${f.action}: ${f.error}`).join('; ');
+}
+
 /** The unhealthy subset, in input order. Empty means a quiet run stays quiet. */
 export function unhealthyProjects(
   projects: readonly ProjectSyncHealth[],

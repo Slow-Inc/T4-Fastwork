@@ -11,6 +11,7 @@ import {
   type SyncActionKind,
   type SyncEvent,
 } from './project-automation-sync';
+import { summarizeSyncFailures } from './sync-health';
 
 export interface PipelineStateLoader {
   loadByGithub(owner: string, repo: string): Promise<ProjectSyncState | null>;
@@ -29,6 +30,21 @@ export interface PipelineActionExecutor {
   recaptureCover(state: ProjectSyncState, event: SyncEvent): Promise<void>;
   rank(state: ProjectSyncState, event: SyncEvent): Promise<void>;
   revalidate(state: ProjectSyncState, event: SyncEvent): Promise<void>;
+}
+
+/**
+ * Records that a run REACHED a project — the input `isSyncUnhealthy` reads (#193).
+ *
+ * Separate from the executors because it is not one of the pipeline's actions: it happens once
+ * per run regardless of what the plan contained. **Implementations must not throw** — a failed
+ * bookkeeping write must never fail a sync that already did its work (see `PgPipelineSyncStore`).
+ */
+export interface PipelineSyncRecorder {
+  recordSyncOutcome(
+    projectId: number,
+    atIso: string,
+    error: string | null,
+  ): Promise<void>;
 }
 
 /** Actions that may be planned but intentionally not executed yet (slice gating). */
@@ -119,6 +135,7 @@ export async function runPipelineSync(
   },
   loader: PipelineStateLoader,
   executor: PipelineActionExecutor,
+  recorder?: PipelineSyncRecorder,
 ): Promise<PipelineSyncResult> {
   const state = await loader.loadByGithub(event.owner, event.repo);
   if (!state) {
@@ -159,6 +176,20 @@ export async function runPipelineSync(
         error: err instanceof Error ? err.message : String(err),
       });
     }
+  }
+
+  // Record EVERY applied run, including one that planned nothing. The recorded timestamp means
+  // "a run reached this project" — the distinction `isSyncUnhealthy` needs to tell a healthy quiet
+  // repo from an unreached one. A recorder that only fired on change would repeat the blind spot
+  // that made `github_snapshots.updated_at` unusable here: `syncResource` skips the upsert on a
+  // 304 (`github.service.ts:100-102`), so that column tracks content changes, not runs (#193).
+  // Awaited, not fire-and-forget: the serverless process can freeze the moment we return.
+  if (opts.apply && recorder) {
+    await recorder.recordSyncOutcome(
+      state.id,
+      new Date(opts.now ?? Date.now()).toISOString(),
+      summarizeSyncFailures(failed),
+    );
   }
 
   return {

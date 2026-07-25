@@ -11,6 +11,7 @@ import {
   PipelineSyncController,
   PIPELINE_ACTION_EXECUTOR,
   PIPELINE_STATE_LOADER,
+  PIPELINE_SYNC_RECORDER,
 } from './pipeline-sync.controller';
 import { PipelineActionExecutorService } from './pipeline-action-executor.service';
 import { PgPipelineSyncStore } from './pg-pipeline-sync.store';
@@ -39,6 +40,8 @@ import { PgVercelProjectMapper } from './pg-vercel-project.mapper';
     PgVercelProjectMapper,
     PipelinePushRunner,
     { provide: PIPELINE_STATE_LOADER, useExisting: PgPipelineSyncStore },
+    // Same store: it already owns the row this records against (#193).
+    { provide: PIPELINE_SYNC_RECORDER, useExisting: PgPipelineSyncStore },
     {
       provide: PIPELINE_ACTION_EXECUTOR,
       useExisting: PipelineActionExecutorService,
@@ -51,6 +54,7 @@ import { PgVercelProjectMapper } from './pg-vercel-project.mapper';
     PipelinePushRunner,
     PIPELINE_STATE_LOADER,
     PIPELINE_ACTION_EXECUTOR,
+    PIPELINE_SYNC_RECORDER,
   ],
 })
 export class PipelineSyncModule {}

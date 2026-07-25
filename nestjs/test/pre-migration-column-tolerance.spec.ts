@@ -168,6 +168,18 @@ describe('pre-migration tolerance: last_capture_* missing (#198)', () => {
     expect(attempts[0]).toContain('last_capture_dispatch_at');
   });
 
+  // 0034 is parked behind the same production-write gate, so the recorder ships before its
+  // columns exist. Throwing here would turn every applied run into a failed one (#193).
+  it('recordSyncOutcome degrades to a no-op instead of throwing', async () => {
+    const { db, attempts } = dbMissing('last_synced_at');
+    const store = new PgPipelineSyncStore(db as never);
+
+    await store.recordSyncOutcome(4, '2026-07-26T00:00:00.000Z', null);
+
+    expect(attempts).toHaveLength(1);
+    expect(attempts[0]).toContain('last_synced_at');
+  });
+
   it('loadByGithub degrades when only the capture columns are missing', async () => {
     const { db } = dbMissing('last_capture_trigger', [
       {

@@ -7,12 +7,14 @@ import {
   runPipelineSync,
   type PipelineActionExecutor,
   type PipelineStateLoader,
+  type PipelineSyncRecorder,
   WEBHOOK_DEFERRED_ACTIONS,
 } from './pipeline-sync';
 import type { PushPipelineRunner } from './github-webhook.service';
 import {
   PIPELINE_ACTION_EXECUTOR,
   PIPELINE_STATE_LOADER,
+  PIPELINE_SYNC_RECORDER,
 } from './pipeline-sync.controller';
 import type { SyncEvent } from './project-automation-sync';
 import type { PipelineSyncResult } from './pipeline-sync';
@@ -32,6 +34,8 @@ export class PipelinePushRunner implements PushPipelineRunner {
     private readonly loader: PipelineStateLoader,
     @Inject(PIPELINE_ACTION_EXECUTOR)
     private readonly executor: PipelineActionExecutor,
+    @Inject(PIPELINE_SYNC_RECORDER)
+    private readonly recorder: PipelineSyncRecorder,
   ) {}
 
   async runPush(event: SyncEvent): Promise<PushRunOutcome> {
@@ -46,6 +50,7 @@ export class PipelinePushRunner implements PushPipelineRunner {
           { apply: true, deferred: WEBHOOK_DEFERRED_ACTIONS },
           this.loader,
           this.executor,
+          this.recorder,
         ),
       );
 
