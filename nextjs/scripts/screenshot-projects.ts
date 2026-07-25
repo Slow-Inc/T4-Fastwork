@@ -212,7 +212,7 @@ async function main(): Promise<void> {
           await page.close();
           const html = await fetchHtml(row.live_url);
           if (!(await applyOgFallback(db, row, html, trigger))) {
-            console.warn(`[screenshot] ${row.slug}: no OG fallback.`);
+            console.warn(`[screenshot] ${row.slug}: no OG cover applied.`);
           }
           continue;
         }
@@ -227,7 +227,7 @@ async function main(): Promise<void> {
             `[screenshot] ${row.slug}: blank capture — trying OG.`,
           );
           if (!(await applyOgFallback(db, row, html, trigger))) {
-            console.warn(`[screenshot] ${row.slug}: no OG fallback.`);
+            console.warn(`[screenshot] ${row.slug}: no OG cover applied.`);
           }
           continue;
         }
@@ -245,7 +245,7 @@ async function main(): Promise<void> {
         try {
           const html = await fetchHtml(row.live_url);
           if (!(await applyOgFallback(db, row, html, trigger))) {
-            console.warn(`[screenshot] ${row.slug}: no OG fallback.`);
+            console.warn(`[screenshot] ${row.slug}: no OG cover applied.`);
           }
         } catch (ogErr) {
           console.warn(`[screenshot] ${row.slug}: OG fallback failed —`, ogErr);
