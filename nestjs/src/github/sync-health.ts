@@ -3,8 +3,15 @@
  *
  * `runPipelineSync` is fail-soft: it reports failed actions and never throws
  * (`pipeline-sync.ts:69`), which is right for a batch job but means a project can fail on every run
- * while every run returns a success-shaped result. #211 was that defect found by hand, on a page a
- * visitor happened to open. These predicates make the same class of problem reportable.
+ * while every run returns a success-shaped result. These predicates make that reportable.
+ *
+ * ⚠️ **What this does NOT catch — and #211 is the example.** An action the planner *defers* is not a
+ * failure, so a webhook that defers `sync_taxonomy` to the cron drain every single time
+ * (`WEBHOOK_DEFERRED_ACTIONS`) records a clean run. The drain endpoints that then skip the repo —
+ * `taxonomy-generate.controller.ts` / `case-study-simple.controller.ts` — are not pipeline runs and
+ * record nothing here. So the #211 row (published, github-backed, no category, no content) reads
+ * perfectly healthy through these predicates. Catching that class needs a *content-completeness*
+ * invariant over the row itself, not a freshness timestamp. Do not read this file as covering it.
  */
 
 export interface ProjectSyncHealth {
@@ -37,10 +44,15 @@ export const STUCK_AFTER_REVISITS = 3;
  * should be reported by the cause someone can act on, not by its age.
  */
 /**
- * @param revisitIntervalMs How often a *single* project is expected to be reached — **not** the cron
- *   period. `refreshAll` rotates a budget of 8 repos per hourly run over ~47 published github repos
- *   (`github-refresh.service.ts:47,53-62`), so a given project is revisited roughly every 6 hours.
- *   Passing the 1-hour cron period here would report almost every healthy project as stuck.
+ * @param revisitIntervalMs How often a *single* project is expected to be RECORDED — **not** the
+ *   cron period. Passing the 1-hour cron period would report almost every healthy project as stuck.
+ *
+ *   ⚠️ **`stuck` is not alertable yet.** Only `runPipelineSync` records (see
+ *   `PipelineSyncRecorder`), and that runs on a push or a Vercel deploy — not on the hourly cron,
+ *   whose `refreshAll` → `syncRepoDetail` path (`github-refresh.service.ts:162-169`) writes no
+ *   project row. So a repo that simply has not been pushed to reads stale no matter how healthy it
+ *   is, and an alert on `stuck` today would fire on every quiet project. The `error` and `never`
+ *   reasons are unaffected. Wiring the cron path to record is the precondition for that alert.
  */
 export function isSyncUnhealthy(
   project: ProjectSyncHealth,
@@ -63,6 +75,41 @@ export function isSyncUnhealthy(
     return { slug: project.slug, reason: 'stuck', detail: `${hours}h stale` };
   }
   return null;
+}
+
+/**
+ * The `lastSyncError` value for one run's failures — `null` when nothing failed, so a run that
+ * succeeds *clears* the column instead of leaving a fixed problem reported forever.
+ *
+ * Every failure is named, not just the first: the pipeline isolates actions so one throw does not
+ * cancel the rest (`pipeline-sync.ts:150-161`), so a run can genuinely break in two unrelated
+ * places and reporting one would hide the other behind the fix for it.
+ *
+ * Lives beside `isSyncUnhealthy` deliberately — this writes the column that predicate reads, and
+ * separating the writer from the reader is how the two formats drift apart.
+ */
+export function summarizeSyncFailures(
+  failures: readonly { action: string; error: string }[],
+): string | null {
+  if (!failures.length) return null;
+  return failures
+    .map((f) => `${f.action}: ${truncate(f.error, MAX_RECORDED_ERROR_CHARS)}`)
+    .join('; ');
+}
+
+/**
+ * Per-action budget for the recorded message. The action name is ours and always kept; the message
+ * comes from an upstream (an LLM gateway, the GitHub API, the pooler) and is the untrusted part.
+ *
+ * 200 matches the existing cap on interpolated upstream text (`screenshot-dispatch.ts:59`). It is a
+ * disclosure bound, not tidiness: no migration grants `public.projects` column-by-column, so anon
+ * SELECT reaches every column, and once 0034 lands whatever an upstream returned in `err.message`
+ * is world-readable through PostgREST. The actionable full text stays in the logs, which are not.
+ */
+const MAX_RECORDED_ERROR_CHARS = 200;
+
+function truncate(text: string, max: number): string {
+  return text.length <= max ? text : `${text.slice(0, max)}…`;
 }
 
 /** The unhealthy subset, in input order. Empty means a quiet run stays quiet. */

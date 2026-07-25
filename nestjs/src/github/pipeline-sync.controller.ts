@@ -18,11 +18,13 @@ import {
   runPipelineSync,
   type PipelineActionExecutor,
   type PipelineStateLoader,
+  type PipelineSyncRecorder,
 } from './pipeline-sync';
 import type { SyncEvent } from './project-automation-sync';
 
 export const PIPELINE_STATE_LOADER = Symbol('PIPELINE_STATE_LOADER');
 export const PIPELINE_ACTION_EXECUTOR = Symbol('PIPELINE_ACTION_EXECUTOR');
+export const PIPELINE_SYNC_RECORDER = Symbol('PIPELINE_SYNC_RECORDER');
 
 @Controller('github')
 export class PipelineSyncController {
@@ -32,6 +34,8 @@ export class PipelineSyncController {
     private readonly loader: PipelineStateLoader,
     @Inject(PIPELINE_ACTION_EXECUTOR)
     private readonly executor: PipelineActionExecutor,
+    @Inject(PIPELINE_SYNC_RECORDER)
+    private readonly recorder: PipelineSyncRecorder,
   ) {}
 
   @Post('pipeline-sync')
@@ -68,7 +72,13 @@ export class PipelineSyncController {
 
     const lock = `github-pipeline:${parsed.owner.toLowerCase()}/${parsed.repo.toLowerCase()}`;
     const outcome = await this.store.runExclusive(lock, () =>
-      runPipelineSync({ ...event }, { apply }, this.loader, this.executor),
+      runPipelineSync(
+        { ...event },
+        { apply },
+        this.loader,
+        this.executor,
+        this.recorder,
+      ),
     );
 
     if (!outcome.ran) {

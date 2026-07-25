@@ -6,7 +6,10 @@ import { sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../database/database.module';
 import { snapshotKey } from './github.config';
 import { isMissingColumnError } from './missing-column';
-import type { PipelineStateLoader } from './pipeline-sync';
+import type {
+  PipelineStateLoader,
+  PipelineSyncRecorder,
+} from './pipeline-sync';
 import type { ProjectSyncState } from './project-automation-sync';
 
 function asOwner(v: unknown): 'auto' | 'human' {
@@ -14,7 +17,9 @@ function asOwner(v: unknown): 'auto' | 'human' {
 }
 
 @Injectable()
-export class PgPipelineSyncStore implements PipelineStateLoader {
+export class PgPipelineSyncStore
+  implements PipelineStateLoader, PipelineSyncRecorder
+{
   private readonly logger = new Logger(PgPipelineSyncStore.name);
 
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
@@ -160,6 +165,43 @@ export class PgPipelineSyncStore implements PipelineStateLoader {
       if (!isMissingColumnError(err)) throw err;
       this.logger.warn(
         `last_capture_dispatch_at not present yet — cooldown not recorded for project ${id}`,
+      );
+    }
+  }
+
+  /**
+   * Records that a run REACHED this project, and why it failed if it did (#193). Written on every
+   * applied run — including one that planned nothing, which is the point (see `runPipelineSync`).
+   *
+   * Never throws. The sync has already done its work by the time this runs, so failing the run
+   * over bookkeeping would trade a real success for a false failure. A write that keeps failing
+   * leaves the row stale, and `isSyncUnhealthy` reports a stale row as `stuck` — so this degrades
+   * loudly, not silently.
+   */
+  async recordSyncOutcome(
+    id: number,
+    atIso: string,
+    error: string | null,
+  ): Promise<void> {
+    try {
+      await this.db.execute(
+        sql`update projects
+               set last_synced_at = ${atIso}::timestamptz,
+                   last_sync_error = ${error}
+             where id = ${id}`,
+      );
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        // Pre-0034 there is nowhere to write; the report reads null and says `never` (#198).
+        this.logger.warn(
+          `sync-health columns not present yet — outcome not recorded for project ${id}`,
+        );
+        return;
+      }
+      this.logger.error(
+        `recording the sync outcome for project ${id} failed: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
       );
     }
   }

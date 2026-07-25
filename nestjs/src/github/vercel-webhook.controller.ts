@@ -20,10 +20,12 @@ import {
   WEBHOOK_DEFERRED_ACTIONS,
   type PipelineActionExecutor,
   type PipelineStateLoader,
+  type PipelineSyncRecorder,
 } from './pipeline-sync';
 import {
   PIPELINE_ACTION_EXECUTOR,
   PIPELINE_STATE_LOADER,
+  PIPELINE_SYNC_RECORDER,
 } from './pipeline-sync.controller';
 import type { SyncEvent } from './project-automation-sync';
 
@@ -112,6 +114,8 @@ export class VercelWebhookController {
     private readonly executor: PipelineActionExecutor,
     @Inject(VERCEL_PROJECT_MAPPER)
     private readonly mapper: VercelProjectMapper,
+    @Inject(PIPELINE_SYNC_RECORDER)
+    private readonly recorder: PipelineSyncRecorder,
   ) {}
 
   @Post('webhook')
@@ -184,6 +188,7 @@ export class VercelWebhookController {
           { apply: true, deferred: WEBHOOK_DEFERRED_ACTIONS },
           this.loader,
           this.executor,
+          this.recorder,
         ),
       );
     } catch (err) {
