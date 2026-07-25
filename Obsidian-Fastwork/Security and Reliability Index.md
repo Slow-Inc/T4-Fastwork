@@ -12,6 +12,7 @@ source: Engineering knowledge migration from MangaDock
 - [[Deliberate Diagnosis Loop]]
 - [[Authoritative Validation at Trust Boundaries]]
 - [[Authorization Needs a Backstop]]
+- [[A New Column Is Public By Default]]
 - [[Identity Transition Cache Isolation]]
 - [[Scoped Destructive Operations]]
 - [[End-to-End Cancellation]]
