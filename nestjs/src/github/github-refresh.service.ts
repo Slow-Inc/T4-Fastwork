@@ -30,7 +30,7 @@ export interface DetailSyncer {
   syncRepoDetail(
     owner: string,
     repo: string,
-  ): Promise<{ readmeSha: string | null }>;
+  ): Promise<{ readmeSha: string | null; readmeMissing?: boolean }>;
   syncUserProfile(login: string): Promise<void>;
 }
 
@@ -70,6 +70,8 @@ export interface RefreshSummary {
 /** Outcome of a single-repo detail refresh (#143). */
 export interface RepoDetailRefreshSummary extends RefreshSummary {
   readmeSha: string | null;
+  /** GitHub has no README for this repo; a negative-cache marker was stored (#177). */
+  readmeMissing: boolean;
 }
 
 export class GithubRefreshService {
@@ -189,6 +191,7 @@ export class GithubRefreshService {
       changed: [],
       failed: [],
       readmeSha: null,
+      readmeMissing: false,
     };
     if (!this.detail) {
       summary.failed.push(keys[0]);
@@ -198,6 +201,7 @@ export class GithubRefreshService {
       const r = await this.detail.syncRepoDetail(owner, repo);
       summary.synced.push(...keys);
       summary.readmeSha = r.readmeSha;
+      summary.readmeMissing = r.readmeMissing === true;
     } catch {
       summary.failed.push(keys[0]);
     }

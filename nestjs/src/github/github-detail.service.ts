@@ -47,7 +47,7 @@ export class GithubDetailService {
   async syncRepoDetail(
     owner: string,
     repo: string,
-  ): Promise<{ readmeSha: string | null }> {
+  ): Promise<{ readmeSha: string | null; readmeMissing: boolean }> {
     await this.snap.syncResource(
       snapshotKey.repoContributors(owner, repo),
       githubUrl.repoContributors(owner, repo),
@@ -69,17 +69,24 @@ export class GithubDetailService {
     }
 
     let readmeSha: string | null = null;
+    let readmeMissing = false;
+    const readmeKey = snapshotKey.repoReadme(owner, repo);
     try {
       const r = await this.snap.syncResource(
-        snapshotKey.repoReadme(owner, repo),
+        readmeKey,
         githubUrl.repoReadme(owner, repo),
         { map: parseReadme },
       );
       readmeSha = (r.data as ReadmeSnapshot | null)?.sha ?? null;
     } catch (err) {
       if (!isNotFound(err)) throw err;
+      // Swallowing the 404 without writing anything left no snapshot row, so the missing-readme
+      // backfill re-selected this repo on every run and its taxonomy/case-study never generated
+      // (#177). Persist the absence instead.
+      readmeMissing = true;
+      await this.snap.markResourceMissing(readmeKey);
     }
-    return { readmeSha };
+    return { readmeSha, readmeMissing };
   }
 
   /** Snapshot a member's profile and their profile README (optional). */
