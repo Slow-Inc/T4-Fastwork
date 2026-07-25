@@ -1,5 +1,47 @@
 # Open-Work Ledger
 
+## 2026-07-25 (AFK) — #193 S8 sync-health SHIPPED in two slices; the review found what it misses
+
+- **Shipped #220 → `99273a0` (#193 slice 1):** the pure predicate `sync-health.ts`
+  (`isSyncUnhealthy` / `unhealthyProjects`, 9 tests) + the additive migration
+  `0034_project_sync_health.sql`, **unapplied**. `revisitIntervalMs` is deliberately *not* the cron
+  period — a project is reached about every 6 h because `refreshAll` rotates 8 repos hourly over ~47,
+  and a test pins that a 10 h-old sync is healthy at the revisit interval and stuck at the cron
+  period.
+- **Shipped #221 → `8566723` (#193 slice 2, the recording slice):** every applied `runPipelineSync`
+  writes `last_synced_at` / `last_sync_error` through a new `PipelineSyncRecorder`, wired into all
+  three production entry points (push runner, secret-guarded `/github/pipeline-sync`, Vercel
+  webhook); `health.spec.ts` boots the whole `AppModule`, so the DI is verified for real. Records on
+  **every** applied run including a no-op — `github_snapshots.updated_at` could not be reused because
+  `syncResource` skips the upsert on a 304, so it means "content changed", not "a run reached this".
+  Degrades on the unapplied columns and never throws.
+- **⚠️ The review found the feature does NOT catch #211, which is what motivated it.** A push plans
+  `sync_taxonomy`, the webhook **defers** it, deferral is not a failure → the run records
+  `error: null` and the empty-shell row reads healthy. The `#220` header comment claimed otherwise
+  and was corrected (`bd48f97`). Filed **#222** — a content-completeness invariant over the row
+  (`published + github + null category/content`) needs no column, no recording and no migration, and
+  is the higher-value check.
+- **⚠️ `stuck` is not alertable yet → filed #223.** Only pushes and deploys record; the recurring
+  `refreshAll` → `syncRepoDetail` path writes no project row, so a repo nobody pushed to reads stale
+  however healthy it is. Recorded as a ⚠️ block on `revisitIntervalMs`.
+- **security-review finding, remediated at the source:** no migration grants `public.projects`
+  column-by-column, so `anon` holds table-level SELECT and both `0034` columns become world-readable
+  through PostgREST once applied — and `last_sync_error` carries upstream text. A column-level
+  revoke cannot fix that while the table grant stands. The recorded message is now capped at 200
+  chars (the bound `screenshot-dispatch.ts:59` already uses), full text stays in logs, and `0034`
+  documents the exposure for whoever authorises it. `0032`'s columns share it — pre-existing, now
+  written down. Full bilingual evidence: #221#issuecomment-5080496777 (reviewed HEAD `32d64cc`).
+- **#193 stays OPEN:** 3 of 5 ACs done; the alert (AC3) is blocked by #222/#223 *and* still carries
+  the original ambiguity (#193 names `scripts/notify.ps1`; no `scripts/` directory exists), and the
+  cooldown/single-slug ops check (AC4) is unstarted.
+- **#211 stays OPEN, waiting on a clock, not on work.** Measured after the merge: the row is still
+  all-null and the marker is still the `15:56:56Z` one. Cron runs `17:50`, `18:52`, `20:05` all
+  landed *before* the 6 h TTL expires (`~21:56:56Z`), so #215 excluded the repo correctly. Verified
+  `/github/refresh/missing-readme` is wired into the cron (workflow line 80), so no human step is
+  needed.
+- **Still parked, unchanged:** prod migrations `0032`/`0033`/`0034`; the PAT (#217); the webhook
+  (#218); merging #178; closing #172; #110.
+
 ## 2026-07-25 (AFK) — #211 root-caused + #215 shipped; #178 reviewed and parked
 
 - **#211 root cause (not what the issue guessed):** `Slow-Inc/T4-Fastwork` has **no README** on
