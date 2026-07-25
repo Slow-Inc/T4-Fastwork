@@ -48,6 +48,19 @@ export class TaxonomyGenerateController {
     generated: number;
     applied: boolean;
     capped: boolean;
+    /**
+     * Published candidates with no README snapshot, so this run had nothing to generate from
+     * (#211) — either the repo has no README, or its detail sync has not run yet; the reader only
+     * sees the store. They are named rather than counted because the count alone leaves
+     * an operator running a manual query to find out which row is stuck — and their skip costs no
+     * LLM call, so it never consumes the cap and the run still reports success without them.
+     *
+     * Complete only for the candidates this run actually scanned: the loop breaks at the cap, so a
+     * blocked row ordered after the one that generated is reported by a later run, not this one.
+     * The exhaustive set is `readme_sha is null` on published github rows — which is what an alert
+     * (#193) should query. This field is the push that makes it reach the logs unprompted.
+     */
+    noReadmeSlugs: string[];
   }> {
     const expected = process.env.GITHUB_REFRESH_SECRET;
     if (!expected || !constantTimeEqual(secret, expected)) {
@@ -73,10 +86,12 @@ export class TaxonomyGenerateController {
 
     let generated = 0;
     let attempted = 0;
+    const noReadmeSlugs: string[] = [];
     for (const p of projects) {
       if (attempted >= maxPerRun) break;
       try {
         const r = await svc.generateForProject(p);
+        if (r.noReadme) noReadmeSlugs.push(p.slug);
         if (r.generated) {
           generated++;
           attempted++;
@@ -93,12 +108,26 @@ export class TaxonomyGenerateController {
     if (apply && generated > 0) {
       void this.revalidate?.revalidateProjects();
     }
+    if (noReadmeSlugs.length > 0) {
+      // Warn, not error: the run itself succeeded. But a published project that no amount of
+      // re-running can fill has to reach the logs on its own — waiting for someone to notice an
+      // empty page is the failure mode #211 was found by.
+      //
+      // "no README snapshot", not "no README on GitHub": `getRepoReadme` reads the snapshot store
+      // and never calls GitHub (`github-read.service.ts:52`), so an absent snapshot means either
+      // the repo has no README or its detail sync has not run yet. Claiming the former would send
+      // an operator hunting for a README that exists.
+      this.logger.warn(
+        `taxonomy: no README snapshot, cannot generate: ${noReadmeSlugs.join(', ')}`,
+      );
+    }
     return {
       candidates: projects.length,
       attempted,
       generated,
       applied: apply,
       capped: attempted >= maxPerRun,
+      noReadmeSlugs,
     };
   }
 }

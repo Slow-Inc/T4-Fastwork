@@ -85,7 +85,12 @@ export class TaxonomyGenerateService {
 
   async generateForProject(
     project: TaxonomyProject,
-  ): Promise<{ generated: boolean; patch?: ContentPatch }> {
+    /**
+     * `noReadme` marks the one skip an operator has to act on: the repo has no README at all, so
+     * this row can never be enriched as it stands (#211). Every other `generated: false` is
+     * benign — already taxonomised, human-owned, or an unchanged README — and stays unreported.
+     */
+  ): Promise<{ generated: boolean; noReadme?: true; patch?: ContentPatch }> {
     if (!needsTaxonomy(project)) return { generated: false };
     if (!project.ghOwner || !project.ghRepo) return { generated: false };
 
@@ -94,7 +99,7 @@ export class TaxonomyGenerateService {
 
     const rr = await this.readme.getRepoReadme(project.ghOwner, project.ghRepo);
     const snap = asReadmeSnapshot(rr?.data);
-    if (!snap) return { generated: false };
+    if (!snap) return { generated: false, noReadme: true };
 
     const ctx: GenerateContext = {
       readmeSha: snap.sha,

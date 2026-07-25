@@ -92,9 +92,38 @@ describe('TaxonomyGenerateService', () => {
       },
     };
     const svc = new TaxonomyGenerateService(readme, llm, store);
-    expect(await svc.generateForProject(base)).toEqual({ generated: false });
+    // Deliberately widened by #211: this used to assert a bare `{ generated: false }`, which is
+    // precisely why a repo with NO README on GitHub was skipped on every run forever with nothing
+    // to distinguish it from a repo whose README simply had not changed. The skip itself is
+    // correct — it costs no LLM call and must not consume the run's cap — but it has to be
+    // reportable, or an un-enrichable published row stays invisible.
+    expect(await svc.generateForProject(base)).toEqual({
+      generated: false,
+      noReadme: true,
+    });
     expect(llmCalls).toBe(0);
     expect(applied).toHaveLength(0);
+  });
+
+  it('a skip for any reason other than an absent README is not reported as noReadme (#211)', async () => {
+    // `needsTaxonomy` already fails here (the category is human-owned), so the service returns
+    // before it ever asks for a README. Reporting `noReadme` for this row would send an operator
+    // hunting for a missing README that is not the reason anything was skipped.
+    const store: TaxonomyStore = {
+      listPublishedNeedingTaxonomy: async () => [],
+      getContent: async () => null,
+      applyPatch: async () => {},
+    };
+    const readme: TaxonomyReadmeReader = { getRepoReadme: async () => null };
+    const llm: TaxonomyLlm = { complete: async () => '{}' };
+    const svc = new TaxonomyGenerateService(readme, llm, store);
+
+    const res = await svc.generateForProject({
+      ...base,
+      categoryOwner: 'human',
+    });
+
+    expect(res).toEqual({ generated: false });
   });
 
   it('applies taxonomy-only patch even when readme_sha already set', async () => {
