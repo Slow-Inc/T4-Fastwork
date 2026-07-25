@@ -107,4 +107,21 @@ export class GithubSnapshotService {
     await this.store.upsert({ key, data, etag: res.etag });
     return { changed: true, data };
   }
+
+  /**
+   * Record that a resource does not exist on GitHub, so a backfill queue keyed on "is this
+   * snapshot present?" can advance past it (#177). Deliberately carries neither `markdown` nor
+   * `sha`: every reader narrows on those, so the marker reads as absent content rather than as
+   * empty content a generator would try to expand.
+   */
+  async markResourceMissing(
+    key: string,
+    now: Date = new Date(),
+  ): Promise<void> {
+    await this.store.upsert({
+      key,
+      data: { missing: true, checkedAt: now.toISOString() },
+      etag: null,
+    });
+  }
 }

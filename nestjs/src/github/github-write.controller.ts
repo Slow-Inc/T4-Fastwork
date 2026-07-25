@@ -129,6 +129,10 @@ export class GithubWriteController {
     candidates: number;
     planned: number;
     synced: number;
+    /** Of `synced`: gained a real README. */
+    withReadme: number;
+    /** Of `synced`: GitHub has no README, negative-cached so the queue advances (#177). */
+    noReadme: number;
     failed: number;
     applied: boolean;
     capped: boolean;
@@ -164,6 +168,8 @@ export class GithubWriteController {
         candidates: missingCount,
         planned: planned.length,
         synced: 0,
+        withReadme: 0,
+        noReadme: 0,
         failed: 0,
         applied: false,
         capped: missingCount > planned.length,
@@ -175,16 +181,22 @@ export class GithubWriteController {
       'github-refresh-missing-readme',
       async () => {
         let synced = 0;
+        let withReadme = 0;
+        let noReadme = 0;
         let failed = 0;
         for (const r of planned) {
           const summary = await this.refresh.refreshRepoDetail(r.owner, r.repo);
           if (summary.failed.length) failed++;
           else {
             synced++;
+            // A negative-cached repo is progress (it leaves the queue) but will never gain
+            // content, so it must not read as a content win (#177).
+            if (summary.readmeMissing) noReadme++;
+            else withReadme++;
             void this.revalidate.revalidateProject(r.slug).catch(() => {});
           }
         }
-        return { synced, failed };
+        return { synced, withReadme, noReadme, failed };
       },
     );
 
@@ -193,6 +205,8 @@ export class GithubWriteController {
         candidates: missingCount,
         planned: planned.length,
         synced: 0,
+        withReadme: 0,
+        noReadme: 0,
         failed: 0,
         applied: true,
         capped: missingCount > planned.length,
@@ -204,6 +218,8 @@ export class GithubWriteController {
       candidates: missingCount,
       planned: planned.length,
       synced: outcome.result.synced,
+      withReadme: outcome.result.withReadme,
+      noReadme: outcome.result.noReadme,
       failed: outcome.result.failed,
       applied: true,
       capped: missingCount > planned.length,

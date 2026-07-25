@@ -171,7 +171,14 @@ describe('GithubDetailService.syncRepoDetail', () => {
     expect(r.readmeSha).toBeNull();
     expect(store.rows['repo:a/b:contributors']).toBeDefined();
     expect(store.rows['repo:a/b:pulls']).toBeDefined();
-    expect(store.rows['repo:a/b:readme']).toBeUndefined();
+    // Deliberately inverted by #177: this used to assert NO row, which is precisely why the
+    // missing-readme backfill re-selected the same repo forever. The 404 is still tolerated —
+    // the repo does not fail — but the absence is now recorded so the queue can advance.
+    expect(r.readmeMissing).toBe(true);
+    expect(store.rows['repo:a/b:readme']).toEqual({
+      data: { missing: true, checkedAt: expect.any(String) },
+      etag: null,
+    });
   });
 });
 

@@ -121,4 +121,32 @@ describe('GithubWriteController.doRefreshMissingReadme (#158)', () => {
     expect(detailCalls).toEqual(['xenodeve/resume_web']);
     expect(exclusiveNames).toEqual(['github-refresh-missing-readme']);
   });
+
+  // #177 — a repo with no README used to be reported as a plain success, so an operator could
+  // not tell real progress from a repo that will never have content.
+  it('reports a repo with no README separately from one that gained a README', async () => {
+    const { c } = makeController({
+      refreshRepoDetail: (async (owner: string, repo: string) => ({
+        synced: [`repo:${owner}/${repo}:readme`],
+        changed: [],
+        failed: [],
+        readmeSha: null,
+        readmeMissing: true,
+      })) as unknown as GithubRefreshService['refreshRepoDetail'],
+    });
+
+    const res = await c.doRefreshMissingReadme('right', { apply: true });
+
+    expect(res.synced).toBe(1);
+    expect(res.noReadme).toBe(1);
+    expect(res.withReadme).toBe(0);
+    expect(res.failed).toBe(0);
+  });
+
+  it('counts a repo that did gain a README as withReadme', async () => {
+    const { c } = makeController();
+    const res = await c.doRefreshMissingReadme('right', { apply: true });
+    expect(res.withReadme).toBe(1);
+    expect(res.noReadme).toBe(0);
+  });
 });
