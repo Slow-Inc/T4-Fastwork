@@ -1,5 +1,36 @@
 # Open-Work Ledger
 
+## 2026-07-25 (AFK) — #222 CLOSED: the empty-shell report that #193 could not give us
+
+- **Filed and shipped in one session.** #222 came out of scrutinizing #221 — the sync-health
+  predicates cannot catch the #211 class, because a webhook defers the LLM actions every run and
+  deferral is not a failure, so an empty-shell row records a clean run. Shipped #225 (`2a9ae8d`) +
+  #226 (`7136759`); closed with evidence.
+- **`project-completeness.ts`** — a pure invariant over the row (`published + github` and any
+  auto-owned field empty). **No column, no recording, no migration**: every field already exists.
+  Three exclusions are load-bearing — a **human-owned** blank is editorial, a **draft/hidden** row is
+  expected to be mid-enrichment, and a repo GitHub has **no README** for is reported but **not
+  counted actionable** (nothing here can fill it, and #215's marker re-checks it).
+- **`POST /github/report-incomplete`** (secret-guarded, read-only) + a cron step ordered **last**, so
+  the report never names rows the same run was about to fill. A visitor is no longer the detector.
+- **Running it on production is what found the real defect** (#226): `resolveReadmeMissing` ignored
+  the marker TTL, so after expiry it would keep asserting "no README upstream" while the backfill
+  treats the same marker as expired and re-checks — and since `no-readme` is excluded from
+  `actionable`, the #211 row would have been dropped from the report built to catch it.
+  `authoritativeReadmeKeys` now owns the TTL for both readers. Tests alone did not surface this.
+- **scrutinize also caught a cost bug before merge:** the query selected `content` +
+  `overview_summary` in full for ~47 rows every hour to answer a boolean; now
+  `left(btrim(coalesce(...)), 1)` — the same choice `listReadmeSnapshotStates` documents one method
+  below in that file.
+- **Real production state now visible for the first time:** `scanned 46 · actionable 19 · reported
+  26` — **25 of 46 published projects have no `overview_summary`**. Nothing broken;
+  `/github/generate-overviews` is capped at 1/run so it drains ~1/hour, but it was invisible until
+  this shipped. No issue filed — the queue is draining correctly.
+- **#211 still open, waiting on a clock:** real UTC `21:13:01Z` vs a marker written `15:56:56Z` with a
+  6 h TTL → expires `~21:56:56Z`. The cron runs `17:50`/`18:52`/`20:05` all preceded that, so #215
+  excluded the repo correctly. `/github/refresh/missing-readme` confirmed wired into the cron
+  (workflow line 80) and returning `candidates: 0`, consistent with an unexpired marker.
+
 ## 2026-07-25 (AFK) — #193 S8 sync-health SHIPPED in two slices; the review found what it misses
 
 - **Shipped #220 → `99273a0` (#193 slice 1):** the pure predicate `sync-health.ts`
