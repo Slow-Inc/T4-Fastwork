@@ -172,6 +172,32 @@ describe('recording a pipeline run (#193)', () => {
     );
   });
 
+  it('bounds the recorded message, because the column is anon-readable', async () => {
+    // `projects` has no column-scoped grant (no migration touches it), so once 0034 is applied
+    // anon SELECT covers the new columns and whatever an upstream put in `err.message` is public.
+    // Bounding it caps how much of an upstream response body can be republished that way.
+    const { recorder, calls } = fakeRecorder();
+    const executor: PipelineActionExecutor = {
+      ...noopExecutor,
+      syncTaxonomy: async () => {
+        throw new Error('x'.repeat(500));
+      },
+    };
+
+    await runPipelineSync(
+      push(),
+      { apply: true, now: NOW },
+      loaderOf(current({ categoryId: null })),
+      executor,
+      recorder,
+    );
+
+    const recorded = calls[0].error ?? '';
+    expect(recorded.length).toBeLessThanOrEqual(240);
+    expect(recorded.startsWith('sync_taxonomy: xxx')).toBe(true);
+    expect(recorded.endsWith('…')).toBe(true);
+  });
+
   it('records nothing for a dry run, which reached nothing', async () => {
     const { recorder, calls } = fakeRecorder();
 

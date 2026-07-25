@@ -92,7 +92,24 @@ export function summarizeSyncFailures(
   failures: readonly { action: string; error: string }[],
 ): string | null {
   if (!failures.length) return null;
-  return failures.map((f) => `${f.action}: ${f.error}`).join('; ');
+  return failures
+    .map((f) => `${f.action}: ${truncate(f.error, MAX_RECORDED_ERROR_CHARS)}`)
+    .join('; ');
+}
+
+/**
+ * Per-action budget for the recorded message. The action name is ours and always kept; the message
+ * comes from an upstream (an LLM gateway, the GitHub API, the pooler) and is the untrusted part.
+ *
+ * 200 matches the existing cap on interpolated upstream text (`screenshot-dispatch.ts:59`). It is a
+ * disclosure bound, not tidiness: no migration grants `public.projects` column-by-column, so anon
+ * SELECT reaches every column, and once 0034 lands whatever an upstream returned in `err.message`
+ * is world-readable through PostgREST. The actionable full text stays in the logs, which are not.
+ */
+const MAX_RECORDED_ERROR_CHARS = 200;
+
+function truncate(text: string, max: number): string {
+  return text.length <= max ? text : `${text.slice(0, max)}…`;
 }
 
 /** The unhealthy subset, in input order. Empty means a quiet run stays quiet. */
