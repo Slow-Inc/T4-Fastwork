@@ -10,6 +10,8 @@ const PAGES = [
   "/about",
   "/projects",
   "/projects/mangadock",
+  // The enrichment fixture (#175) gets the same layout/hydration contract as any page.
+  "/projects/hype-macro-store",
   "/faq",
   "/contact",
   "/pricing-guide",
@@ -1371,4 +1373,117 @@ test("gh visibility badge follows the language switch (#202)", async ({
   }
 
   expect(errors).toEqual([]);
+});
+
+/**
+ * Visitor-visible enrichment on a project detail page (#175, epic #172).
+ *
+ * The GitHub→AI pipeline can report success at the data layer and still ship an empty
+ * shell to visitors: a page with a title and nothing to read. `lib/project-map.ts` maps an
+ * un-enriched row to `category: ''` and `content: []`, which renders as an empty eyebrow,
+ * an empty facts row, and a disclosure with zero paragraphs — all of which the generic
+ * smoke loop above happily passes, because the <h1> is still there. These cases assert
+ * what a visitor actually reads.
+ *
+ * `hype-macro-store` is github-sourced, published, and enriched, so the assertions are
+ * unconditional. The only tolerated escape is a 404 — if the fixture is unpublished in
+ * this environment there is no page to make claims about.
+ */
+const ENRICHED_SLUG = "hype-macro-store";
+
+/** Open the fixture's detail page, skipping only when it is unpublished here. */
+async function gotoEnrichedDetail(page: Page): Promise<string[]> {
+  const errors = trackErrors(page);
+  const res = await page.goto(`/projects/${ENRICHED_SLUG}`, {
+    waitUntil: "networkidle",
+  });
+  test.skip(
+    res?.status() === 404,
+    `${ENRICHED_SLUG} is not published in this environment`,
+  );
+  return errors;
+}
+
+/** The category eyebrow above the title — empty on an un-enriched row. */
+function categoryEyebrow(page: Page) {
+  return page.locator(".detail-head .t-idx").first();
+}
+
+test(`enriched project detail shows a category and deep content (#175)`, async ({
+  page,
+}) => {
+  const errors = await gotoEnrichedDetail(page);
+
+  await expect(page.locator("h1").first()).toBeVisible();
+
+  // Category, in both places a visitor meets it: the eyebrow above the title…
+  const eyebrow = categoryEyebrow(page);
+  await expect(eyebrow).toBeVisible();
+  await expect(eyebrow).toHaveText(/\S/);
+  const category = (await eyebrow.innerText()).trim();
+
+  // …and the facts list in the summary section. Targeted through its own <dt> rather
+  // than by position, so a reordered facts list cannot silently assert the wrong row.
+  const categoryFact = page
+    .locator(".project-facts > div")
+    .filter({ has: page.locator("dt", { hasText: /^(หมวดหมู่|Category)$/ }) })
+    .locator("dd");
+  await expect(categoryFact).toHaveCount(1);
+  await expect(categoryFact).toBeVisible();
+  await expect(categoryFact).toHaveText(category);
+
+  // Deep content sits behind a <details> that is closed on load, so clicking it proves
+  // both that the paragraphs exist and that a visitor can reach them. Excluding
+  // `.detail-readme` keeps this about our generated content, not the mirrored README.
+  const disclosure = page
+    .locator("details.project-disclosure:not(.detail-readme)")
+    .first();
+  await expect(disclosure).toBeVisible();
+  await disclosure.locator("summary").click();
+
+  const paragraphs = disclosure.locator(".detail-content p");
+  expect(
+    await paragraphs.count(),
+    "deep detail rendered no paragraphs — the page is an empty shell",
+  ).toBeGreaterThan(0);
+  await expect(paragraphs.first()).toBeVisible();
+  const body = (await disclosure.locator(".detail-content").innerText()).trim();
+  expect(
+    body.length,
+    "deep detail is too short to be real content",
+  ).toBeGreaterThan(200);
+
+  expect(errors, "console errors on the enriched detail page").toEqual([]);
+});
+
+test(`the /projects listing shows the same enriched category as the detail page (#175)`, async ({
+  page,
+}) => {
+  // Read the category from the detail page first, then require the listing to agree.
+  // Asserting the listing against itself would pass on an empty badge.
+  const errors = await gotoEnrichedDetail(page);
+  const category = (await categoryEyebrow(page).innerText()).trim();
+  expect(category, "detail page has no category to compare against").not.toBe(
+    "",
+  );
+
+  await page.goto("/projects", { waitUntil: "networkidle" });
+  const card = page.locator("article.pcard").filter({
+    has: page.locator(`a[href="/projects/${ENRICHED_SLUG}"]`),
+  });
+  await expect(card).toHaveCount(1);
+
+  // Compare case-normalised: `.badge` is text-transform: uppercase (globals.css:1227)
+  // while the detail eyebrow `.t-idx` is not (globals.css:94), so the two render the same
+  // stored value differently. Matching the full badge text rather than a substring keeps a
+  // different badge on the card — owner, featured, visibility — from satisfying this.
+  const badges = (
+    await card.locator(".pcard-badges .badge").allInnerTexts()
+  ).map((text) => text.trim().toLowerCase());
+  expect(
+    badges,
+    "the listing card shows no badge matching the detail page category",
+  ).toContain(category.toLowerCase());
+
+  expect(errors, "console errors across detail + listing").toEqual([]);
 });
