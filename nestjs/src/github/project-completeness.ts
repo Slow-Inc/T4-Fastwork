@@ -9,6 +9,11 @@
  * every field it reads already exists.
  */
 
+import {
+  authoritativeReadmeKeys,
+  type ReadmeSnapshotState,
+} from './missing-readme-backfill';
+
 /** The auto-filled fields a visitor-facing project page depends on. */
 export type IncompleteField = 'category' | 'content' | 'overview';
 
@@ -54,14 +59,23 @@ export type CompletenessRow = Omit<ProjectCompleteness, 'readmeMissing'> & {
  * Keys are compared case-insensitively: the key was built from whatever casing GitHub returned, and
  * a mismatch would report `never-reached` for a repo that simply has no README — sending someone to
  * look for a stalled queue that does not exist. No snapshot at all means the detail sync has not run
- * yet, which is unknown rather than missing, so it stays `false`.
+ * yet, and an **expired** marker means the backfill is about to re-check — both are unknown rather
+ * than missing, so both stay `false`.
  */
 export function resolveReadmeMissing(
   rows: readonly CompletenessRow[],
-  states: readonly { key: string; missing: boolean }[],
+  states: readonly ReadmeSnapshotState[],
+  now: Date = new Date(),
 ): ProjectCompleteness[] {
+  // An EXPIRED marker is not evidence. #215 made it expire so the backfill re-checks the repo; if
+  // this reader kept treating it as fact the two would disagree about the same row — and because a
+  // `no-readme` row is excluded from the actionable count, the row #211 is about would be dropped
+  // from the report meant to catch it. `authoritativeReadmeKeys` owns the TTL rule for both.
+  const stillChecked = authoritativeReadmeKeys(states, now);
   const missingKeys = new Set(
-    states.filter((s) => s.missing).map((s) => s.key.toLowerCase()),
+    states
+      .filter((s) => s.missing && stillChecked.has(s.key))
+      .map((s) => s.key.toLowerCase()),
   );
   return rows.map(({ ghOwner, ghRepo, ...rest }) => ({
     ...rest,

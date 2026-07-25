@@ -11,6 +11,7 @@ import { describe, it, expect } from 'bun:test';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { DrizzleDB } from '../src/database/database.module';
 import { PgShowcaseRepoStore } from '../src/github/pg-showcase-repos.store';
+import { README_MARKER_TTL_MS } from '../src/github/missing-readme-backfill';
 import {
   incompleteProject,
   incompleteProjects,
@@ -156,6 +157,27 @@ describe('resolveReadmeMissing (#222)', () => {
     );
 
     expect(res.readmeMissing).toBe(true);
+  });
+
+  it('stops trusting an EXPIRED marker, the way the backfill does', () => {
+    // #215 made the marker expire so its repo re-enters the backfill queue. If this reader kept
+    // treating an expired marker as fact, the two components would disagree about the same row:
+    // the backfill would re-check it while the report insisted "no README upstream" — and a
+    // `no-readme` row is excluded from the actionable count, so the row #211 is about would be
+    // silently dropped from the very report meant to catch it.
+    const checkedAt = new Date('2026-07-25T15:56:56Z');
+    const expired = new Date(checkedAt.getTime() + README_MARKER_TTL_MS + 1);
+    const fresh = new Date(checkedAt.getTime() + README_MARKER_TTL_MS - 1);
+    const states = [
+      { key: 'repo:Slow-Inc/T4-Fastwork:readme', missing: true, checkedAt },
+    ];
+
+    expect(resolveReadmeMissing([row], states, fresh)[0].readmeMissing).toBe(
+      true,
+    );
+    expect(resolveReadmeMissing([row], states, expired)[0].readmeMissing).toBe(
+      false,
+    );
   });
 
   it('treats a real README snapshot, and an absent one, as not missing', () => {
