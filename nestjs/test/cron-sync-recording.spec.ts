@@ -163,6 +163,23 @@ describe('refreshAll records the repos it reached (#223)', () => {
     ]);
   });
 
+  it('a successful pass CLEARS an error an earlier pipeline run recorded — deliberately', async () => {
+    // `last_sync_error` is one slot and means "the most recent attempt's error", so the most recent
+    // writer wins: a cron pass that succeeds at 10:52 erases a push-time action failure from 10:05.
+    // That is the column's semantics, not an accident — but it means this column cannot be the
+    // durable detector for a failed *enrichment*. #222's content invariant is, because it reads the
+    // outcome (the field is still empty) instead of who last failed. Pinned so nobody builds a
+    // daily alert on this column expecting it to remember.
+    const detail = detailSyncer();
+    const { recorder, calls } = fakeRecorder();
+
+    await service(detail, recorder, [
+      { owner: 'Slow-Inc', repo: 'Demo' },
+    ]).refreshAll();
+
+    expect(calls[0].error).toBeNull();
+  });
+
   it('works unchanged with no recorder injected', async () => {
     const detail = detailSyncer();
 
