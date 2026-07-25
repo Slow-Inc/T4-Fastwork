@@ -132,6 +132,16 @@ export class VercelWebhookController {
       return;
     }
     if (!verifyVercelSignature(raw, sig, secret)) {
+      // Logged because otherwise the one misconfiguration the setup script can produce — a
+      // `VERCEL_WEBHOOK_SECRET` that does not match the webhook's — is indistinguishable from no
+      // deliveries at all from this side, and only Vercel's delivery log would show it (#218).
+      // Neither the secret nor the presented signature is included: this line is what an operator
+      // pastes into an issue, and echoing the signature would hand an attacker an oracle.
+      this.logger.warn(
+        `rejected a Vercel delivery: signature did not verify (${
+          sig ? 'a signature was presented' : 'no signature header'
+        }) — check that VERCEL_WEBHOOK_SECRET matches the webhook`,
+      );
       res.status(401).json({ action: 'invalid-signature' });
       return;
     }
