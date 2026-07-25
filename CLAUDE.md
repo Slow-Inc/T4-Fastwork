@@ -85,6 +85,25 @@ certificates + articles as drafts → admin approve), and lead-gen flows. See th
 
 **Full requirements (Thai): `Requirement.MD` at the repo root — read the relevant section before implementing any page, component, or data model.**
 
+### 🎯 North Star — minimal human control
+
+**The site maintains itself.** GitHub is the source of truth, AI fills the gaps, and the admin does
+**not** hand-maintain content. This is the goal every automation decision serves.
+
+- **Visibility is authorization.** A public repo's visibility *is* the publish authorization — no
+  human approval step for generated copy on a public repo (**ADR 0011**).
+- **Measurable target** (`docs/prd/2026-07-24-event-driven-realtime-showcase-sync.md`): after a
+  push/deploy, processing **starts ≤ 2 min** and the full sync (content + cover) is **visible
+  ≤ 10 min**.
+- **Corollary for agents — a step that requires a human is a defect to design out, not a normal
+  part of the flow.** When you genuinely must park one (a production DB write, a token, a dashboard
+  action), file it as an issue that states the path to automating it away, and say so in the
+  handoff. Handing a human a recurring chore without that issue is an incomplete deliverable.
+- This does **not** loosen anything in **Operating defaults (mandatory)** above — the delivery
+  pipeline, the pre-merge review gate, and especially the 🛑 production-DB-write stop. Destructive
+  or authorization-changing actions stay human-approved on purpose; the target is to make the
+  *routine additive* work automatic.
+
 Target stack per the spec (§7) — **now implemented**:
 
 - Package manager/runtime: **Bun** (migrated — see Commands below)
