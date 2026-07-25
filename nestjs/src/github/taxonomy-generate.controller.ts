@@ -49,8 +49,9 @@ export class TaxonomyGenerateController {
     applied: boolean;
     capped: boolean;
     /**
-     * Published candidates whose repo has no README at all, so generation can never produce
-     * anything for them (#211). They are named rather than counted because the count alone leaves
+     * Published candidates with no README snapshot, so this run had nothing to generate from
+     * (#211) — either the repo has no README, or its detail sync has not run yet; the reader only
+     * sees the store. They are named rather than counted because the count alone leaves
      * an operator running a manual query to find out which row is stuck — and their skip costs no
      * LLM call, so it never consumes the cap and the run still reports success without them.
      *
@@ -111,8 +112,13 @@ export class TaxonomyGenerateController {
       // Warn, not error: the run itself succeeded. But a published project that no amount of
       // re-running can fill has to reach the logs on its own — waiting for someone to notice an
       // empty page is the failure mode #211 was found by.
+      //
+      // "no README snapshot", not "no README on GitHub": `getRepoReadme` reads the snapshot store
+      // and never calls GitHub (`github-read.service.ts:52`), so an absent snapshot means either
+      // the repo has no README or its detail sync has not run yet. Claiming the former would send
+      // an operator hunting for a README that exists.
       this.logger.warn(
-        `taxonomy: no README on GitHub, cannot generate: ${noReadmeSlugs.join(', ')}`,
+        `taxonomy: no README snapshot, cannot generate: ${noReadmeSlugs.join(', ')}`,
       );
     }
     return {

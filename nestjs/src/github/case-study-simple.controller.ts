@@ -57,8 +57,9 @@ export class CaseStudySimpleController {
     applied: boolean;
     capped: boolean;
     /**
-     * Published candidates whose repo has no README at all, so no run can ever fill their content
-     * (#211). Named rather than counted: a count leaves an operator querying the DB to find which
+     * Published candidates with no README snapshot, so there was nothing to generate content from
+     * (#211) — the repo has no README, or its detail sync has not run yet; the reader only sees the
+     * store. Named rather than counted: a count leaves an operator querying the DB to find which
      * row is stuck, and because the skip costs no LLM call it never consumes the cap — the run
      * reports success while the same row is passed over again.
      *
@@ -150,8 +151,12 @@ export class CaseStudySimpleController {
       // Warn, not error: the run succeeded. But a published project that no future run can fill
       // must reach the logs by itself — #211 was found because a visitor-facing page happened to
       // be opened, which is not a monitoring strategy.
+      //
+      // "snapshot", not "GitHub": `getRepoReadme` only reads the snapshot store
+      // (`github-read.service.ts:52`), so this covers both a repo with no README and one whose
+      // detail sync has not run yet — and it must not assert the first.
       this.logger.warn(
-        `case-study: no README on GitHub, cannot generate: ${noReadmeSlugs.join(', ')}`,
+        `case-study: no README snapshot, cannot generate: ${noReadmeSlugs.join(', ')}`,
       );
     }
 
