@@ -61,20 +61,30 @@ function deps(opts: { readme?: unknown; llmReply?: string } = {}) {
 
 describe('CaseStudySimpleService.generateForProject', () => {
   it('generates + publishes when the README sha changed', async () => {
-    const d = deps({ readme: { markdown: '# readme typescript', sha: 'sha2' } });
+    const d = deps({
+      readme: { markdown: '# readme typescript', sha: 'sha2' },
+    });
     const svc = new CaseStudySimpleService(d.readme, d.llm, d.store);
     const r = await svc.generateForProject(project({ readmeSha: 'sha1' }));
     expect(r.generated).toBe(true);
     expect(d.llmCalls).toHaveLength(1);
     expect(d.published).toHaveLength(1);
-    expect(d.published[0]).toMatchObject({ projectId: 1, slug: 'proj', sha: 'sha2' });
+    expect(d.published[0]).toMatchObject({
+      projectId: 1,
+      slug: 'proj',
+      sha: 'sha2',
+    });
   });
 
   it('skips (0 LLM calls) when the README sha is unchanged — delta gate', async () => {
     const d = deps({ readme: { markdown: '# x', sha: 'same' } });
     const svc = new CaseStudySimpleService(d.readme, d.llm, d.store);
     const r = await svc.generateForProject(
-      project({ readmeSha: 'same', content: 'already filled', contentOwner: 'auto' }),
+      project({
+        readmeSha: 'same',
+        content: 'already filled',
+        contentOwner: 'auto',
+      }),
     );
     expect(r.generated).toBe(false);
     expect(d.llmCalls).toHaveLength(0);
@@ -104,12 +114,30 @@ describe('CaseStudySimpleService.generateForProject', () => {
     expect(d.llmCalls).toHaveLength(0);
   });
 
-  it('skips when there is no README snapshot', async () => {
+  it('skips when there is no README snapshot, and says so (#211)', async () => {
     const d = deps({ readme: undefined });
     const svc = new CaseStudySimpleService(d.readme, d.llm, d.store);
     const r = await svc.generateForProject(project());
     expect(r.generated).toBe(false);
     expect(d.llmCalls).toHaveLength(0);
+    // A repo with no README can never produce content, so this skip repeats forever. It must be
+    // distinguishable from the delta-gate skip above, which means the row is already done.
+    expect(r.noReadme).toBe(true);
+  });
+
+  it('the delta-gate skip is not reported as noReadme (#211)', async () => {
+    const d = deps({ readme: { markdown: '# x', sha: 'same' } });
+    const svc = new CaseStudySimpleService(d.readme, d.llm, d.store);
+    const r = await svc.generateForProject(
+      project({
+        readmeSha: 'same',
+        content: 'already filled',
+        contentOwner: 'auto',
+      }),
+    );
+    expect(r.generated).toBe(false);
+    // This row has a README and is already filled — reporting it would drown the real signal.
+    expect(r.noReadme).toBeUndefined();
   });
 
   it('skips a project with no GitHub linkage', async () => {

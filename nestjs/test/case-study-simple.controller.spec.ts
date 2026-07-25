@@ -17,19 +17,37 @@ const VALID = JSON.stringify({
   technologies: ['ts'],
 });
 
-function make(over: { projects?: CaseStudyProject[] } = {}) {
+function make(
+  over: {
+    projects?: CaseStudyProject[];
+    /** Repos with no README on GitHub at all — the #211 case. */
+    withoutReadme?: string[];
+  } = {},
+) {
   const writes: number[] = [];
   const store: CaseStudySimpleStore = {
     listPublishedGithubProjects: async () =>
       over.projects ?? [
-        { id: 1, slug: 'a', ghOwner: 'o', ghRepo: 'r', readmeSha: 'old', description: null, content: null, contentOwner: 'auto' },
+        {
+          id: 1,
+          slug: 'a',
+          ghOwner: 'o',
+          ghRepo: 'r',
+          readmeSha: 'old',
+          description: null,
+          content: null,
+          contentOwner: 'auto',
+        },
       ],
     publishCaseStudy: async (id) => {
       writes.push(id);
     },
   };
   const readme: ReadmeReader = {
-    getRepoReadme: async () => ({ data: { markdown: 'ts', sha: 'new' }, stale: false }),
+    getRepoReadme: async (_owner, repo) =>
+      (over.withoutReadme ?? []).includes(repo)
+        ? null
+        : { data: { markdown: 'ts', sha: 'new' }, stale: false },
   };
   const llm: CompletionLlm = { complete: async () => VALID };
   return { c: new CaseStudySimpleController(readme, llm, store), writes };
@@ -56,6 +74,52 @@ describe('CaseStudySimpleController', () => {
     expect(res.candidates).toBe(1);
     expect(res.generated).toBe(1);
     expect(writes).toHaveLength(0); // nothing written in dry-run
+  });
+
+  // #211 — the un-enrichable row sorts first in production (newest publish) and its skip costs no
+  // LLM call, so it never consumes the cap: the run generates a different project and reports
+  // success while the stuck row is skipped again. The response has to name it.
+  it('names published candidates whose repo has no README at all (#211)', async () => {
+    process.env.GITHUB_REFRESH_SECRET = 'right';
+    const { c, writes } = make({
+      projects: [
+        {
+          id: 9,
+          slug: 't4-fastwork',
+          ghOwner: 'Slow-Inc',
+          ghRepo: 'T4-Fastwork',
+          readmeSha: null,
+          description: null,
+          content: null,
+          contentOwner: 'auto',
+        },
+        {
+          id: 1,
+          slug: 'a',
+          ghOwner: 'o',
+          ghRepo: 'r',
+          readmeSha: 'old',
+          description: null,
+          content: null,
+          contentOwner: 'auto',
+        },
+      ],
+      withoutReadme: ['T4-Fastwork'],
+    });
+
+    const res = await c.run('right', { apply: true });
+
+    expect(res.candidates).toBe(2);
+    expect(res.generated).toBe(1);
+    expect(writes).toEqual([1]);
+    expect(res.noReadmeSlugs).toEqual(['t4-fastwork']);
+  });
+
+  it('reports no blocked slugs when every candidate has a README (#211)', async () => {
+    process.env.GITHUB_REFRESH_SECRET = 'right';
+    const { c } = make();
+    const res = await c.run('right', { apply: true });
+    expect(res.noReadmeSlugs).toEqual([]);
   });
 
   it('a truthy-but-not-true apply value stays dry-run (no prod write)', async () => {
@@ -106,7 +170,10 @@ describe('CaseStudySimpleController', () => {
       publishCaseStudy: async () => {},
     };
     const readme: ReadmeReader = {
-      getRepoReadme: async () => ({ data: { markdown: 'ts', sha: 'new' }, stale: false }),
+      getRepoReadme: async () => ({
+        data: { markdown: 'ts', sha: 'new' },
+        stale: false,
+      }),
     };
     const llm: CompletionLlm = { complete: async () => VALID };
     const c = new CaseStudySimpleController(
@@ -184,7 +251,10 @@ describe('CaseStudySimpleController', () => {
       },
     };
     const readme: ReadmeReader = {
-      getRepoReadme: async () => ({ data: { markdown: 'ts', sha: 'new' }, stale: false }),
+      getRepoReadme: async () => ({
+        data: { markdown: 'ts', sha: 'new' },
+        stale: false,
+      }),
     };
     const llm: CompletionLlm = { complete: async () => VALID };
     const c = new CaseStudySimpleController(readme, llm, store);

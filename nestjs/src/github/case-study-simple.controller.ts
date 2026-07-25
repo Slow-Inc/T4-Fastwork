@@ -56,6 +56,13 @@ export class CaseStudySimpleController {
     generated: number;
     applied: boolean;
     capped: boolean;
+    /**
+     * Published candidates whose repo has no README at all, so no run can ever fill their content
+     * (#211). Named rather than counted: a count leaves an operator querying the DB to find which
+     * row is stuck, and because the skip costs no LLM call it never consumes the cap — the run
+     * reports success while the same row is passed over again.
+     */
+    noReadmeSlugs: string[];
   }> {
     const expected = process.env.GITHUB_REFRESH_SECRET;
     if (!expected || !constantTimeEqual(secret, expected)) {
@@ -103,10 +110,12 @@ export class CaseStudySimpleController {
     // scanning without spending the per-run budget.
     let generated = 0;
     let attempted = 0;
+    const noReadmeSlugs: string[] = [];
     for (const p of projects) {
       if (attempted >= maxPerRun) break;
       try {
         const r = await svc.generateForProject(p);
+        if (r.noReadme) noReadmeSlugs.push(p.slug);
         if (r.generated) {
           generated++;
           attempted++;
@@ -133,12 +142,22 @@ export class CaseStudySimpleController {
       void this.revalidate?.revalidateProjects();
     }
 
+    if (noReadmeSlugs.length > 0) {
+      // Warn, not error: the run succeeded. But a published project that no future run can fill
+      // must reach the logs by itself — #211 was found because a visitor-facing page happened to
+      // be opened, which is not a monitoring strategy.
+      this.logger.warn(
+        `case-study: no README on GitHub, cannot generate: ${noReadmeSlugs.join(', ')}`,
+      );
+    }
+
     return {
       candidates: projects.length,
       attempted,
       generated,
       applied: apply,
       capped: attempted >= maxPerRun,
+      noReadmeSlugs,
     };
   }
 }

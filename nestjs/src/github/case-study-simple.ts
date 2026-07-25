@@ -89,12 +89,16 @@ export class CaseStudySimpleService {
 
   async generateForProject(
     project: CaseStudyProject,
-  ): Promise<{ generated: boolean }> {
+    /**
+     * `noReadme` separates the one permanent blocker — the repo has no README, so no run can ever
+     * produce content — from the delta gate below, which means the row is already done (#211).
+     */
+  ): Promise<{ generated: boolean; noReadme?: true }> {
     if (!project.ghOwner || !project.ghRepo) return { generated: false };
 
     const rr = await this.readme.getRepoReadme(project.ghOwner, project.ghRepo);
     const snap = asReadmeSnapshot(rr?.data);
-    if (!snap) return { generated: false };
+    if (!snap) return { generated: false, noReadme: true };
 
     // Delta gate (#160): unchanged README skips unless content still empty+auto.
     if (!shouldGenerateCaseStudy(project, snap.sha)) {
