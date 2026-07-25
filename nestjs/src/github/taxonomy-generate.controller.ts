@@ -53,6 +53,11 @@ export class TaxonomyGenerateController {
      * anything for them (#211). They are named rather than counted because the count alone leaves
      * an operator running a manual query to find out which row is stuck — and their skip costs no
      * LLM call, so it never consumes the cap and the run still reports success without them.
+     *
+     * Complete only for the candidates this run actually scanned: the loop breaks at the cap, so a
+     * blocked row ordered after the one that generated is reported by a later run, not this one.
+     * The exhaustive set is `readme_sha is null` on published github rows — which is what an alert
+     * (#193) should query. This field is the push that makes it reach the logs unprompted.
      */
     noReadmeSlugs: string[];
   }> {

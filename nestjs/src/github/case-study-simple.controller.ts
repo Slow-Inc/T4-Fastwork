@@ -61,6 +61,10 @@ export class CaseStudySimpleController {
      * (#211). Named rather than counted: a count leaves an operator querying the DB to find which
      * row is stuck, and because the skip costs no LLM call it never consumes the cap — the run
      * reports success while the same row is passed over again.
+     *
+     * Complete only for the candidates this run scanned — the loop breaks at the cap, so a blocked
+     * row ordered after the one that generated surfaces on a later run. The exhaustive set is
+     * `readme_sha is null` on published github rows, which is what an alert (#193) should query.
      */
     noReadmeSlugs: string[];
   }> {
