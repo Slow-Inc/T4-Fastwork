@@ -96,11 +96,17 @@ export class PgShowcaseRepoStore
   }
 
   async listReadmeSnapshotStates(): Promise<ReadmeSnapshotState[]> {
-    // `missing` / `checked_at` come from the #177 marker shape; a real README snapshot has neither,
-    // so it reads as `missing: false` and the TTL never applies to it.
+    // Both fields come from the #177 marker shape; a real README snapshot has neither, so it reads
+    // as `missing: false` and the TTL never applies to it. Projected rather than selecting `data`,
+    // because that would pull every README's full markdown on every backfill run.
+    //
+    // `->>` yields text or null, and the comparison happens in TS on purpose: asking Postgres for a
+    // boolean would make this depend on how the driver maps one, and a driver that returned `'t'`
+    // would read the marker as a real snapshot — silently restoring the permanent exclusion #215
+    // removes. Text has one representation.
     const rows = (await this.db.execute(
       sql`select key,
-                 (data->>'missing') = 'true' as missing,
+                 data->>'missing' as missing_flag,
                  data->>'checkedAt' as checked_at
           from github_snapshots
           where key like ${'repo:%:readme'}`,
@@ -115,7 +121,7 @@ export class PgShowcaseRepoStore
       }
       states.push({
         key: r.key,
-        missing: r.missing === true,
+        missing: r.missing_flag === 'true',
         checkedAt: parseCheckedAt(r.checked_at),
       });
     }
