@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { UnauthorizedException } from '@nestjs/common';
 import { GithubWriteController } from '../src/github/github-write.controller';
+import { README_MARKER_TTL_MS } from '../src/github/missing-readme-backfill';
 import type { GithubRefreshService } from '../src/github/github-refresh.service';
 import type {
   MissingReadmeStore,
@@ -9,7 +10,7 @@ import type {
 
 function makeController(over: {
   listPublished?: MissingReadmeStore['listPublishedGithubForReadmeBackfill'];
-  listExistingKeys?: MissingReadmeStore['listExistingReadmeKeys'];
+  listStates?: MissingReadmeStore['listReadmeSnapshotStates'];
   refreshRepoDetail?: GithubRefreshService['refreshRepoDetail'];
   exclusive?: (
     name: string,
@@ -52,9 +53,15 @@ function makeController(over: {
         { owner: 'xenodeve', repo: 'resume_web', slug: 'resume-web' },
         { owner: 'Slow-Inc', repo: 'Other', slug: 'other' },
       ]),
-    listExistingReadmeKeys:
-      over.listExistingKeys ??
-      (async () => new Set(['repo:Slow-Inc/MangaDock:readme'])),
+    listReadmeSnapshotStates:
+      over.listStates ??
+      (async () => [
+        {
+          key: 'repo:Slow-Inc/MangaDock:readme',
+          missing: false,
+          checkedAt: null,
+        },
+      ]),
   };
 
   const revalidate = {
@@ -148,5 +155,49 @@ describe('GithubWriteController.doRefreshMissingReadme (#158)', () => {
     const res = await c.doRefreshMissingReadme('right', { apply: true });
     expect(res.withReadme).toBe(1);
     expect(res.noReadme).toBe(0);
+  });
+
+  // #215 — a #177 missing-marker is a readme key, so it used to exclude its repo from this backfill
+  // forever. A repo that later gains a README then lost the one step built to fetch it and had to
+  // wait for the broad refresh's rotating 8-repo budget. An expired marker must re-enter the queue.
+  it('re-selects a repo whose missing-marker has expired', async () => {
+    const stale = new Date(Date.now() - (README_MARKER_TTL_MS + 60_000));
+    const { c, detailCalls } = makeController({
+      listPublished: async () => [
+        { owner: 'Slow-Inc', repo: 'T4-Fastwork', slug: 't4-fastwork' },
+      ],
+      listStates: async () => [
+        {
+          key: 'repo:Slow-Inc/T4-Fastwork:readme',
+          missing: true,
+          checkedAt: stale,
+        },
+      ],
+    });
+
+    const res = await c.doRefreshMissingReadme('right', { apply: true });
+
+    expect(res.candidates).toBe(1);
+    expect(detailCalls).toEqual(['Slow-Inc/T4-Fastwork']);
+  });
+
+  it('still skips a repo whose missing-marker is fresh, so a README-less repo is not re-fetched hourly', async () => {
+    const { c, detailCalls } = makeController({
+      listPublished: async () => [
+        { owner: 'Slow-Inc', repo: 'T4-Fastwork', slug: 't4-fastwork' },
+      ],
+      listStates: async () => [
+        {
+          key: 'repo:Slow-Inc/T4-Fastwork:readme',
+          missing: true,
+          checkedAt: new Date(),
+        },
+      ],
+    });
+
+    const res = await c.doRefreshMissingReadme('right', { apply: true });
+
+    expect(res.candidates).toBe(0);
+    expect(detailCalls).toEqual([]);
   });
 });

@@ -32,7 +32,10 @@ import { DrizzleSnapshotStore } from './drizzle-snapshot.store';
 import { RagIngestService } from '../ingestion/rag-ingest.service';
 import { RevalidateService } from '../revalidate/revalidate.service';
 import { PgShowcaseRepoStore } from './pg-showcase-repos.store';
-import { selectReposMissingReadme } from './missing-readme-backfill';
+import {
+  authoritativeReadmeKeys,
+  selectReposMissingReadme,
+} from './missing-readme-backfill';
 
 @Controller('github')
 export class GithubWriteController {
@@ -149,10 +152,12 @@ export class GithubWriteController {
         ? Math.floor(configured)
         : 1;
 
-    const [candidates, existingKeys] = await Promise.all([
+    const [candidates, snapshotStates] = await Promise.all([
       this.projects.listPublishedGithubForReadmeBackfill(),
-      this.projects.listExistingReadmeKeys(),
+      this.projects.listReadmeSnapshotStates(),
     ]);
+    // An expired missing-marker stops counting as "checked", so its repo re-enters the queue (#215).
+    const existingKeys = authoritativeReadmeKeys(snapshotStates);
     const planned = selectReposMissingReadme(
       candidates,
       existingKeys,
