@@ -1,5 +1,24 @@
 # Open-Work Ledger
 
+## 2026-07-25 — #175 D3 enrichment E2E MERGED; epic #172 left open on one residual
+
+- **Shipped:** [#175](https://github.com/Slow-Inc/T4-Fastwork/issues/175) via PR #212, squashed as
+  `6a42a87`. Two unconditional Playwright cases assert visitor-visible category + deep content on
+  `/projects/hype-macro-store`, plus that route in the smoke loop. `bun run e2e` 68 passed.
+- **Fixture correction:** `mangadock` is `source = cms` with a null `overview_summary` — not a valid
+  enrichment fixture. Use `hype-macro-store` (github-sourced, published, enriched).
+- **Red proof came from prod, not a mutated file:** `t4-fastwork` is a published github row with
+  `category_id` + `content` both null → the cases fail on `<div class="t-idx"></div>`.
+- **Opened:** [#211](https://github.com/Slow-Inc/T4-Fastwork/issues/211) — that row is a live
+  visitor-facing empty shell, never enriched 48 h after publish while both generation crons run
+  hourly. Fix must reach it through the automated path; a hand-written DB row would hide the defect.
+- **Epic [#172](https://github.com/Slow-Inc/T4-Fastwork/issues/172) NOT closed:** goals (2) cover
+  and (3) E2E lock are met (37/37 no-`live_url` projects have a cover; 47/47 published do), goal (1)
+  fill is 46/47 with #211 as the named exception. Closing it would be an optimistic close —
+  the close/keep-open decision is the developer's, stated on the issue.
+- **Still parked (unchanged):** prod migrations `0032`/`0033`; org-scoped `SCREENSHOT_DISPATCH_TOKEN`;
+  the Vercel dashboard webhook.
+
 ## 2026-07-24 — Epic #185 event-driven realtime showcase sync (in progress)
 
 - **Epic:** [#185](https://github.com/Slow-Inc/T4-Fastwork/issues/185) — hands-off automation;
