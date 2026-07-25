@@ -25,21 +25,26 @@ export interface UnhealthyProject {
 }
 
 /**
- * How many cadences a project may go unsynced before it counts as stuck.
+ * How many expected revisits a project may miss before it counts as stuck.
  *
- * Three, because GitHub Actions schedules drift by tens of minutes and the detail sync rotates a
- * budget of repos per run — one or two missed runs is normal, so alerting there would cry wolf and
- * train everyone to ignore the signal.
+ * Three, because GitHub Actions schedules drift by tens of minutes — one or two missed revisits is
+ * normal, and alerting there would train everyone to ignore the signal.
  */
-export const STUCK_AFTER_CADENCES = 3;
+export const STUCK_AFTER_REVISITS = 3;
 
 /**
  * `null` when the project looks healthy. An error outranks staleness: a stale-and-failing project
  * should be reported by the cause someone can act on, not by its age.
  */
+/**
+ * @param revisitIntervalMs How often a *single* project is expected to be reached — **not** the cron
+ *   period. `refreshAll` rotates a budget of 8 repos per hourly run over ~47 published github repos
+ *   (`github-refresh.service.ts:47,53-62`), so a given project is revisited roughly every 6 hours.
+ *   Passing the 1-hour cron period here would report almost every healthy project as stuck.
+ */
 export function isSyncUnhealthy(
   project: ProjectSyncHealth,
-  cadenceMs: number,
+  revisitIntervalMs: number,
   now: Date = new Date(),
 ): UnhealthyProject | null {
   if (project.lastSyncError) {
@@ -53,7 +58,7 @@ export function isSyncUnhealthy(
     return { slug: project.slug, reason: 'never', detail: 'never synced' };
   }
   const ageMs = now.getTime() - project.lastSyncedAt.getTime();
-  if (ageMs > cadenceMs * STUCK_AFTER_CADENCES) {
+  if (ageMs > revisitIntervalMs * STUCK_AFTER_REVISITS) {
     const hours = Math.floor(ageMs / 3_600_000);
     return { slug: project.slug, reason: 'stuck', detail: `${hours}h stale` };
   }
@@ -63,12 +68,12 @@ export function isSyncUnhealthy(
 /** The unhealthy subset, in input order. Empty means a quiet run stays quiet. */
 export function unhealthyProjects(
   projects: readonly ProjectSyncHealth[],
-  cadenceMs: number,
+  revisitIntervalMs: number,
   now: Date = new Date(),
 ): UnhealthyProject[] {
   const out: UnhealthyProject[] = [];
   for (const p of projects) {
-    const bad = isSyncUnhealthy(p, cadenceMs, now);
+    const bad = isSyncUnhealthy(p, revisitIntervalMs, now);
     if (bad) out.push(bad);
   }
   return out;
