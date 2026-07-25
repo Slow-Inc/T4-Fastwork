@@ -11,7 +11,7 @@ const PAGES = [
   "/projects",
   "/projects/mangadock",
   // The enrichment fixture (#175) gets the same layout/hydration contract as any page.
-  "/projects/hype-macro-store",
+  "/projects/t4-fastwork",
   "/faq",
   "/contact",
   "/pricing-guide",
@@ -1385,11 +1385,15 @@ test("gh visibility badge follows the language switch (#202)", async ({
  * smoke loop above happily passes, because the <h1> is still there. These cases assert
  * what a visitor actually reads.
  *
- * `hype-macro-store` is github-sourced, published, and enriched, so the assertions are
- * unconditional. The only tolerated escape is a 404 — if the fixture is unpublished in
- * this environment there is no page to make claims about.
+ * The fixture is `t4-fastwork` on purpose (#211): it is the row that WAS the empty shell —
+ * published, github-sourced, and serving a page with nothing to read — and it was filled by
+ * the normal automated path (README backfill after the #215 marker expired, then the capped
+ * taxonomy / overview / case-study generators). Pointing these assertions at the row the bug
+ * was about is what stops it from regressing silently; a hand-repaired row would have proved
+ * nothing. The only tolerated escape is a 404 — if the fixture is unpublished in this
+ * environment there is no page to make claims about.
  */
-const ENRICHED_SLUG = "hype-macro-store";
+const ENRICHED_SLUG = "t4-fastwork";
 
 /** Open the fixture's detail page, skipping only when it is unpublished here. */
 async function gotoEnrichedDetail(page: Page): Promise<string[]> {
