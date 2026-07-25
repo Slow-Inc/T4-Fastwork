@@ -47,4 +47,29 @@ describe('ProjectTechnologyPanel', () => {
     expect(container.textContent).toContain('Next.js');
     expect(container.textContent).toContain('ใช้สร้าง App Router frontend');
   });
+
+  test('dedupes duplicate technology names for stable React keys (#184)', () => {
+    const { container } = render(
+      <ProjectTechnologyPanel
+        technologies={['Tailwind CSS', 'Next.js', 'Tailwind CSS']}
+        technologyDetails={[
+          { name: 'Tailwind CSS' },
+          {
+            name: 'Tailwind CSS',
+            usedFor: 'Utility styling',
+            usedForEn: 'Utility styling',
+          },
+          { name: 'Next.js', usedFor: 'App Router' },
+        ]}
+        tags={['portfolio', 'portfolio']}
+      />,
+    );
+
+    const techNames = Array.from(
+      container.querySelectorAll('.tech-used-for-item__name'),
+    ).map((el) => el.textContent);
+    expect(techNames).toEqual(['Tailwind CSS', 'Next.js']);
+    expect(container.textContent).toContain('Utility styling');
+    expect(container.querySelectorAll('.chip-muted').length).toBe(1);
+  });
 });
