@@ -29,6 +29,7 @@ import { RagIngestService } from '../ingestion/rag-ingest.service';
 import { RevalidateModule } from '../revalidate/revalidate.module';
 import { PipelineSyncModule } from './pipeline-sync.module';
 import { PipelinePushRunner } from './pipeline-push-runner';
+import { PgPipelineSyncStore } from './pg-pipeline-sync.store';
 
 @Module({
   imports: [
@@ -70,6 +71,9 @@ import { PipelinePushRunner } from './pipeline-push-runner';
         syncer: GithubSnapshotService,
         detail: GithubDetailService,
         showcaseRepos: PgShowcaseRepoStore,
+        // #223 — the hourly detail loop records that it reached each repo. Without it only pushes
+        // and Vercel deploys record, so a repo nobody pushed to reads stale however healthy it is.
+        outcomes: PgPipelineSyncStore,
       ) =>
         new GithubRefreshService(
           syncer,
@@ -78,8 +82,14 @@ import { PipelinePushRunner } from './pipeline-push-runner';
           detail,
           undefined,
           showcaseRepos,
+          outcomes,
         ),
-      inject: [GithubSnapshotService, GithubDetailService, PgShowcaseRepoStore],
+      inject: [
+        GithubSnapshotService,
+        GithubDetailService,
+        PgShowcaseRepoStore,
+        PgPipelineSyncStore,
+      ],
     },
     {
       provide: SnapshotOwnerRefresher,
