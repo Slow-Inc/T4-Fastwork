@@ -12,6 +12,13 @@ adds autonomous-agent safety constraints.
 
 1. Read `CLAUDE.md` in full and obey the stricter applicable rule from `AGENTS.md`.
 2. Read `docs/OPEN-WORK-LEDGER.md` and `Obsidian-Fastwork/Home.md`.
+2b. **Audit the gate on recent merges** — `bun run scripts/gate-audit.ts --since <date of the newest
+   session heading in the ledger>` (from `nestjs/`). It reports merged PRs with no evidence, evidence
+   quoting no full SHA, evidence about a commit other than the one merged, or only one of the two
+   gates. A non-empty report is a **process incident**: record it in the ledger before starting new
+   delivery. Do **not** back-fill evidence onto the offending PR — evidence produced after the merge is
+   documentation, not a gate, and back-filling makes the record lie about what happened. `0 gaps` over
+   an empty window is not a clean bill of health; the script says so itself.
 3. Open only the vault notes, requirement section, ADR, issue, and source files relevant to the
    active task. Do not load the whole vault.
 4. Use `karpathy-guidelines` before writing, changing, reviewing, or refactoring code.
