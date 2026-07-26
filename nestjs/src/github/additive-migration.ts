@@ -28,8 +28,12 @@ export interface AdditiveVerdict {
  * Exported for one reason: `test/adr0015-additive-list-matches-classifier.spec.ts` asserts that ADR 0015
  * documents **every** shape here. Widening this list without documenting it is the exact drift that made
  * the ADR wrong in the first place (#257), and only a test that can see the list can catch it.
+ *
+ * `readonly` + frozen because exporting it makes the boundary reachable from outside this module: a bare
+ * `RegExp[]` could be widened at runtime with a `push`, which is precisely the mutation the refuse-by-
+ * default design exists to make impossible. Being exported for a test must not make it editable by code.
  */
-export const ADDITIVE_SHAPES: RegExp[] = [
+export const ADDITIVE_SHAPES: readonly RegExp[] = Object.freeze([
   // alter table [schema.]t add column if not exists ...
   /^alter\s+table\s+(?:if\s+exists\s+)?[\w."]+\s+add\s+column\s+if\s+not\s+exists\s+/,
   /^create\s+table\s+if\s+not\s+exists\s+/,
@@ -38,7 +42,7 @@ export const ADDITIVE_SHAPES: RegExp[] = [
   /^create\s+extension\s+if\s+not\s+exists\s+/,
   // Metadata only — cannot affect a read, a write, or a grant.
   /^comment\s+on\s+/,
-];
+]);
 
 /** Strip comments and split on `;` so each statement is judged on its own. */
 function statements(sql: string): string[] {
