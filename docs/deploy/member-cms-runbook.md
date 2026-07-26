@@ -10,9 +10,10 @@ Decisions: [ADR 0005](../adr/0005-member-content-to-db-provenance-additive.md) (
 
 Migrations `0004`–`0017` are applied to the Supabase project `t4-fastwork`
 (`ngpsbetwbhbemcoequoy`) — members table, member content, RLS + column grants, unified-auth
-`is_admin`, and the security fixes. Drizzle migrations run via `bun run db:migrate`
-(needs `DATABASE_URL`); Supabase-only SQL under `supabase/migrations/` is applied via the
-Supabase MCP. Re-applying is idempotent.
+`is_admin`, and the security fixes. All of it lives under `supabase/migrations/` and is applied via the
+Supabase MCP; re-applying is idempotent. **The `bun run db:migrate` path referenced here previously no
+longer exists** — see [migrations.md](migrations.md) for where DDL goes and what applies it (#247 /
+ADR 0015).
 
 ## Required human steps
 
