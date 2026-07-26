@@ -1,5 +1,43 @@
 # Open-Work Ledger
 
+## 2026-07-26 (AFK) — `ready-for-agent` is now EMPTY: #193 closed, ADR 0015 shipped, the rest relabelled honestly
+
+Cleared the label rather than the work: everything still open needs a human, and each one now says
+exactly which human action, so the label means "an agent can pick this up now".
+
+- **#193 CLOSED on AC1–AC3 + AC5, AC4 dropped with the reason stated.** AC4 wanted a runtime ops check
+  that cooldown + single-slug dispatch bound Action minutes. Both are already guaranteed at the seam
+  and covered: `project-automation-sync.spec.ts:110`, `cover-capture-contract.spec.ts:168`/`:181`,
+  `screenshot-dispatch.spec.ts:27`. And the premise was wrong — **Action minutes were never the
+  binding constraint; the 60 s function limit was**, which is why the generators run capped at 1.
+- **#207 → [ADR 0015](adr/0015-additive-migrations-apply-themselves.md) (`f8767b2`, Proposed).** The
+  finding that unparks it: **the privileged CI credential does not need to exist** — the backend is
+  already the Postgres superuser through the pooler (ADR 0007) and `bun run db:migrate` is wired. The
+  parking reason was never the credential, only the permission. ADR decides the classifier as the
+  safety boundary (refuse-by-default, so "additive" is a static property of the SQL), the deploy path
+  over the boot path (ADR 0014 — on serverless "boot" means every cold start), and that a failed
+  migration must not fail the deploy. ⚠️ It names a **blocking prerequisite**: `supabase/migrations/`
+  and `nestjs/drizzle/` hold duplicated DDL in two journals; automating over that makes drift silent.
+- **#217 relabelled with two corrections.** It is **`workflow_dispatch`**, not `repository_dispatch`
+  (`screenshot-dispatch.ts:32`), so the 403 is the ordinary fine-grained-PAT-missing-`Actions: write`
+  error — the interim stopgap is a 2-minute re-mint, not an org-PAT project. And its "alternative"
+  (pull instead of push) **already exists** as `screenshot-projects.yml`'s `0 */6 * * *` gap-fill —
+  6-hourly against a ≤10 min target, i.e. 36× outside it. So the GitHub App is the only option that
+  keeps the guarantee, and the pull path stays as the safety net it already is.
+- **#194 / #202 relabelled — and #202's E2E currently passes VACUOUSLY.** `0033` is unapplied, so no
+  badge renders, so the `E2E_EXPECT_GH_BADGE=1`-gated assertion never executes. Honest by
+  construction, but not the coverage #202 asks for. Both close by applying `0033`, then flipping that
+  env var and re-running e2e — no code change expected.
+- **#191 verified code-complete, deliberately NOT closed.** All six ACs have named tests
+  (`vercel-webhook.controller.spec.ts:44/:171/:179/:195/:211/:266/:278`). It stays open because no
+  webhook exists in Vercel, so the precise recapture never fires — closing on ACs alone would claim a
+  feature that does not run. #185 closes with it.
+- **Blocked by the sandbox, not by policy:** the `setup-vercel-webhook.ts --apply` run was denied by
+  the auto-mode classifier (reads the Vercel CLI credential + writes prod infra). Everything around it
+  was verified first: the dry-run plan (`create`, `deployment.succeeded`, both T4 projects), the team
+  and project IDs resolved from the API, and the receiving end answering **503 `not-configured`** —
+  which should flip to **401 `invalid-signature`** after the run. That flip is the verification.
+
 ## 2026-07-26 (AFK) — #239 CLOSED; #240 measured on production: the DB read is gone
 
 - **#239 (`f72c872`, PR #243):** every project writer busts `PROJECTS_CACHE_TAG` through one helper
