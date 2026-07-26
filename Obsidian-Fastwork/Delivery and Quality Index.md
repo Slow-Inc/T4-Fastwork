@@ -24,3 +24,4 @@ source: Engineering knowledge migration from MangaDock
 - [[Learning Capture Before Completion]]
 - [[Merged Branch Cleanup]]
 - [[Bilingual Pre-Merge Review Evidence]]
+- [[Doc-Code Invariants Run Both Ways]]

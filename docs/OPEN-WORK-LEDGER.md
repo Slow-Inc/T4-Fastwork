@@ -1,5 +1,34 @@
 # Open-Work Ledger
 
+## 2026-07-27 — ADR 0015 now says what the classifier does, and the invariant runs both ways
+
+- **#257 CLOSED (`0f55006`, PR #258).** ADR 0015 and `isAdditiveMigration` defined "additive"
+  differently **in both directions**: the ADR called `create or replace view` additive (refused by the
+  classifier) and omitted `create schema/extension if not exists` (accepted by it). Both lists are now
+  marker-delimited in the ADR and their SQL examples are **executable** —
+  `adr0015-additive-list-matches-classifier.spec.ts` runs each one through the classifier. Status stays
+  **`Proposed`**: accepting it turns on production DDL and is the developer's call.
+  - ⚠️ **The first version of the invariant caught only half the bug it was written for.** It checked
+    that every shape the ADR calls additive really is, but not that the ADR documents every shape the
+    classifier accepts — the exact direction that let `create schema/extension` go undocumented. Both
+    directions now assert, the second one mutation-proved (deleting the `create extension` bullet fails
+    the test naming that shape). Generalized in
+    [`Doc-Code Invariants Run Both Ways`](../Obsidian-Fastwork/Doc-Code%20Invariants%20Run%20Both%20Ways.md).
+  - ⚠️ **`security-review` on my own diff:** exporting `ADDITIVE_SHAPES` so the coverage test could see
+    it made a security boundary externally mutable — `ADDITIVE_SHAPES.push(/^drop /)` from any importer
+    would pre-approve destructive DDL. Now `readonly` + `Object.freeze`, verified by attempting the push
+    at runtime, not by reading the type. Satisfying an AC by shipping a fresh weakness is the wrong trade.
+  - A vacuous pass was also possible: the extractor took the first backticked span per bullet, so prose
+    backticking a word before the SQL would be fed to the classifier — non-additive, so the refused-list
+    assertion would have passed for the wrong reason. Spans must now open with a DDL/DML verb.
+  - `ADDITIVE_SHAPES` itself is unchanged, verified line by line in the merge diff. nestjs **573 pass**.
+- **#259 OPENED (`ready-for-agent`) — the audit's `--since` is a UTC date.** `mergedAt` is UTC while the
+  documented step-2b recipe passes a local calendar date, and this machine is UTC+7. Measured: PR #258
+  merged `2026-07-26T23:28:03Z` = `2026-07-27 06:31` local, so `--since 2026-07-27` audited **0 PRs**
+  while `--since 2026-07-26` audited 16 and confirmed **#258 passes**. The tool does **not** claim a pass
+  on an empty window — it prints `nothing was checked`, the vacuous-pass guard #253 built on purpose — so
+  the defect is in the recipe, not the output. Fix the wording, do not silently widen the window.
+
 ## 2026-07-26/27 (AFK) — the gate is now trigger-first, detectable, and it caught its own author twice
 
 - **#251 CLOSED for A–E (`488c4b3`, PR #252).** The pre-merge gate became a 🛑 STOP section triggered by
