@@ -82,3 +82,35 @@ export function findUnreviewedMerges(prs: MergedPr[]): GateGap[] {
   }
   return gaps;
 }
+
+/**
+ * Is this merge inside the requested window? `since` is a **UTC** calendar date (`YYYY-MM-DD`), because
+ * that is what `mergedAt` carries — see `describeAuditWindow` for why the caller must be told (#259).
+ */
+export function inMergeWindow(
+  mergedAt: string | null,
+  since: string | undefined,
+): boolean {
+  if (!mergedAt) return false;
+  return !since || mergedAt.slice(0, 10) >= since;
+}
+
+/**
+ * The window sentence the report opens with. It exists because "audited 0 merged PRs" is true and
+ * useless: the operator asked for *today* in local time, and a UTC comparison can legitimately answer
+ * with an empty set. Saying the boundary out loud, and naming the local-date trap when the set is empty,
+ * is what keeps a vacuous window from reading as a clean day (#259).
+ */
+export function describeAuditWindow(
+  count: number,
+  since: string | undefined,
+): string {
+  const scope = since
+    ? `audited ${count} merged PRs merged on/after ${since} (UTC)`
+    : `audited ${count} merged PRs`;
+  if (count > 0) return scope;
+  return (
+    `${scope} — nothing was checked. Note this is a UTC boundary: a PR merged in your local ` +
+    `morning can carry the previous UTC date, so if you passed a local date, retry with the day before.`
+  );
+}
