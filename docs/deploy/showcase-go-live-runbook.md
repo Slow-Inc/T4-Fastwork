@@ -53,8 +53,11 @@ gh issue close 27 28 30 31 --comment "Shipped in PR #29 — <evidence>"
   `GITHUB_SHOWCASE_REPOS` detail — spec P6/P7). The freshness cron for this is
   still the ADR-0003 open item.
 - `DATABASE_URL` in `.env` and `.env.local` both point at the same prod pooler
-  (`aws-0-ap-southeast-1.pooler.supabase.com`), so `bun run db:ingest` /
-  `db:migrate` hit prod either way — there is no separate dev DB to guard.
+  (`aws-0-ap-southeast-1.pooler.supabase.com`), so `bun run db:ingest` hits prod
+  either way — there is no separate dev DB to guard. (`db:migrate` no longer
+  exists; migrations go through the Supabase path — see
+  [migrations.md](migrations.md), #247 / ADR 0015. The table row above is a
+  record of what that session did, not current instructions.)
 - P3 auto-generation (LLM content) is built + tested but not wired to a cron /
   `CUSTOM_OPENAI_*` yet; showcase repos are curated via `GITHUB_SHOWCASE_REPOS`
   for now.
