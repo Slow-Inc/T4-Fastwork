@@ -24,8 +24,12 @@ export interface AdditiveVerdict {
  * Statement shapes that cannot change an existing object, its authorization, or its data. Each is
  * anchored at the start of the statement and requires the idempotence guard where one exists, so a
  * re-run converges instead of erroring.
+ *
+ * Exported for one reason: `test/adr0015-additive-list-matches-classifier.spec.ts` asserts that ADR 0015
+ * documents **every** shape here. Widening this list without documenting it is the exact drift that made
+ * the ADR wrong in the first place (#257), and only a test that can see the list can catch it.
  */
-const ADDITIVE_SHAPES: RegExp[] = [
+export const ADDITIVE_SHAPES: RegExp[] = [
   // alter table [schema.]t add column if not exists ...
   /^alter\s+table\s+(?:if\s+exists\s+)?[\w."]+\s+add\s+column\s+if\s+not\s+exists\s+/,
   /^create\s+table\s+if\s+not\s+exists\s+/,

@@ -16,7 +16,10 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isAdditiveMigration } from '../src/github/additive-migration';
+import {
+  ADDITIVE_SHAPES,
+  isAdditiveMigration,
+} from '../src/github/additive-migration';
 
 const ADR = join(
   import.meta.dir,
@@ -30,8 +33,18 @@ const ADR = join(
 const adr = readFileSync(ADR, 'utf8');
 
 /**
- * Pull the first backticked span out of every bullet inside a marker-delimited block. The backticks are
- * what make an example machine-extractable — surrounding prose in the bullet is free to explain why.
+ * A backticked span only counts as an example if it opens with a DDL/DML verb. Taking the *first* span
+ * unconditionally would let a bullet whose prose happens to backtick a word first (`unique`, say) feed
+ * that word to the classifier — which classifies as non-additive, so the refused-list assertion would
+ * pass for entirely the wrong reason. Requiring a verb makes a vacuous pass impossible instead of
+ * unlikely.
+ */
+const SQL_VERB =
+  /^(alter|create|comment|drop|grant|revoke|update|delete|truncate|insert)\s/i;
+
+/**
+ * Pull the first SQL-looking backticked span out of every bullet inside a marker-delimited block. The
+ * backticks are what make an example machine-extractable — surrounding prose is free to explain why.
  */
 function examplesIn(marker: string): string[] {
   const start = adr.indexOf(`<!-- ${marker}:start -->`);
@@ -39,10 +52,15 @@ function examplesIn(marker: string): string[] {
   if (start === -1 || end === -1 || end < start) return [];
   const block = adr.slice(start, end);
   return block
-    .split('\n')
-    .filter((l) => l.trim().startsWith('- '))
-    .map((l) => l.match(/`([^`]+)`/)?.[1])
-    .filter((s): s is string => Boolean(s));
+    .split(/^\s*-\s/m)
+    .slice(1)
+    .map(
+      (bullet) =>
+        (bullet.match(/`([^`]+)`/g) ?? [])
+          .map((m) => m.slice(1, -1))
+          .find((span) => SQL_VERB.test(span)) ?? '',
+    )
+    .filter((s) => s.length > 0);
 }
 
 describe("ADR 0015's additive list is the classifier's list (#257)", () => {
@@ -70,6 +88,23 @@ describe("ADR 0015's additive list is the classifier's list (#257)", () => {
       'ADR 0015 calls these additive but the classifier refuses them. Either the ADR is wrong, or the ' +
         'classifier is too narrow — do not "fix" this by deleting the example: ' +
         wrong.join(' ; '),
+    ).toEqual([]);
+  });
+
+  it('documents every shape the classifier accepts', () => {
+    // The other direction of the same drift, and the one that is silent: a shape added to
+    // ADDITIVE_SHAPES but never written into the ADR leaves the ADR understating what auto-applies.
+    // That is half of what went wrong here — `create schema/extension if not exists` were accepted by
+    // the classifier and absent from the ADR — so an invariant that only checks the ADR's own examples
+    // would have caught half the bug.
+    const examples = examplesIn('additive-shapes');
+    const undocumented = ADDITIVE_SHAPES.filter(
+      (shape) => !examples.some((sql) => shape.test(sql.toLowerCase())),
+    );
+    expect(
+      undocumented.map((r) => r.source),
+      'The classifier accepts these shapes and ADR 0015 gives no example of them. A shape that ' +
+        'auto-applies DDL to production must be written down where the decision is recorded: ',
     ).toEqual([]);
   });
 
