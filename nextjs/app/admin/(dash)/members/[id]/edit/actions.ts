@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidateProjectFromAction } from '@/lib/revalidate-project';
 import { createClient } from '@/lib/server';
 import { assertAdmin } from '@/lib/admin-access';
 import {
@@ -95,11 +95,7 @@ export async function toggleMemberProjectSelection(
       memberProjectId,
       selected,
       store,
-      revalidate: () => {
-        revalidatePath('/projects');
-        revalidatePath('/admin/projects');
-        revalidatePath('/admin/members');
-      },
+      revalidate: () => revalidateProjectFromAction([{ path: '/admin/members' }]),
     });
     if (!res.ok) return res;
     return { ok: true };
@@ -166,8 +162,7 @@ export async function reconcileDeselectedPersonalShowcase(opts?: {
         .in('id', projectIds)
         .eq('owner_type', 'personal');
       if (error) return { ok: false, error: error.message };
-      revalidatePath('/projects');
-      revalidatePath('/admin/projects');
+      revalidateProjectFromAction();
     }
     return {
       ok: true,

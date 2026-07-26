@@ -7,6 +7,7 @@ import {
   PROJECT_SELECT_ATTEMPTS,
 } from './projects-select';
 import { createColumnLadder } from './column-ladder';
+import { PROJECTS_CACHE_TAG } from './revalidate';
 import { unstable_cache } from 'next/cache';
 
 /**
@@ -96,9 +97,6 @@ export async function fetchPublishedProjects(): Promise<Project[]> {
   if (!rows) throw new Error('projects: select failed (ladder exhausted)');
   return rows.map(mapDbProject);
 }
-
-/** The tag every project write must bust. One name, so a writer cannot miss half of it. */
-export const PROJECTS_CACHE_TAG = 'projects';
 
 /**
  * Ceiling, not the mechanism. Invalidation is by tag on write (see `app/api/revalidate/route.ts` and

@@ -1,7 +1,7 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { revalidateProjectFromAction } from '@/lib/revalidate-project';
 import { createClient } from '@/lib/server';
 import { assertAdmin } from '@/lib/admin-access';
 import {
@@ -59,8 +59,7 @@ export async function createProject(
     return { error: error.message.includes('duplicate') ? 'slug นี้มีอยู่แล้ว' : 'บันทึกไม่สำเร็จ' };
   }
 
-  revalidatePath('/admin/projects');
-  revalidatePath('/projects');
+  revalidateProjectFromAction();
   redirect('/admin/projects');
 }
 
@@ -91,8 +90,7 @@ export async function updateProject(
 
   if (error) return { error: 'บันทึกไม่สำเร็จ' };
 
-  revalidatePath('/admin/projects');
-  revalidatePath('/projects');
+  revalidateProjectFromAction();
   redirect('/admin/projects');
 }
 
@@ -137,8 +135,7 @@ export async function importMemberRepo(formData: FormData) {
   await supabase
     .from('projects')
     .upsert(row, { onConflict: 'slug', ignoreDuplicates: true });
-  revalidatePath('/admin/projects');
-  revalidatePath('/projects');
+  revalidateProjectFromAction();
   redirect('/admin/projects');
 }
 
@@ -166,8 +163,7 @@ export async function importAllMemberRepos() {
       .from('projects')
       .upsert(rows, { onConflict: 'slug', ignoreDuplicates: true });
   }
-  revalidatePath('/admin/projects');
-  revalidatePath('/projects');
+  revalidateProjectFromAction();
   redirect('/admin/projects');
 }
 
@@ -204,8 +200,7 @@ export async function importOrgRepo(formData: FormData) {
   await supabase
     .from('projects')
     .upsert(row, { onConflict: 'slug', ignoreDuplicates: true });
-  revalidatePath('/admin/projects');
-  revalidatePath('/projects');
+  revalidateProjectFromAction();
   redirect('/admin/projects');
 }
 
@@ -244,8 +239,7 @@ export async function importAllOrgRepos() {
       .from('projects')
       .upsert(rows, { onConflict: 'slug', ignoreDuplicates: true });
   }
-  revalidatePath('/admin/projects');
-  revalidatePath('/projects');
+  revalidateProjectFromAction();
   redirect('/admin/projects');
 }
 
@@ -255,6 +249,5 @@ export async function deleteProject(formData: FormData) {
   if (!id) return;
   const supabase = await createClient();
   await supabase.from('projects').delete().eq('id', Number(id));
-  revalidatePath('/admin/projects');
-  revalidatePath('/projects');
+  revalidateProjectFromAction();
 }

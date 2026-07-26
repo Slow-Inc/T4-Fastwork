@@ -38,6 +38,14 @@ export interface RevalidateTarget {
   type?: 'page' | 'layout';
 }
 
+/**
+ * The Data Cache tag the cached project list carries (#238) and every project writer must bust
+ * (#239). Defined here — beside the writer-side targets and away from the `server-only` repo — so
+ * the cache and the writers cannot drift into two names, and so a writer can import it without
+ * pulling in the Supabase client.
+ */
+export const PROJECTS_CACHE_TAG = 'projects';
+
 export type ContentRevalidationKind = 'faq' | 'service' | 'certificate' | 'blog';
 
 export function contentRevalidationTargets(
