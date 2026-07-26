@@ -12,7 +12,11 @@
  *
  * Requires `gh` on PATH and read access to the repo. Reads only; it never comments or merges.
  */
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { findUnreviewedMerges, type MergedPr } from '../src/github/gate-audit';
+
+const run = promisify(execFile);
 
 interface GhPr {
   number: number;
@@ -26,15 +30,15 @@ function arg(name: string): string | undefined {
   return i === -1 ? undefined : process.argv[i + 1];
 }
 
+/**
+ * `node:child_process`, not `Bun.spawn`: `tsconfig.build.json` excludes only tests, so this file is
+ * type-checked by the production Nest build, which has no Bun types and emits CommonJS. Using the Bun
+ * global here failed the deploy (TS2867) — caught by the pre-merge gate on PR #254 before it landed.
+ */
 async function gh(args: string[]): Promise<string> {
-  const proc = Bun.spawn(['gh', ...args], { stdout: 'pipe', stderr: 'pipe' });
-  const [out, err, code] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-  if (code !== 0) throw new Error(`gh ${args[0]} failed: ${err.trim()}`);
-  return out;
+  // A large PR list can exceed the default 1 MB stdout buffer.
+  const { stdout } = await run('gh', args, { maxBuffer: 32 * 1024 * 1024 });
+  return stdout;
 }
 
 async function main(): Promise<void> {
@@ -90,4 +94,9 @@ async function main(): Promise<void> {
   );
 }
 
-await main();
+// Not top-level `await`: the production build emits CommonJS and rejects it (TS1309). Mirrors
+// `setup-vercel-webhook.ts`.
+main().catch((err: unknown) => {
+  console.error(err instanceof Error ? err.message : String(err));
+  process.exit(1);
+});
