@@ -6,12 +6,12 @@
  * because the alternative — allow unless it looks dangerous — means every future Postgres syntax the
  * author did not anticipate arrives pre-approved.
  *
- * ⚠️ **Narrower than ADR 0015's own list, deliberately.** The ADR names `create or replace view` as
- * additive. Measuring the real corpus says otherwise: replacing a view changes what an existing public
- * read returns, which is a behaviour change wearing additive clothing, and this repo's views are read by
- * the anon client. `create or replace function` is worse still — `is_app_admin()` is SECURITY DEFINER and
- * decides admin authorization (ADR 0007). Neither is accepted here. The ADR is still `Proposed`, so this
- * is a correction to make before it is accepted, not a deviation from a settled decision.
+ * ⚠️ **`create or replace view` and `create or replace function` are refused, and the ADR agrees.** The
+ * ADR's first draft called the view shape additive; it is not — replacing a view changes what an existing
+ * public read returns, and this repo's views are read by the anon client. The function shape is sharper
+ * still: `is_app_admin()` is SECURITY DEFINER and decides admin authorization (ADR 0007). ADR 0015 was
+ * corrected to match this list in #257, and `test/adr0015-additive-list-matches-classifier.spec.ts` runs
+ * the ADR's own examples through `isAdditiveMigration` so the two cannot drift apart again.
  */
 
 export interface AdditiveVerdict {
