@@ -6,6 +6,7 @@ import {
   isMissingProjectColumnError,
   PROJECT_SELECT_ATTEMPTS,
 } from './projects-select';
+import { createColumnLadder } from './column-ladder';
 
 /**
  * Projects data access (Requirement §10 / §12) — DB-ONLY.
@@ -37,12 +38,20 @@ export async function getProjectRankMap(): Promise<Map<string, number>> {
   }
 }
 
+/**
+ * Process-lifetime memo of the winning column set (#207). Module scope on purpose: a serverless
+ * instance serves many requests, and paying the failing attempts once per instance instead of once
+ * per request is the whole saving. The memo expires (`LADDER_MEMO_TTL_MS`) so a migration that lands
+ * later is picked up without waiting for a cold start.
+ */
+const projectSelectLadder = createColumnLadder(PROJECT_SELECT_ATTEMPTS);
+
 async function selectPublished(
   slug?: string,
 ): Promise<DbProjectRow[] | null> {
   const supabase = publicDb();
   const run = async (select: string) => {
-    let q = supabase
+    const q = supabase
       .from('projects')
       .select(select)
       .eq('status', 'published')
@@ -53,9 +62,12 @@ async function selectPublished(
     return q.order('ai_rank', { ascending: true, nullsFirst: false });
   };
 
-  for (const select of PROJECT_SELECT_ATTEMPTS) {
+  for (const select of projectSelectLadder.order()) {
     const res = await run(select);
     if (!res.error) {
+      // Remember the set the database accepted so the next read in this process skips the attempts
+      // that fail — measured at 3.2-3.7s per uncached read while 0032/0033 stay unapplied (#207).
+      projectSelectLadder.remember(select);
       if (!res.data) return slug ? null : [];
       return (
         Array.isArray(res.data) ? res.data : [res.data]
