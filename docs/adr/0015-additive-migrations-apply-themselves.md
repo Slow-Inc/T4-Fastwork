@@ -37,6 +37,38 @@ db:migrate`. Nothing new has to be issued, stored, or rotated.
 So the blocker was never the credential. It was that granting *any* automation permission to run DDL
 felt like removing the guard in `CLAUDE.md`. This ADR draws the line so it is not.
 
+### Verified ledger state — measured 2026-07-27, before deciding what the applier targets
+
+The claim above ("`db:migrate` is already wired") was checked rather than assumed, because the whole
+decision rests on it. Production holds **two** migration ledgers:
+
+| | rows / files | last | idempotent? |
+|---|---|---|---|
+| `drizzle.__drizzle_migrations` (prod) | 7 | 2026-07-15 | — |
+| `nestjs/drizzle/*.sql` (repo) | 9 | `0008_project_gh_private` | `0000`–`0006` **no** (`0000`: 21 statements, 1 `IF NOT EXISTS`); `0007`, `0008` **yes** (every statement guarded) |
+| `supabase_migrations.schema_migrations` (prod) | 35 | version `20260723223616` | — |
+| `supabase/migrations/*.sql` (repo) | 34 | `0034_project_sync_health` | the recent ones yes, by convention |
+
+Three facts follow, and they sharpen this ADR rather than contradict it:
+
+1. **`bun run db:migrate` is safe *today*, but only because the journal is accurate.** The 7 recorded
+   rows cover `0000`–`0006`, so the non-idempotent early migrations do not re-run; the 2 pending ones
+   (`0007`, `0008`) are fully `IF NOT EXISTS`. The safety is a property of the *journal*, not of the
+   files — and `docs/deploy/showcase-go-live-runbook.md:13` records that the journal has been kept
+   accurate by **hand-inserting rows into `drizzle.__drizzle_migrations` via the Supabase MCP**. That
+   is the same class of act `CLAUDE.md` forbids for `supabase_migrations.schema_migrations`, done to
+   the other ledger.
+2. **The two repo folders are not mirrors.** `nestjs/drizzle/0007`/`0008` duplicate
+   `supabase/migrations/0032`/`0033`, but **`0034` has no drizzle counterpart at all** — so the drizzle
+   path cannot apply `0034` even in principle.
+3. **Therefore the applier must target `supabase/migrations/`, not drizzle.** Applying through drizzle
+   would land the columns while leaving `supabase_migrations.schema_migrations` still claiming they are
+   pending — drift created by the very automation meant to remove a human step. `nestjs/drizzle/`
+   becomes **history-only**: kept for the record, never the thing that applies.
+
+This is a refinement of decision item 5 below, not a reversal: `supabase_migrations` is still never
+hand-written — it is written by the supported migration path, which is exactly the point.
+
 ## Decision
 
 **An additive migration applies itself. A non-additive migration is refused by the machine, not by a
@@ -81,12 +113,14 @@ short window. `/projects` loses the 3.45 s refill tax. #194, #202 and #193's rec
 rather than degraded-by-default.
 
 **The sharpest hazard: two migration ledgers for one database.** `supabase/migrations/00XX` and
-`nestjs/drizzle/000X` currently hold *duplicated* DDL for the same schema (`0032`↔`0007`,
-`0033`↔`0008`), tracked in two separate journals. Automating one of them makes drift silent: apply via
-drizzle and the Supabase ledger still believes the column is pending. **The ADR's implementation must
-resolve this before the automation is switched on** — one directory is the source of truth and the
-other is generated from it or deleted. Automating on top of the duplication would be worse than the
-manual step it replaces.
+`nestjs/drizzle/000X` hold *duplicated* DDL for the same schema (`0032`↔`0007`, `0033`↔`0008`) while
+`0034` exists in only one of them, tracked in two separate journals — both of which exist in
+production (see the measured table above). Automating one of them makes drift silent: apply via drizzle
+and the Supabase ledger still believes the column is pending. **This must be resolved before the
+automation is switched on**, and per the measurement the resolution is now decided rather than open:
+`supabase/migrations/` is the source of truth that the applier targets, and `nestjs/drizzle/` is
+history-only. What remains for the implementation is making that structural — so a future
+`drizzle-kit generate` cannot quietly reintroduce a second pending migration — not choosing it.
 
 **Failure modes, named as the third acceptance criterion of #207 requires:**
 
@@ -96,7 +130,8 @@ manual step it replaces.
 | Classifier wrongly refuses an additive file | Column stays missing | Degrades to exactly today's behaviour; loud, not silent |
 | Migration fails mid-way | Partial schema | Every statement is `if not exists`, so a re-run converges; the deploy stands |
 | Two deploys race | Two appliers | Advisory lock; the loser waits and then finds nothing pending |
-| Drizzle and Supabase ledgers drift | Schema state believed twice | **Unresolved — this is the blocking prerequisite above, not a residual risk** |
+| Drizzle and Supabase ledgers drift | Schema state believed twice | Resolved in principle by targeting `supabase/migrations/` only; **making it structural is the blocking prerequisite**, so a future `drizzle-kit generate` cannot reintroduce a pending drizzle migration |
+| The drizzle journal is inaccurate | `0000`–`0006` re-run, and they are **not** idempotent | Real today: the runbook records the journal being kept accurate by hand. Removing the drizzle apply path removes this failure mode entirely — another reason it is the prerequisite |
 
 ## What is still theirs to decide
 
