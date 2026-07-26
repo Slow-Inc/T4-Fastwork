@@ -22,12 +22,21 @@
     backticking a word before the SQL would be fed to the classifier — non-additive, so the refused-list
     assertion would have passed for the wrong reason. Spans must now open with a DDL/DML verb.
   - `ADDITIVE_SHAPES` itself is unchanged, verified line by line in the merge diff. nestjs **573 pass**.
-- **#259 OPENED (`ready-for-agent`) — the audit's `--since` is a UTC date.** `mergedAt` is UTC while the
+- **#259 CLOSED (`674471b`, PR #261) — the audit's `--since` is a UTC date.** `mergedAt` is UTC while the
   documented step-2b recipe passes a local calendar date, and this machine is UTC+7. Measured: PR #258
   merged `2026-07-26T23:28:03Z` = `2026-07-27 06:31` local, so `--since 2026-07-27` audited **0 PRs**
   while `--since 2026-07-26` audited 16 and confirmed **#258 passes**. The tool does **not** claim a pass
   on an empty window — it prints `nothing was checked`, the vacuous-pass guard #253 built on purpose — so
-  the defect is in the recipe, not the output. Fix the wording, do not silently widen the window.
+  the defect is in the recipe, not the output. Fixed by making the report state its own window: an empty
+  one now reads `audited 0 merged PRs merged on/after <date> (UTC) — nothing was checked` plus the
+  local-date trap, so the operator can see *why* it was empty. `--since` is **not** widened automatically —
+  that would audit PRs nobody asked about. Window logic moved into the pure module (`inMergeWindow`,
+  `describeAuditWindow`); the filter is behaviour-identical, verified clause by clause.
+  - ⚠️ **Reading `16 → 17` audited PRs as a filter change would be wrong** — #260 merged between the two
+    runs. Both #258 and #260 are absent from the 10 gaps, i.e. both passed the gate.
+- **Every branch this session took the full gate, including three docs-only ones.** `ready-for-agent` is
+  **empty** again; the four items in the previous session's *What the developer owes* are all still
+  unstarted and still the only things blocking #185, #191, #193's recording, #194, #202 and #248.
 
 ## 2026-07-26/27 (AFK) — the gate is now trigger-first, detectable, and it caught its own author twice
 
