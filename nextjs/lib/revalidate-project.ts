@@ -29,7 +29,7 @@ import {
  * helper existed. Kept as-is deliberately: #239 adds the tag bust and changes nothing about which
  * routes are refreshed.
  */
-export const ADMIN_PROJECT_PATHS: RevalidateTarget[] = [
+const ADMIN_PROJECT_PATHS: RevalidateTarget[] = [
   { path: '/admin/projects' },
   { path: '/projects' },
 ];
