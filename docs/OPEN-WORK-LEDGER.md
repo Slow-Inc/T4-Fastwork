@@ -1,5 +1,53 @@
 # Open-Work Ledger
 
+## 2026-07-25/26 (AFK) — #211 CLOSED by the automation itself; #223 · #218 · #193 AC3 · #207-perf shipped
+
+- **#211 fixed itself through the automated path, which was its hard constraint.** Measured `23:24Z`:
+  `readme_sha 9265d74`, `category_id 51`, overview 400 chars, content 1391 chars — all null at
+  `19:16Z`. Chain: no README (root cause #214) → committed → #177 marker still said "missing" and
+  before #215 would have excluded the repo **forever** → #215's 6 h TTL expired `21:56:56Z` → the
+  `22:43:06Z` cron re-fetched via `/github/refresh/missing-readme` → capped generators filled the rest.
+  **No manual DB write.** #175's E2E + the smoke route now point at that row (PR #232, `7d4248c`);
+  `bun run e2e` 70 passed.
+- **#223 (`5eda64c`):** the cron detail loop records too, so a quiet repo is no longer
+  indistinguishable from an unreached one. ⚠️ Recorded in the type: `last_sync_error` is **one slot,
+  last writer wins** — a successful cron pass erases a push-time failure, so this column cannot
+  *remember* and must not be the durable detector. #222's content invariant is.
+- **#193 AC3 (`e9a257b`):** `POST /github/report-sync-health` + cron step. The `scripts/notify.ps1`
+  ambiguity is **decided: log-based**, matching #214/#216/#222. Cannot cry wolf, by three explicit
+  choices: missing columns → *not assessable* (never "47 stuck"), a DB outage → **rethrow** (an empty
+  list reads as all-clear), threshold **derived** from the 8-repo rotation with a one-cron-period floor.
+  AC4 recommended for dropping (cooldown already tested; Action minutes were never the constraint).
+- **#218 (`97cf350`):** committed idempotent setup script. Docs read, not guessed — **no PATCH** for
+  webhooks (so a change is delete+create and the secret rotates → compare by coverage, not equality)
+  and **Vercel generates the secret** (correcting the issue's own plan). Also closed the gap the script
+  makes reachable: a bad signature returned **401 silently**, so a mismatched secret looked like no
+  deliveries; it now warns without echoing the secret or the signature. **Script not run** — AC3 + #191
+  wait on that.
+- **#207 perf half (`b106192`):** `createColumnLadder` memoises the accepted column set. TTL 10 min so
+  a long-lived process picks up a landed migration without a cold start; remembering does not collapse
+  the ladder. Also fixed `let q` → `const q`, a pre-existing #154 error that had left **`bun run lint`
+  red on master**.
+- **⚠️ The measurement did NOT meet #207's criterion, and that is the finding.** `/projects` went
+  3.2–3.7 s → **1.4–1.6 s**, but not sub-second, because the page is **never cached**:
+  `no-store` + `x-vercel-cache: MISS` on four consecutive requests. Filed **#234** — the page has no
+  `force-dynamic`/`revalidate`/`cookies()` and reads the deliberately cookieless `public-db.ts`, so the
+  leading hypothesis is `@supabase/ssr` fetching with `cache: 'no-store'`. This survives every
+  auto-migrate option. #207's three-way decision stays parked with a written recommendation
+  (Option 1, CI-on-deploy, additive only) — the open part is where a privileged CI credential lives.
+- **#178 family closed** (#179/#180/#181/#182 + the epic) via PR #229 `72fe8a9`. The branch was
+  **8 merges stale**, so the review on file described a diff that no longer existed; re-derived it
+  (6 files, +689/−18 three-dot), resolved two positional conflicts keeping both sides, proved nothing
+  was dropped by a full `bun run e2e` (70). Measured: all 38 visible `member_projects` rows are
+  `selected = true`, so #182 had **no drift to repair**. Live admin toggle deliberately not performed.
+- **Two of my own defects caught by the gates, worth remembering:** the #222/#226 marker tests used an
+  **absolute** `checkedAt` and went red on their own six hours later when the real clock crossed the
+  TTL (fixed to relative, reason named); and I stamped review evidence on #231 with an **invented SHA**
+  (`d1c4e0e`) written from memory — corrected in place with the correction visible, because a stamp
+  nobody can verify is not evidence.
+- **Still parked on the developer:** `0032`/`0033`/`0034` · running the webhook script (#218 AC3 → #191)
+  · #207's option + credential decision · #193 AC4 drop · #217 (token boundary) · #110 (art direction).
+
 ## 2026-07-25 (AFK) — #222 CLOSED: the empty-shell report that #193 could not give us
 
 - **Filed and shipped in one session.** #222 came out of scrutinizing #221 — the sync-health
