@@ -111,7 +111,28 @@ Target stack per the spec (§7) — **now implemented**:
 - Backend: **Nest.js as a separate API layer** in `nestjs/` (decided — see the wayfinder map #1)
 - Database: Supabase (Postgres + pgvector for RAG + Auth + Storage + Realtime); backend connects via the Supavisor transaction pooler (6543) with Drizzle
 - AI: streaming LLM via an OpenAI-compatible gateway (`CUSTOM_OPENAI_*` env) + RAG via pgvector
-- Deploy: Vercel, or self-hosted behind Cloudflare
+- Deploy: **both apps run on Vercel — serverless, not a long-lived server** (see below)
+
+### ⚠️ Deploy topology — we are serverless (do not assume otherwise)
+
+**Hostinger (registrar) → Cloudflare (DNS + CDN/proxy) → Vercel.** There is no self-hosted option in
+play; **`nextjs/` and `nestjs/` both run as Vercel serverless functions**, and the backend's real
+entrypoint in production is **`nestjs/api/index.ts`**, *not* `src/main.ts` (that only runs for local
+`bun run start`) — so all backend bootstrap config belongs in the shared `src/configure-app.ts`.
+
+Three consequences that have each already cost a bug or a wrong plan:
+
+- **Nothing persists in process memory.** A module-scope cache is per-instance and mostly unused; a
+  `setInterval`/held loop or an in-process queue does not exist between requests. Measured: the memo in
+  `createColumnLadder` (#207/#233) only took `/projects` 3.2–3.7 s → 1.4–1.6 s, never sub-second.
+- **Per the vendored Next 16 docs, `'use cache'` *and* `'use cache: remote'` fall back to an in-memory
+  LRU isolated to each process** unless `cacheHandlers` is configured — so "just cache it" is not a
+  serverless answer. Only Vercel `PRERENDER` (`x-vercel-cache`) is measured genuinely fast here.
+- **Cloudflare serves HTML as `cf-cache: DYNAMIC` on purpose.** Turning on "Cache Everything" for HTML
+  is a **no-go** — it fights the ISR / on-demand revalidation path, trading the freshness guarantee for
+  latency, silently.
+
+Details + measurements: [`Obsidian-Fastwork/Three Cache Layers on Serverless.md`](Obsidian-Fastwork/Three%20Cache%20Layers%20on%20Serverless.md).
 
 Phased roadmap: **Phase 1** MVP (portfolio + CMS) → **Phase 2** AI chat + RAG + blog → **Phase 3** full i18n, analytics, performance polish.
 
