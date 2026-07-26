@@ -2,7 +2,7 @@
 
 **Status**: Proposed
 **Date**: 2026-07-26
-**Relates to**: [ADR 0007](0007-db-enforced-authz-rls-is-app-admin.md) (authz lives in the database) · [ADR 0011](0011-auto-publish-public-repos-visibility-is-authorization.md) (visibility is authorization) · [ADR 0014](0014-serve-both-vercel-apps-behind-cloudflare.md) (serverless runtime) · issues #207, #194, #202, #234
+**Relates to**: [ADR 0007](0007-db-enforced-authz-rls-is-app-admin.md) (authz lives in the database) · [ADR 0011](0011-auto-publish-public-repos-visibility-is-authorization.md) (visibility is authorization) · [ADR 0014](0014-serve-both-vercel-apps-behind-cloudflare.md) (serverless runtime) · issues #207, #194, #202, #234, #257
 
 **Proposed, not Accepted.** One thing in it is genuinely the developer's to grant — see *What is still
 theirs to decide*. Everything else is decided here.
@@ -75,12 +75,46 @@ hand-written — it is written by the supported migration path, which is exactly
 convention.**
 
 1. **The classifier is the safety boundary, and it is a static property of the SQL — not a promise in
-   a comment.** A migration is *additive* only if every statement is one of:
-   `alter table … add column if not exists`, `create table if not exists`,
-   `create index [concurrently] if not exists`, `comment on`, or `create or replace view`.
-   Anything else — `drop`, `alter column`, `rename`, `truncate`, `update`, `delete`, `grant`,
-   `revoke`, `alter … set not null` — makes the file non-additive. **The default is refuse:** a
-   statement the classifier does not recognise is non-additive.
+   a comment.** A migration is *additive* only if **every** statement matches one of these shapes.
+   The examples are executable: `nestjs/test/adr0015-additive-list-matches-classifier.spec.ts` feeds
+   each one to `isAdditiveMigration`, so this list cannot drift from the code that enforces it (#257).
+
+   <!-- additive-shapes:start -->
+   - `alter table projects add column if not exists gh_private boolean` — a new column cannot change
+     what an existing read returns. The guard is part of the shape, not a nicety: without it a re-run
+     errors instead of converging.
+   - `create table if not exists project_sync_health (id uuid primary key)` — a new relation.
+   - `create index if not exists projects_slug_idx on projects (slug)` — `unique` and `concurrently`
+     are accepted too.
+   - `create schema if not exists showcase` — a new namespace.
+   - `create extension if not exists vector` — idempotent by construction.
+   - `comment on column projects.gh_private is 'mirrors GitHub visibility'` — metadata only; cannot
+     affect a read, a write, or a grant.
+   <!-- additive-shapes:end -->
+
+   Everything else is refused. These shapes are named individually because each one has a plausible
+   claim to being "just additive" and is not:
+
+   <!-- refused-shapes:start -->
+   - `create or replace view v_project_cards as select 1 as id` — **this ADR's first draft listed it as
+     additive, and that was wrong.** Replacing a view changes what an existing read returns, and this
+     repo's views are read by the anon client, so it is a behaviour change to a public surface wearing
+     additive clothing. Corrected against the real classifier in #257.
+   - `create or replace function is_app_admin() returns boolean language sql as 'select true'` —
+     sharper than the view for the same reason: it reaches a SECURITY DEFINER function that decides
+     admin authorization (ADR 0007). Auto-applying it would let a merged PR alter an authorization
+     decision silently.
+   - `alter table projects add column gh_private boolean` — the same column as above, without the
+     guard: it fails on the second run, so a retry cannot converge.
+   - `alter table projects alter column slug set not null` — rewrites and can fail on existing rows.
+   - `alter table projects drop column gh_private` — destructive.
+   - `grant select on projects to anon` — changes who can read.
+   - `update projects set slug = lower(slug)` — a data change, not a schema change.
+   <!-- refused-shapes:end -->
+
+   **The default is refuse:** a statement the classifier does not recognise is non-additive. That is
+   the whole design — "allow unless it looks dangerous" would mean every Postgres syntax the author
+   did not anticipate arrives pre-approved.
 2. **Refusal is loud and blocking for that file only.** A non-additive migration is not applied, not
    skipped silently, and does not stop the additive ones behind it from being reported — it is
    reported as *awaiting human authorization* through the same log-based path #193 uses.

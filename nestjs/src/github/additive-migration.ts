@@ -6,12 +6,12 @@
  * because the alternative — allow unless it looks dangerous — means every future Postgres syntax the
  * author did not anticipate arrives pre-approved.
  *
- * ⚠️ **Narrower than ADR 0015's own list, deliberately.** The ADR names `create or replace view` as
- * additive. Measuring the real corpus says otherwise: replacing a view changes what an existing public
- * read returns, which is a behaviour change wearing additive clothing, and this repo's views are read by
- * the anon client. `create or replace function` is worse still — `is_app_admin()` is SECURITY DEFINER and
- * decides admin authorization (ADR 0007). Neither is accepted here. The ADR is still `Proposed`, so this
- * is a correction to make before it is accepted, not a deviation from a settled decision.
+ * ⚠️ **`create or replace view` and `create or replace function` are refused, and the ADR agrees.** The
+ * ADR's first draft called the view shape additive; it is not — replacing a view changes what an existing
+ * public read returns, and this repo's views are read by the anon client. The function shape is sharper
+ * still: `is_app_admin()` is SECURITY DEFINER and decides admin authorization (ADR 0007). ADR 0015 was
+ * corrected to match this list in #257, and `test/adr0015-additive-list-matches-classifier.spec.ts` runs
+ * the ADR's own examples through `isAdditiveMigration` so the two cannot drift apart again.
  */
 
 export interface AdditiveVerdict {
@@ -24,8 +24,16 @@ export interface AdditiveVerdict {
  * Statement shapes that cannot change an existing object, its authorization, or its data. Each is
  * anchored at the start of the statement and requires the idempotence guard where one exists, so a
  * re-run converges instead of erroring.
+ *
+ * Exported for one reason: `test/adr0015-additive-list-matches-classifier.spec.ts` asserts that ADR 0015
+ * documents **every** shape here. Widening this list without documenting it is the exact drift that made
+ * the ADR wrong in the first place (#257), and only a test that can see the list can catch it.
+ *
+ * `readonly` + frozen because exporting it makes the boundary reachable from outside this module: a bare
+ * `RegExp[]` could be widened at runtime with a `push`, which is precisely the mutation the refuse-by-
+ * default design exists to make impossible. Being exported for a test must not make it editable by code.
  */
-const ADDITIVE_SHAPES: RegExp[] = [
+export const ADDITIVE_SHAPES: readonly RegExp[] = Object.freeze([
   // alter table [schema.]t add column if not exists ...
   /^alter\s+table\s+(?:if\s+exists\s+)?[\w."]+\s+add\s+column\s+if\s+not\s+exists\s+/,
   /^create\s+table\s+if\s+not\s+exists\s+/,
@@ -34,7 +42,7 @@ const ADDITIVE_SHAPES: RegExp[] = [
   /^create\s+extension\s+if\s+not\s+exists\s+/,
   // Metadata only — cannot affect a read, a write, or a grant.
   /^comment\s+on\s+/,
-];
+]);
 
 /** Strip comments and split on `;` so each statement is judged on its own. */
 function statements(sql: string): string[] {
