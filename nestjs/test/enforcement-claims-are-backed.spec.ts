@@ -83,8 +83,11 @@ describe('CLAUDE.md has one enforcement table, and it is the only place enforcem
       .split('\n')
       .filter((l) => l.trim().startsWith('|'))
       .map((l) => l.split('|').map((c) => c.trim()))
-      // drop the header row and the |---|---| separator
-      .filter((cells) => cells.length >= 4 && !/^-+$/.test(cells[2] ?? ''))
+      // Drop the |---|---| separator, then the header. The alignment colons matter: a separator
+      // written `|:---|` would survive a `/^-+$/` test, `.slice(1)` would then eat the separator
+      // instead of the header, and the header's own "Evidence" cell would be demanded as an
+      // artifact — a false failure caused purely by reformatting the table.
+      .filter((cells) => cells.length >= 4 && !/^:?-+:?$/.test(cells[2] ?? ''))
       .slice(1);
 
     expect(rows.length, 'the enforcement table must have at least one row').toBeGreaterThan(0);
