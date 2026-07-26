@@ -44,6 +44,28 @@ cache lives in process memory will reproduce that ceiling.
 and deployments", which process memory cannot do) — but whether that holds on *this* deployment is an
 empirical question to measure, not to assert.
 
+## Measured — 2026-07-26, and the question above is now answered (#240)
+
+`unstable_cache` **is** durable across invocations here. On production after #239:
+
+- **16 warm requests to `/projects` produced 0 database calls** — `pg_stat_statements` on the
+  PostgREST list query: 3381 → 3381 → 3382 → 3382, where the single `+1` is a refill forced by a
+  deliberate tag bust.
+- **The proof of durability is the invalidation, not the hit rate.** The bust was issued from the
+  Route Handler — a *different* function invocation from the reads — and it released the entry. A
+  per-process LRU cannot be invalidated from another invocation, so the entry lives in a shared store.
+- **Warm p95 0.83 s** (TTFB p95 0.46 s) against a 1.4–1.6 s baseline that paid a Supabase round-trip
+  every request. The residual is **function invocation**, not data access: the layer-2 ceiling in this
+  note is exactly what remains.
+- `revalidateTag(tag, 'max')` **expires an `unstable_cache` entry immediately** here rather than
+  serving stale-while-revalidate — the first read after a bust blocked 3.451 s while the next two took
+  0.41/0.39 s. The `'max'` profile does not resolve to a cacheLife without Cache Components, so
+  `cacheLife` is `undefined` and the entry is simply expired.
+
+**Counters beat clocks.** The clock said 1.4–1.6 s → 0.83 s, which #207 already proved can be true
+while every request still hits the database. `pg_stat_statements` is the instrument that answers the
+actual question — snapshot, drive N requests, snapshot again, and read the delta.
+
 ## How to apply
 
 - **Name the layer before proposing the fix.** "Cache it" is not a plan; "serve it from the Vercel CDN
