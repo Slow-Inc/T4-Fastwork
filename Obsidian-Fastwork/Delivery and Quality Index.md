@@ -18,6 +18,7 @@ source: Engineering knowledge migration from MangaDock
 - [[Validated Blameless Postmortems]]
 - [[Change Impact Records]]
 - [[Baselines Before Optimization]]
+- [[Check the ADRs Before Fixing an Anomaly]]
 - [[Release Truth and Rollback Drills]]
 - [[User Acceptance Is a Separate Gate]]
 - [[Learning Capture Before Completion]]
