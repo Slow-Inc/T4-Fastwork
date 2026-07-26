@@ -1,5 +1,36 @@
 # Open-Work Ledger
 
+## 2026-07-26 (AFK) — #239 CLOSED; #240 measured on production: the DB read is gone
+
+- **#239 (`f72c872`, PR #243):** every project writer busts `PROJECTS_CACHE_TAG` through one helper
+  (`nextjs/lib/revalidate-project.ts`) — the secret-guarded `/api/revalidate` (where **all** nestjs
+  writes and the screenshot CI arrive), 7 admin project actions, 2 member-edit sites. Two entry points
+  because Next 16 forces it, read out of `next/dist/.../revalidate.js`: `updateTag` throws in a Route
+  Handler (`E872`), and `revalidateTag(tag,'max')` deliberately skips `store.pathWasRevalidated` "so
+  that server actions don't pull their own writes" — using `'max'` in an admin action would have made
+  an edit look unsaved. A structural test scans the writer surface; its own first draft had a hole (a
+  literal-only check passed `/api/revalidate/route.ts`, which had no path literal at all).
+- **#240 measured, and the numbers replace the estimates below.** Production, 17:04–17:10 UTC:
+  - **16 warm requests → 0 database calls** (`pg_stat_statements`, PostgREST list query: 3381 → 3381 →
+    3382 → 3382). The one call is the refill a tag bust forced. This is the check #207 failed.
+  - **Durability across invocations: verified.** A bust issued in a *different* invocation released
+    the entry — impossible for per-process memory. `unstable_cache` is Data-Cache-backed here.
+  - **Warm p95 0.83 s** (TTFB p95 0.46 s), median 0.57 s, on a reused connection. Measured naively —
+    a fresh curl process per request — the same server reads p95 ≈ 1.4 s; the difference is DNS+TLS
+    the browser pays once. Baseline was 1.4–1.6 s **with a DB round-trip every request**.
+  - `x-vercel-cache: MISS` / `cf-cache: DYNAMIC` throughout — expected, the route is still dynamic.
+  - ⚠️ **The refill still costs 3.45 s** because `0032`/`0033` are unapplied: every miss pays three
+    failing selects first. That cost now falls on one request per invalidation instead of all of them.
+  - ⚠️ **Correcting PR #243's own claim:** it said the cron path serves stale first (SWR). It does
+    **not** — the first read after a bust blocked for 3.451 s while the next two took 0.41/0.39 s. On
+    this deployment `revalidateTag(tag,'max')` expires an `unstable_cache` entry immediately.
+  - **Not proven — the mutation half of the post-write probe.** A production DB write needs explicit
+    per-action authorization and none was given; no natural write landed in the window (last generator
+    write 12:59 UTC). #240 stays **open** on that one AC.
+- **Superseded above:** the "`@supabase/ssr` with `cache: 'no-store'`" hypothesis in the 07-25/26
+  section was wrong — the real cause is that the page awaits `searchParams` (ADR 0014 + the PRD record
+  it). Left in place rather than edited out, per the records rule.
+
 ## 2026-07-25/26 (AFK) — #211 CLOSED by the automation itself; #223 · #218 · #193 AC3 · #207-perf shipped
 
 - **#211 fixed itself through the automated path, which was its hard constraint.** Measured `23:24Z`:
