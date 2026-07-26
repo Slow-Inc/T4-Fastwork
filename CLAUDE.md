@@ -16,9 +16,9 @@ task in this repo — before writing or changing code, not after.**
   the `t4-dev-workflow` skill alone (it has been skipped too often).** Any non-trivial change flows:
   **`grill-me` (stress-test the idea) → `to-prd` (one PRD per epic) → `to-issues` (one tracked GitHub
   issue per deliverable) → `tdd` (red-first) → PR that references its issue.**
-  - **No code lands without a tracked GitHub issue; no PR without a referenced issue.** The PR side is
-    hook-enforced (`gh pr create` is denied with no referenced issue); *creating* the PRD/issues is
-    discipline you must do yourself.
+  - **No code lands without a tracked GitHub issue; no PR without a referenced issue.** Nothing checks
+    this for you — see **Enforcement status** below before assuming any part of the pipeline is
+    automatic.
   - **A plan, roadmap, or ticket list in a `docs/` file is NOT a substitute for real GitHub issues.**
     Convert each deliverable into an issue **before** implementing it — including when you work from a
     fix-plan doc or hand tickets to another agent. Retro-fitting an issue at PR time to satisfy the hook
@@ -40,14 +40,33 @@ task in this repo — before writing or changing code, not after.**
   Never delete default/current/long-lived or unverified branches.
 - Also standing: **TDD is mandatory** and **every frontend change is verified end-to-end**
   (`bun run e2e`) — see the ⚠️ note under Commands.
-- **Before merging any branch** (including one another agent produced), run **`code-review` +
-  `scrutinize` on the ACTUAL merge diff** (`git diff origin/master...HEAD`), not just the last
-  commit — never merge work you have not reviewed. The `scrutinize` gate is incomplete until its
-  full **English + Thai** report is posted as a PR comment with the reviewed HEAD SHA and comment URL
-  recorded; if HEAD changes, rerun it and post updated evidence. Add **`security-review`** on any
-  auth / RLS / admin-write / secret / upload / webhook / untrusted-input / external-request /
-  privileged-client change, and include its findings or residual risks in the same bilingual PR
-  evidence.
+- 🛑 **STOP GATE — you are about to land a branch.** The trigger is the *action*: `gh pr merge`,
+  enabling auto-merge, merging in the GitHub UI/API, or any other way a branch reaches the default
+  branch. Before that action:
+  1. Resolve the PR and its current HEAD SHA (read it — `git rev-parse HEAD` — never from memory).
+  2. Run **`code-review`** and **`scrutinize`** on the **ACTUAL merge diff**:
+     `git diff origin/master...HEAD` (three-dot; two-dot lies on a stale branch).
+  3. Post the full **English + Thai** report as a PR comment, recording the reviewed HEAD SHA and the
+     comment URL.
+  4. If HEAD moved, both reviews are stale — rerun and post again.
+  5. Only then merge.
+  - **Applicability is decided by the attempted merge — never by what the change contains.** Not file
+    type, not line count, not `Refs #N` vs `Closes #N`, not "it's only docs". **docs-only, ADR-only,
+    ledger, config, test-only and one-line branches all take the full gate.** These are the exact
+    proxies that were used to skip it four times in one session (2026-07-26); they are not inputs.
+  - **If you find yourself reasoning that this change does not need the gate, that reasoning IS the
+    failure mode.** The gate on a docs PR is not ceremony: the review skipped that day shipped an ADR
+    whose load-bearing premise was never verified, and `scrutinize` step 1 is "is the premise real?".
+- **Conditional gate, separate from the one above:** add **`security-review`** when the merge diff
+  touches auth / RLS / admin-write / secret / upload / webhook / untrusted-input / external-request /
+  privileged-client surfaces, and include its findings or residual risks in the same bilingual
+  evidence. This list scopes `security-review` **only** — it does not narrow the STOP gate, which has
+  no content-based scope at all.
+- 🛑 **The default branch is merge-only.** Before the first change in a task, check the current branch;
+  if it is `master`, branch first. **Every** change — code, docs, ADRs, ledger entries, one-liners —
+  lands through an issue-linked PR that passed the gate above. Never `git push` a commit to `master`.
+  Verify branch and destination before every push. (Learned 2026-07-26: a ledger commit went straight
+  to `master` because this rule lived only in `Obsidian-Fastwork/Branch First Delivery.md`.)
 - 🛑 **Any PRODUCTION DB write is a STOP-and-get-explicit-authz action — a separate, EARLIER
   checkpoint than the merge gate.** A migration, seed, or data change applied to the prod database
   via **any** path (Supabase MCP `execute_sql`, `supabase`/`psql` CLI, or the dashboard) requires:
@@ -56,11 +75,35 @@ task in this repo — before writing or changing code, not after.**
   approval is **NOT** authorization for a raw prod DB write — and applying something a prior step
   deliberately *parked* for the rules is overriding that guard, not completing it. Keep migrations
   additive + idempotent; **never hand-edit `supabase_migrations.schema_migrations`.** ⚠️ **No hook
-  enforces this** (unlike `gh pr create/merge`, which are gated) — it is pure discipline, so the
+  enforces this — and per Enforcement status below, none enforces anything else either** — so the
   guard must live here in the map, not only in an agent's private memory.
 
 Skip only for trivial, non-code conversational replies. These override default behavior; the
 user's explicit instructions still win.
+
+### Enforcement status — verified against this checkout, 2026-07-27
+
+**Documentation is never evidence that a hook exists.** If a row below claims machinery and you cannot
+find the artifact it names, **the repository wins** — treat the control as discipline and say so.
+A row that reads *discipline only* needs no artifact; that is the honest case, not a gap in the table.
+
+<!-- enforcement-table:start -->
+
+| Control | Status | Evidence |
+|---|---|---|
+| Issue referenced on PR creation | discipline only | no `PreToolUse` hook; no `.claude/t4.json` |
+| `code-review` + `scrutinize` before merge | discipline only | nothing verifies the review evidence |
+| `verify` / test run before merge | discipline only | no merge hook in this checkout |
+| Dangerous-git refusal (`reset --hard`, force-push, `branch -D`) | discipline only | no command-denial hook |
+| Production DB write stop | discipline only | stated in this file; no mechanism |
+| Direct push to the default branch | not established here | branch protection is server-side — check GitHub, do not infer it |
+
+<!-- enforcement-table:end -->
+
+`.claude/settings.local.json` contains a `SessionStart` hook only. Any PR that adds or removes
+enforcement **updates this table in the same PR** and names the checked-in path plus a command that
+verifies it — not the word "enforced". A test holds the table to that:
+`nestjs/test/enforcement-claims-are-backed.spec.ts`.
 
 ## Repository layout
 
@@ -226,9 +269,28 @@ core framework-agnostic — Nest.js only wires it.
 
 ## Agent skills
 
-Repository skill instructions are canonical in `.agents/skills/`. `.claude/skills/` contains
-thin discovery wrappers that forward to those files so Claude Code and other agents use the same
-workflow without maintaining duplicate bodies.
+Repository skill instructions are canonical in `.agents/skills/` (47 tracked). `.claude/skills/`
+contains thin discovery wrappers that forward to those files so Claude Code and other agents use the
+same workflow without maintaining duplicate bodies.
+
+**Three mandatory gates are NOT in this repo** — they resolve from a user-level install, so a fresh
+clone is missing them and nothing says so until a gate quietly does not run. Install them before
+relying on the pipeline:
+
+<!-- external-skills:start -->
+
+| Gate | Source | Install |
+|---|---|---|
+| `code-review` | mattpocock skills | `/setup-matt-pocock-skills` |
+| `tdd` | mattpocock skills | `/setup-matt-pocock-skills` |
+| `t4-dev-workflow` | T4 team skill set (user-level by design) | installed with the other `t4-*` skills |
+
+<!-- external-skills:end -->
+
+Vendoring their bodies here is a separate call (third-party content in a public repo); declaring the
+dependency is not. A test holds this list to the gates `CLAUDE.md` actually makes mandatory:
+`nestjs/test/gate-skills-resolve-in-repo.spec.ts` — it fails if a gate is named mandatory while
+resolving neither in `.agents/skills/` nor here.
 
 ### Issue tracker
 
