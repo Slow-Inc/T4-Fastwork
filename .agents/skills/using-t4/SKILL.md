@@ -27,6 +27,7 @@ adds autonomous-agent safety constraints.
 | Plan, design, PR, diff, audit, or second opinion | Use `scrutinize` and trace the actual end-to-end path |
 | Validated bug, hard-to-reverse decision, or system-affecting change | Use `t4-engineering-records` |
 | Durable cross-task lesson | Update one note in `Obsidian-Fastwork/` and link it from the relevant index/Home |
+| **About to land a branch** (`gh pr merge`, auto-merge, UI/API merge) | **STOP.** Apply `CLAUDE.md`'s STOP GATE to `git diff origin/master...HEAD` — `code-review` + `scrutinize`, evidence posted with the reviewed HEAD SHA. Applicability is the merge action, never the change's content: docs-only and ADR-only take the full gate |
 | PR merged | Verify the remote head was deleted, fetch/prune, switch away, then safely delete the local branch |
 
 ## Standing rules
