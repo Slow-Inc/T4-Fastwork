@@ -19,3 +19,4 @@ edit-to-reverse). See `docs/agents/domain.md` and the `t4-engineering-records` s
 | [0011](0011-auto-publish-public-repos-visibility-is-authorization.md) | Auto-publish generated content for public repos: repo visibility IS the publish authorization (supersedes ADR 0009's publish-gate; keeps automated input/output validation) | Accepted | 2026-07-22 |
 | [0012](0012-flat-team-authz-any-linked-member-is-admin.md) | Flat team authorization: any linked member is an admin | Accepted | 2026-07-23 |
 | [0013](0013-simplified-single-readme-case-study.md) | Simplified single-README case study generation | Accepted | 2026-07-23 |
+| [0014](0014-serve-both-vercel-apps-behind-cloudflare.md) | Serve both Vercel serverless apps behind Cloudflare (Hostinger registrar) — records the delivery topology + its three caching rules | Accepted | 2026-07-26 |
