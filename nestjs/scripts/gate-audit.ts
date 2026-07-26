@@ -4,7 +4,11 @@
  *
  *   bun run scripts/gate-audit.ts             # the default window (30 most recent merged PRs)
  *   bun run scripts/gate-audit.ts --limit 60
- *   bun run scripts/gate-audit.ts --since 2026-07-26
+ *   bun run scripts/gate-audit.ts --since 2026-07-26   # a UTC date, not a local one
+ *
+ * `--since` is compared against GitHub's `mergedAt`, which is **UTC**. A PR merged in your local
+ * morning (UTC+7 here) carries the previous UTC date, so passing today's local date can legitimately
+ * audit nothing — the report says so rather than implying a clean day (#259).
  *
  * Run this at session start. A non-empty report is a process incident: record it before starting new
  * delivery, and do **not** back-fill evidence onto the offending PR — evidence produced after the merge
@@ -14,7 +18,12 @@
  */
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { findUnreviewedMerges, type MergedPr } from '../src/github/gate-audit';
+import {
+  describeAuditWindow,
+  findUnreviewedMerges,
+  inMergeWindow,
+  type MergedPr,
+} from '../src/github/gate-audit';
 
 const run = promisify(execFile);
 
@@ -58,9 +67,7 @@ async function main(): Promise<void> {
     ]),
   ) as GhPr[];
 
-  const inWindow = listed.filter(
-    (p) => p.mergedAt && (!since || p.mergedAt.slice(0, 10) >= since),
-  );
+  const inWindow = listed.filter((p) => inMergeWindow(p.mergedAt, since));
 
   const prs: MergedPr[] = inWindow.map((p) => ({
     number: p.number,
@@ -70,11 +77,11 @@ async function main(): Promise<void> {
 
   const gaps = findUnreviewedMerges(prs);
 
-  console.log(`audited ${prs.length} merged PRs${since ? ` since ${since}` : ''}`);
+  // Say the window out loud: "0 gaps" over an empty window is not a clean bill of health, and that
+  // is exactly the kind of vacuous pass this audit exists to stop being fooled by.
+  console.log(describeAuditWindow(prs.length, since));
   if (gaps.length === 0) {
-    // Say the window out loud: "0 gaps" over an empty window is not a clean bill of health, and that
-    // is exactly the kind of vacuous pass this audit exists to stop being fooled by.
-    console.log(prs.length === 0 ? 'no PRs in window — nothing was checked' : 'all had evidence');
+    if (prs.length > 0) console.log('all had evidence');
     return;
   }
   console.log(`\n${gaps.length} merged without usable gate evidence:`);
