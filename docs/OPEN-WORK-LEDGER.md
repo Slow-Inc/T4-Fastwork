@@ -1,5 +1,51 @@
 # Open-Work Ledger
 
+## 2026-07-26/27 (AFK) — the gate is now trigger-first, detectable, and it caught its own author twice
+
+- **#251 CLOSED for A–E (`488c4b3`, PR #252).** The pre-merge gate became a 🛑 STOP section triggered by
+  the merge **action**, with applicability stated as independent of file type, line count and
+  `Refs`/`Closes` — naming the four proxies actually used to skip it. `security-review`'s code-surface
+  list is split out, because that list sharing a sentence with the universal gate is what supplied the
+  "this is about code" frame. Two invariants now hold the docs to the repo:
+  `enforcement-claims-are-backed.spec.ts` (every claim must name an artifact that exists; **`CLAUDE.md`
+  had claimed `gh pr create` was hook-enforced and this repo has no `PreToolUse` hook at all**) and
+  `gate-skills-resolve-in-repo.spec.ts` (**`code-review`, `tdd`, `t4-dev-workflow` resolve only from a
+  user-level install** — a fresh clone lacks three gates).
+  - ⚠️ **Placement finding that changed the plan:** `.agents/skills/using-t4/SKILL.md` (49 lines) is a
+    *different document* from the user-level skill of the same name (79) that actually loads. A route
+    added to the repo copy would not have prevented anything. `CLAUDE.md` is the only document
+    guaranteed to be in context at the decision.
+  - Corrections to my own diagnosis, both recorded on the issue: `.agents/skills/` tracks **47** skills,
+    not "only two" (my grep filtered for four names and I reported the filter as the contents); and the
+    phantom-hook claim is a real defect but **not** the load-bearing cause — `gpt-5.6-sol` was right
+    that "it lowered vigilance" is plausible, not measured.
+- **#253 CLOSED (`418b576`, PR #254).** `findUnreviewedMerges` classifies a merged PR's evidence four
+  ways — no-evidence, unidentified (names a gate, quotes no full SHA), stale (quotes a SHA that is not
+  the merged head), incomplete (one gate only). AC verified for real: `--since 2026-07-26` reports
+  **#244, #245, #246, #249**, the four that merged without the gate. Plus a PR template whose evidence
+  lines are **fields, not checkboxes**, and a session-start audit step in `using-t4`.
+  - The fourth reason came from **running** it: most pre-#251 PRs name both gates and quote no full SHA
+    anywhere, and calling that "stale" was the wrong diagnosis.
+  - 🛑 **The gate caught me on its own PR.** The first HEAD **failed the nestjs Vercel deploy**:
+    `tsconfig.build.json` excludes only `test`, so `scripts/` is type-checked by `nest build` — no Bun
+    types, CommonJS output — and `Bun.spawn` (TS2867) plus top-level `await` (TS1309) broke it. I had run
+    `bun test` and `bun run lint` but **not `bun run build`**, which this repo documents as the
+    type-check. `setup-vercel-webhook.ts` had already solved both problems; I wrote a second script
+    beside it without reading it closely.
+- **#248 classifier landed (`8dd7418`, PR #255); issue stays OPEN.** `isAdditiveMigration` refuses by
+  default, 13 rejected classes, regression-tested against all 34 migrations. **7 of 34** are additive,
+  including exactly `0032`/`0033`/`0034`. Two corrections from the corpus: **CRLF broke comment
+  stripping** (`.` does not match `\r`, so `/--.*$/` matched nothing and every header leaked into the
+  statement — it refused all three pending migrations, silently useless); and **ADR 0015's own list was
+  too permissive** — `create or replace view`/`function` are refused, because a view replacement changes
+  what an anon read returns and `is_app_admin()` is SECURITY DEFINER (ADR 0007). Fix that in the ADR
+  before accepting it.
+  - The applier is **not** built: four of its ACs are claims about a database, the only database is
+    production, and that write is unauthorized. Needs a **Supabase branch** or the authorized first run.
+- **My own repeats worth naming:** `gh` with a long inline body broke on quoting **four times** despite
+  the handoff documenting `--body-file`; and I skipped `bun run build` after the handoff documented that
+  `bun test` does not type-check. Both are documented gotchas, re-hit inside one session.
+
 ## 2026-07-26 (AFK) — `ready-for-agent` is now EMPTY: #193 closed, ADR 0015 shipped, the rest relabelled honestly
 
 Cleared the label rather than the work: everything still open needs a human, and each one now says
