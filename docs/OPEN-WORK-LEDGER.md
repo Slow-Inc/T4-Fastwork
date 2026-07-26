@@ -42,7 +42,7 @@
   before accepting it.
   - The applier is **not** built: four of its ACs are claims about a database, the only database is
     production, and that write is unauthorized. Needs a **Supabase branch** or the authorized first run.
-- **My own repeats worth naming:** `gh` with a long inline body broke on quoting **four times** despite
+- **My own repeats worth naming:** `gh` with a long inline body broke on quoting **three times** despite
   the handoff documenting `--body-file`; and I skipped `bun run build` after the handoff documented that
   `bun test` does not type-check. Both are documented gotchas, re-hit inside one session.
 
