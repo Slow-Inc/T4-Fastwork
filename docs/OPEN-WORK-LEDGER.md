@@ -1,5 +1,42 @@
 # Open-Work Ledger
 
+## 2026-07-27 (AFK) — four remediation items landed, one parked on a decision that is not an agent's
+
+Worked from [`docs/reports/2026-07-27-codebase-scrutiny.md`](reports/2026-07-27-codebase-scrutiny.md).
+Every item took the full gate; `ready-for-agent` is **empty** again.
+
+| Issue | PR | What changed |
+|---|---|---|
+| #265 | [#266](https://github.com/Slow-Inc/T4-Fastwork/pull/266) `b6c5354` | The only `critical`: four pages fed bare `JSON.stringify` to `dangerouslySetInnerHTML`. One `jsonLdHtml` helper, and `lib/jsonld-sinks.test.ts` fails on the **pattern** anywhere under `app/`/`components/` so a fifth page is covered the day it is written |
+| #267 | [#268](https://github.com/Slow-Inc/T4-Fastwork/pull/268) `ba925ae` | A refused screenshot dispatch reported as `executed`. `http-*` now throws → `failed`; `no-token` throws `ActionDeferredError` → `deferred` |
+| #269 | [#270](https://github.com/Slow-Inc/T4-Fastwork/pull/270) `b8fed91` | Three seed scripts deleted content tables with no guard, and `.env` holds the prod connection string. `assertDestructiveSeedAllowed` refuses a non-local host before the first **connection** |
+| #272 | [#273](https://github.com/Slow-Inc/T4-Fastwork/pull/273) `c62a34a` | `postProjectRevalidation` returned `true` for 401/500. Now `res.ok`, plus a warning — because all eleven call sites `void` the boolean, so an honest return value alone changes nothing observable |
+
+nestjs **602 pass** (569 at the session's start), nextjs **430**, `bun run e2e` **70 passed**.
+
+- 🛑 **#271 is parked on purpose and the reason is the point.** Releasing a dedupe claim on failure
+  **deliberately reopens a replay window** so a redelivery can retry; whether that is correct depends
+  on whether every downstream effect is idempotent, and `github-webhook.service.ts` declares itself a
+  security boundary in its own header. Two defensible answers, on a trust boundary, with no reviewer
+  present — that is a park, not a hard task. The issue states both options and what is already decided.
+- ⚠️ **The gate caught my own leak twice this session, both from trying to be helpful.** The scrutiny
+  report told the reader which five surfaces to check before touching them — which enumerates exactly
+  what the redaction withheld — and the vault note's example issue title named two real surfaces inside
+  the paragraph explaining the rule against naming surfaces. Fixed before merge; the first scan missed
+  both because it only covered the report, not the other four committed files.
+- **Three brainstorm results worth keeping, from a round where the three agents disagreed:** build the
+  chunked-SSE harness as the **first commit inside** the chat PR rather than its own PR (red-first
+  without a second gate); **do not** merge the pipeline-honesty fixes into one PR — their contracts
+  deserve separate tests — and split the revalidation contract from the ranking *scheduling* decision,
+  which is why #272 exists and the ranking half does not; and **patch the code toward ADR 0011** rather
+  than reversing it, because public visibility authorises publishing repo-derived content, not letting
+  an LLM mutate the site-wide taxonomy. 2 of 3 agents landed on patch-the-code once one of them read
+  the actual code.
+- **Nobody had checked whether the live authorization gap was ever exploited.** It was not: all 42
+  storage objects have `updated_at == created_at` and every owner is either the service role or an
+  admin. Read-only, needed no authorization, and it changed the priority — worth doing *before* the fix,
+  not after.
+
 ## 2026-07-27 — codebase scrutiny: 39 verified findings, a plan, and 6 held out of the public repo
 
 **Read [`docs/reports/2026-07-27-codebase-scrutiny.md`](reports/2026-07-27-codebase-scrutiny.md) instead
