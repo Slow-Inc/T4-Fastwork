@@ -18,8 +18,13 @@
  * close the element. `>` and `&` are not strictly required in script-data state; they are escaped
  * anyway so the same helper is safe if a caller ever puts the result somewhere that does decode
  * entities.
+ *
+ * The parameter is `object` rather than `unknown` on purpose: `JSON.stringify(undefined)` returns
+ * `undefined`, and `.replace` on that throws — a 500 on a public page. `object` accepts both a schema
+ * object and the root layout's array while rejecting `undefined`/`null`/primitives at compile time,
+ * which is cheaper than a runtime guard for a case no caller should be able to reach.
  */
-export function jsonLdHtml(data: unknown): string {
+export function jsonLdHtml(data: object): string {
   return JSON.stringify(data)
     .replace(/</g, '\\u003c')
     .replace(/>/g, '\\u003e')
