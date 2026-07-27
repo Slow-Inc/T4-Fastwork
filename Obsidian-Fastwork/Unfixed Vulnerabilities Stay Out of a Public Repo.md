@@ -20,8 +20,8 @@ source: T4 Fastwork — 2026-07-27 codebase scrutiny (docs/reports/2026-07-27-co
   แต่ไม่ถูก publish
 - **รายงานสาธารณะ** → ระบุว่ามี N ข้อที่ถูกกันไว้ · บอก *path* ของไฟล์ private · **ไม่บอกชื่อพื้นผิว**
   เพราะแค่ชื่อตารางหรือชื่อ bucket ก็ลดต้นทุนการโจมตีลงมากแล้ว
-- **GitHub issue** → หัวข้อกลาง ๆ ที่ทำงานได้จริง (เช่น `fix(security): scope storage and lead policies to
-  is_app_admin()`) แล้วชี้ไปที่ไฟล์ private · ยังคงมี issue ต่อ deliverable ตามกฎ ไม่ได้ข้ามขั้น
+- **GitHub issue** → หัวข้อกลาง ๆ ที่ทำงานได้จริง (เช่น `fix(security): tighten a production authorization
+  policy` — สังเกตว่าตัวอย่างนี้ตั้งใจไม่บอกชื่อพื้นผิว แม้ในโน้ตที่อธิบายกฎ) แล้วชี้ไปที่ไฟล์ private · ยังคงมี issue ต่อ deliverable ตามกฎ ไม่ได้ข้ามขั้น
 - **เมื่อปิดแล้ว** ย้ายสรุปแบบตัดทอนขึ้นรายงานสาธารณะ และลบเส้นทาง exploit ออกจากไฟล์ private
 
 ## เส้นที่ใช้ตัดสินว่าอะไรกันไว้

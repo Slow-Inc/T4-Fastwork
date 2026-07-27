@@ -28,8 +28,9 @@ tracked in GitHub under non-specific titles.
 The two most serious were **verified directly against the production database** with a read-only policy
 query and a read-only anonymous probe — they are not traced guesses. **Both end in a production DB
 write, so they require branch verification and explicit per-action authorization.** Read that file
-before touching anything under `contact/`, `admin/` uploads, storage buckets, the chat rate limit, or
-JSON-LD.
+**first** if you are about to touch an authorization surface, an upload path, an unauthenticated
+endpoint, or anything that renders untrusted text into markup — it will tell you whether the thing in
+front of you is already known. Listing the surfaces here would rebuild the map this redaction removes.
 
 ### What this run could NOT tell you
 
