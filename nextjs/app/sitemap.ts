@@ -5,8 +5,17 @@ import { solutionSlugs } from '@/content/solution-detail';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://t4labs.dev';
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const projects = await getAllProjects();
+/**
+ * The URL shape of the sitemap, separated from the two database reads so it can be tested without
+ * one (#277). Before this split, `app/site-url.test.ts` was the only test in either workspace that
+ * needed a reachable Supabase: with no env it threw, and with a dummy URL it waited on ECONNREFUSED
+ * until the 5s timeout. The property that test exists to pin — every entry carries the fallback
+ * SITE_URL — is a property of this function and needs no I/O at all.
+ */
+export function sitemapEntries(
+  projectSlugs: string[],
+  postSlugs: string[],
+): MetadataRoute.Sitemap {
   const staticPaths = [
     '',
     '/projects',
@@ -24,8 +33,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: path === '' ? 1 : 0.7,
   }));
 
-  const projectEntries = projects.map((p) => ({
-    url: `${SITE_URL}/projects/${p.slug}`,
+  const projectEntries = projectSlugs.map((slug) => ({
+    url: `${SITE_URL}/projects/${slug}`,
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }));
@@ -36,12 +45,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  const posts = await getPosts();
-  const blogEntries = posts.map((p) => ({
-    url: `${SITE_URL}/blog/${p.slug}`,
+  const blogEntries = postSlugs.map((slug) => ({
+    url: `${SITE_URL}/blog/${slug}`,
     changeFrequency: 'monthly' as const,
     priority: 0.5,
   }));
 
   return [...staticEntries, ...projectEntries, ...solutionEntries, ...blogEntries];
+}
+
+/** Next.js entry point: the two reads, then the pure shaping above. */
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [projects, posts] = await Promise.all([getAllProjects(), getPosts()]);
+  return sitemapEntries(
+    projects.map((p) => p.slug),
+    posts.map((p) => p.slug),
+  );
 }
