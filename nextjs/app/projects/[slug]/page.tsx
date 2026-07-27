@@ -11,7 +11,7 @@ import { getAllProjects, getProjectBySlug } from '@/lib/projects-repo';
 import { getRepoDetail } from '@/lib/github';
 import { keysForRepo } from '@/lib/live-snapshot';
 import { team } from '@/content/site';
-import { pageAlternates } from '@/lib/seo';
+import { jsonLdHtml, pageAlternates } from '@/lib/seo';
 
 /** Team roster for contributor classification (login → /team slug). */
 const roster = team.map((m) => ({ slug: m.slug, githubUrl: m.githubUrl }));
@@ -76,7 +76,7 @@ export default async function ProjectDetailPage({
       )}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
       <FloatingChatProvider>
         <div className="wrap">

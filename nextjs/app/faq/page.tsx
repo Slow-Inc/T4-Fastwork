@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { pageAlternates } from '@/lib/seo';
+import { jsonLdHtml, pageAlternates } from '@/lib/seo';
 import { SiteNav } from '@/components/site/site-nav';
 import { SiteFooter } from '@/components/site/site-footer';
 import { ChatButton } from '@/components/site/chat-button';
@@ -31,7 +31,7 @@ export default async function FaqPage() {
       <SiteNav />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
       <div className="wrap">
         <FaqContent faqs={faqs} />
