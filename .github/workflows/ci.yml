@@ -31,6 +31,17 @@ jobs:
   test:
     name: test (both workspaces)
     runs-on: ubuntu-latest
+    env:
+      # `test/health.spec.ts` boots the whole AppModule, so it constructs DatabaseModule, which
+      # refuses to build without a DATABASE_URL. A deliberately fake one is enough and keeps the
+      # coverage: the guard only rejects an unset value or the `[YOUR-PASSWORD]` placeholder,
+      # postgres.js does not connect until a query, and the health controller is dependency-free —
+      # so all three probes answer without a database existing. Measured: 613 pass, 0 fail with no
+      # env files present and only this value set.
+      #
+      # That boot is worth keeping in CI rather than excluding: it is the only check that catches a
+      # broken DI graph, which `nest build` does not.
+      DATABASE_URL: postgresql://postgres.ci:ci-not-a-real-password@127.0.0.1:6543/postgres
     steps:
       - uses: actions/checkout@v4
 
