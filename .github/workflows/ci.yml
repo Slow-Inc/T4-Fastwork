@@ -1,0 +1,108 @@
+name: CI
+
+# Verification that does not depend on Vercel (#277, PRD #275).
+#
+# Before this, the only automatic signal a PR got was a Vercel deployment status: it type-checks but
+# runs no tests, and when the account hit its 24h deploy quota on 2026-07-27 every PR lost its only
+# check. Actions runs regardless.
+#
+# ── Why one workflow with a `gate` job, rather than several required checks ──────────────────────
+# GitHub required status checks and conditional jobs deadlock: a PR that skips a job leaves that
+# job's required check in "Expected — waiting for status" forever, and the PR can never merge. The
+# first reaction to that is to switch branch protection off, which is the outcome the whole epic
+# exists to avoid. Slow-Inc/MangaDock's ci.yml documents the same trap and the same fix.
+#
+# So: mark **only `gate`** as the required check in branch protection (#279). It always runs and fails
+# only when a job that matters did not succeed.
+#
+# ── Why test/build are not path-filtered ────────────────────────────────────────────────────────
+# The two workspaces are coupled: a change under nestjs/ alters what the frontend renders. Filtering
+# would buy a couple of minutes and re-introduce the deadlock class above. The whole run is short.
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (both workspaces)
+    runs-on: ubuntu-latest
+    env:
+      # `test/health.spec.ts` boots the whole AppModule, so it constructs DatabaseModule, which
+      # refuses to build without a DATABASE_URL. A deliberately fake one is enough and keeps the
+      # coverage: the guard only rejects an unset value or the `[YOUR-PASSWORD]` placeholder,
+      # postgres.js does not connect until a query, and the health controller is dependency-free —
+      # so all three probes answer without a database existing. Measured: 613 pass, 0 fail with no
+      # env files present and only this value set.
+      #
+      # That boot is worth keeping in CI rather than excluding: it is the only check that catches a
+      # broken DI graph, which `nest build` does not.
+      DATABASE_URL: postgresql://postgres.ci:ci-not-a-real-password@127.0.0.1:6543/postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned, not `latest`: a Bun release must not be able to turn a green branch red with no diff.
+      # 1.3.14 is the version the product is developed against.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
+      - run: bun install --frozen-lockfile
+
+      # No environment at all, deliberately. Measured on 2026-07-28: the suite needs none once
+      # app/sitemap.ts's pure shaper is separated from its two database reads — before that split,
+      # one test built a real Supabase client, and it was the only reason this job would have needed
+      # a repository secret.
+      - name: Unit tests (root entry point)
+        run: bun run test
+
+  build:
+    name: build (type-check)
+    runs-on: ubuntu-latest
+    env:
+      # `next build` prerenders pages that read Supabase, so it refuses to start with no URL+key.
+      # Dummy values are enough and no repository secret is required: the data layer is DB-first with
+      # a static fallback, so an unreachable host falls back to seed content and the build completes
+      # (measured — with these exact values, exit 0).
+      #
+      # What this job therefore proves: the code compiles and every route renders. What it does NOT
+      # prove: that the routes render real data. The Vercel deployment check still covers that, and
+      # this job is here because `bun test` does not type-check — which is how a broken backend build
+      # reached a PR head on 2026-07-26.
+      NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_dummy_for_ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
+      - run: bun install --frozen-lockfile
+
+      - name: Build both workspaces (root entry point)
+        run: bun run build
+
+  gate:
+    name: gate
+    # Must run even when a dependency failed or was skipped — otherwise a failed job leaves the
+    # required check unreported, which is the deadlock this job exists to prevent.
+    if: ${{ always() }}
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    steps:
+      # Both jobs above are unconditional, so anything other than success is a real problem —
+      # including `cancelled`. When a conditional job joins (the browser suite, #278), give it its own
+      # branch here that accepts `skipped`; do not relax this one.
+      - name: Verify required jobs
+        run: |
+          echo "test=${{ needs.test.result }} build=${{ needs.build.result }}"
+          if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.build.result }}" != "success" ]; then
+            echo "::error::A required CI job did not succeed"
+            exit 1
+          fi
+          echo "CI gate passed."
