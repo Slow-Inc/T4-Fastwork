@@ -25,8 +25,12 @@ export type ContentRevalidationKind =
   'faq' | 'service' | 'certificate' | 'blog';
 
 /** Fire a project revalidation at the frontend. With `slug`, targets that
- * detail page only (#143); without, bulk `/projects` + every detail. Returns
- * whether the POST was attempted+succeeded; never throws. */
+ * detail page only (#143); without, bulk `/projects` + every detail.
+ *
+ * Returns whether the frontend ACCEPTED it — a rejected secret (401) or a 5xx returns false, because
+ * the previous version returned `true` for any response it managed to receive, which made a
+ * permanently-401ing revalidation path look healthy (#272). Never throws: a missed revalidation must
+ * not fail the write that triggered it. */
 export async function postProjectRevalidation(
   deps: RevalidateDeps,
   slug?: string | null,
@@ -36,11 +40,11 @@ export async function postProjectRevalidation(
   const origin = parseAllowedOrigins(frontendOrigin)[0];
   const qs = slug ? `?slug=${encodeURIComponent(slug)}` : '';
   try {
-    await fetchImpl(`${origin}/api/revalidate${qs}`, {
+    const res = await fetchImpl(`${origin}/api/revalidate${qs}`, {
       method: 'POST',
       headers: { 'x-refresh-secret': secret },
     });
-    return true;
+    return res.ok;
   } catch {
     return false;
   }
@@ -54,11 +58,11 @@ export async function postContentRevalidation(
   if (!secret) return false;
   const origin = parseAllowedOrigins(frontendOrigin)[0];
   try {
-    await fetchImpl(`${origin}/api/revalidate?kind=${kind}`, {
+    const res = await fetchImpl(`${origin}/api/revalidate?kind=${kind}`, {
       method: 'POST',
       headers: { 'x-refresh-secret': secret },
     });
-    return true;
+    return res.ok;
   } catch {
     return false;
   }
