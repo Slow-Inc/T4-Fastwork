@@ -6,7 +6,7 @@ import { ChatButton } from '@/components/site/chat-button';
 import { RevealObserver } from '@/components/site/reveal-observer';
 import { BlogArticleContent } from '@/components/pages/blog-article-content';
 import { getPostBySlug, getPosts } from '@/lib/blog-repo';
-import { pageAlternates } from '@/lib/seo';
+import { jsonLdHtml, pageAlternates } from '@/lib/seo';
 
 type Params = Promise<{ slug: string }>;
 
@@ -60,7 +60,7 @@ export default async function BlogDetailPage({ params }: { params: Params }) {
       <SiteNav />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
       <div className="wrap">
         <BlogArticleContent post={p} />

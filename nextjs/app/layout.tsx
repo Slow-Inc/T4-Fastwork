@@ -10,7 +10,7 @@ import { Analytics } from "@/components/site/analytics";
 import { TurnstileScript } from "@/components/site/turnstile-script";
 import { AiGreetingPopup } from "@/components/site/ai-greeting-popup";
 import { LocaleProvider } from "@/i18n/locale-context";
-import { pageAlternates } from "@/lib/seo";
+import { jsonLdHtml, pageAlternates } from "@/lib/seo";
 
 const disp = Space_Grotesk({
   subsets: ["latin"],
@@ -79,7 +79,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify([
+            __html: jsonLdHtml([
               {
                 "@context": "https://schema.org",
                 "@type": "Organization",
