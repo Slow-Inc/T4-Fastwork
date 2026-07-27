@@ -16,3 +16,8 @@ dist/
 
 # Local personal MCP server config (Hostinger domain/DNS tooling; token via env)
 .mcp.json
+
+# Unfixed-vulnerability notes. This repository is PUBLIC: details of a live
+# authorization hole must not be published before it is closed. See
+# docs/reports/2026-07-27-codebase-scrutiny.md for the redaction rule.
+/docs/security-private/
