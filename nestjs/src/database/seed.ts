@@ -1,14 +1,28 @@
 /**
- * Seeds the real portfolio content (#6). Run: `bun run db:seed`.
- * Idempotent — clears the content tables (FK-safe order) then re-inserts.
+ * Seeds the ORIGINAL launch fixtures (#6). Run: `bun run db:seed`.
+ *
+ * ⚠️ **Destructive, and it no longer restores what it deletes.** It clears nine content tables
+ * (FK-safe order) and re-inserts `seed-data.ts`, which holds the retired launch mockups — while
+ * `/projects` is now DB-only with the GitHub-synced rows. Running this against a populated
+ * database replaces the live showcase with dropped fixtures. "Idempotent" was true only of this
+ * script's own effect, which is the least useful reading of the word here; the guard below is why
+ * a non-local target now has to be requested explicitly (#269).
  * Connects via the Supavisor pooler (DATABASE_URL, prepare:false).
  */
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from './schema';
+import {
+  assertDestructiveSeedAllowed,
+  SEED_OVERRIDE_ENV,
+} from './destructive-seed-guard';
 import * as data from './seed-data';
 
 async function main() {
+  assertDestructiveSeedAllowed({
+    databaseUrl: process.env.DATABASE_URL,
+    allow: process.env[SEED_OVERRIDE_ENV],
+  });
   const client = postgres(process.env.DATABASE_URL!, { prepare: false });
   const db = drizzle(client, { schema });
 

@@ -8,6 +8,10 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from './schema';
+import {
+  assertDestructiveSeedAllowed,
+  SEED_OVERRIDE_ENV,
+} from './destructive-seed-guard';
 
 type Edu = { program: string; institution: string };
 interface SeedMember {
@@ -169,6 +173,10 @@ const members: SeedMember[] = [
 ];
 
 async function main() {
+  assertDestructiveSeedAllowed({
+    databaseUrl: process.env.DATABASE_URL,
+    allow: process.env[SEED_OVERRIDE_ENV],
+  });
   const client = postgres(process.env.DATABASE_URL!, { prepare: false });
   const db = drizzle(client, { schema });
   await db.delete(schema.members);
