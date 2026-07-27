@@ -25,3 +25,4 @@ source: Engineering knowledge migration from MangaDock
 - [[Degraded Modes Must Be Observable]]
 - [[Idempotent Data Migrations]]
 - [[SLOs Runbooks and Recovery Drills]]
+- [[Unfixed Vulnerabilities Stay Out of a Public Repo]]

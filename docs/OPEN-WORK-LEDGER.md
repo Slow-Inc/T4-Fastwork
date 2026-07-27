@@ -1,5 +1,32 @@
 # Open-Work Ledger
 
+## 2026-07-27 — codebase scrutiny: 39 verified findings, a plan, and 6 held out of the public repo
+
+**Read [`docs/reports/2026-07-27-codebase-scrutiny.md`](reports/2026-07-27-codebase-scrutiny.md) instead
+of sweeping the codebase again.** A 15-agent run (7 finders over disjoint territories → one adversarial
+verifier per territory, defaulting to REFUTED → synthesis) raised 43 findings; **39 survived, 4 were
+refuted**. 25 CONFIRMED / 14 PLAUSIBLE · 1 critical, 10 high, 16 medium, 12 low. The report carries every
+`file:line`, the remediation plan in six waves, the three decisions that block work, and the coverage
+record. Re-running costs ~2.5M tokens and 35 minutes; **do not repeat it — extend it.**
+
+- 🔒 **Six findings are NOT in the public report.** Three are reachable on production today and this repo
+  is public. They live in `docs/security-private/2026-07-27-live-authz-findings.md`, which `.gitignore`
+  now excludes (`/docs/security-private/`). The two worst were **verified directly against the production
+  database** with a read-only policy query and a read-only anon probe — not traced. **Both end in a
+  production DB write and need branch verification plus explicit per-action authorization.** Their issues
+  carry non-specific titles on purpose; see
+  [`Unfixed Vulnerabilities Stay Out of a Public Repo`](../Obsidian-Fastwork/Unfixed%20Vulnerabilities%20Stay%20Out%20of%20a%20Public%20Repo.md).
+- ⚠️ **No agent ran `bun test`, `bun run build` or `bun run e2e`** — every survivor is a static trace, and
+  several fixes must *invert currently-pinned assertions*. The report names which.
+- Three things the report exists to stop a future session getting wrong: the missing-column fallback
+  ladders are tracked mitigations, **not** defects, while `0032`–`0034` are unapplied; the backend pooler
+  bypassing RLS is ADR 0007 by design; and the production backend entrypoint is `nestjs/api/index.ts`,
+  not `src/main.ts`.
+- Highest-value non-private items: the pipeline reports `recapture_cover`/`rank`/`revalidate` as
+  *executed* when they were rejected, fired with a bare `void` after the response, or never got the lock —
+  so the ≤10-min freshness target has no honest signal; and `taxonomySlug` collapses every all-Thai name
+  to `'item'` and `C`/`C++`/`C#` to `'c'`, which is the root of #184 that faebee4 papered over in the UI.
+
 ## 2026-07-27 — ADR 0015 now says what the classifier does, and the invariant runs both ways
 
 - **#257 CLOSED (`0f55006`, PR #258).** ADR 0015 and `isAdditiveMigration` defined "additive"
