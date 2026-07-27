@@ -43,7 +43,11 @@ import {
 import { LIVE_URL_SNAPSHOTS, LIVE_URL_STORE } from './live-url.controller';
 import { RevalidateService } from '../revalidate/revalidate.service';
 import { RankService } from '../rank/rank.service';
-import { captureTrigger, type PipelineActionExecutor } from './pipeline-sync';
+import {
+  ActionDeferredError,
+  captureTrigger,
+  type PipelineActionExecutor,
+} from './pipeline-sync';
 import type { ProjectSyncState, SyncEvent } from './project-automation-sync';
 import { PgPipelineSyncStore } from './pg-pipeline-sync.store';
 import {
@@ -166,13 +170,27 @@ export class PipelineActionExecutorService implements PipelineActionExecutor {
 
     // A dispatch that did not happen must not be recorded. Recording it would start the
     // cooldown and suppress every retry of a failure nobody can see (#197).
+    //
+    // It must also not RETURN, because `runPipelineSync` counts a resolved executor as executed —
+    // returning here is what reported a refused dispatch as done work (#267). Which of the two
+    // non-dispatch reasons this is decides the bucket: a missing token is a configuration gate, an
+    // API rejection is a failure somebody has to see.
     if (!outcome.dispatched) {
+      const reason = outcome.reason ?? 'unknown';
+      if (reason === 'no-token') {
+        this.logger.warn(
+          `screenshot dispatch not attempted for ${state.slug} (trigger ${trigger}): no dispatch ` +
+            `token configured — reported as deferred, and the next event retries`,
+        );
+        throw new ActionDeferredError(
+          `screenshot dispatch not attempted: ${reason}`,
+        );
+      }
       this.logger.error(
-        `screenshot dispatch failed for ${state.slug} (trigger ${trigger}): ${
-          outcome.reason ?? 'unknown'
-        } — recording nothing so the next event retries`,
+        `screenshot dispatch failed for ${state.slug} (trigger ${trigger}): ${reason} — ` +
+          `recording nothing so the next event retries`,
       );
-      return;
+      throw new Error(`screenshot dispatch refused: ${reason}`);
     }
 
     // Only the dispatch timestamp (the cooldown input). `last_capture_trigger` belongs to the

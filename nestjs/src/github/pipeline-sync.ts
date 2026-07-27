@@ -73,6 +73,22 @@ export interface PipelineActionFailure {
   error: string;
 }
 
+/**
+ * Thrown by an executor to say "planned, but not attempted" rather than "attempted and failed" (#267).
+ *
+ * The loop below classifies by outcome, and an executor that swallows a non-dispatch and returns is
+ * indistinguishable from one that succeeded — which is how `recapture_cover` came to be reported as
+ * executed while the screenshot workflow token is parked. Throwing is how an action leaves `executed`;
+ * throwing *this* is how it lands in `deferred` instead of `failed`, so a configuration gate does not
+ * read as a permanent failure on every local run.
+ */
+export class ActionDeferredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ActionDeferredError';
+  }
+}
+
 export interface PipelineSyncResult {
   owner: string;
   repo: string;
@@ -171,10 +187,15 @@ export async function runPipelineSync(
       await dispatch(kind, executor, state, event);
       executed.push(kind);
     } catch (err) {
-      failed.push({
-        action: kind,
-        error: err instanceof Error ? err.message : String(err),
-      });
+      // A gated action is not a failed one. Both leave `executed`, which is the point (#267).
+      if (err instanceof ActionDeferredError) {
+        deferred.push(kind);
+      } else {
+        failed.push({
+          action: kind,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
   }
 

@@ -16,6 +16,7 @@ import {
   type SyncEvent,
 } from '../src/github/project-automation-sync';
 import { PipelineActionExecutorService } from '../src/github/pipeline-action-executor.service';
+import { ActionDeferredError } from '../src/github/pipeline-sync';
 import type { ScreenshotDispatchOpts } from '../src/github/screenshot-dispatch';
 import {
   selectSnapshotTargets,
@@ -165,16 +166,39 @@ describe('cover recapture: Nest -> Action contract (#197)', () => {
     ).toHaveLength(0);
   });
 
-  it('records nothing when the dispatch is rejected', async () => {
+  it('records nothing and reports a failure when the dispatch is rejected', async () => {
     const store = new FakePipelineStore();
     const { executor } = makeExecutor(store, {
       dispatched: false,
       reason: 'http-403:Resource not accessible by personal access token',
     });
 
-    await executor.recaptureCover(stateFrom(PUBLISHED_ROW), PUSH_EVENT);
+    // It must throw, not return: `runPipelineSync` counts a resolved executor as executed, so
+    // returning here reported the refused dispatch as done work (#267). This assertion previously
+    // awaited a plain resolve, which is what pinned that defect in place.
+    await expect(
+      executor.recaptureCover(stateFrom(PUBLISHED_ROW), PUSH_EVENT),
+    ).rejects.toThrow('http-403');
 
     // A 403 must not be recorded as a capture, otherwise the cooldown suppresses every retry.
+    expect(store.captureWrites).toEqual([]);
+  });
+
+  it('reports a missing dispatch token as deferred, not as a failure', async () => {
+    const store = new FakePipelineStore();
+    const { executor } = makeExecutor(store, {
+      dispatched: false,
+      reason: 'no-token',
+    });
+
+    // A configuration gate is not a broken pipeline: every local run has no token, and reporting
+    // that as a permanent failure would train everyone to ignore the signal.
+    const err = await executor
+      .recaptureCover(stateFrom(PUBLISHED_ROW), PUSH_EVENT)
+      .then(() => null)
+      .catch((e: unknown) => e);
+
+    expect(err).toBeInstanceOf(ActionDeferredError);
     expect(store.captureWrites).toEqual([]);
   });
 
