@@ -4,5 +4,11 @@
   "workspaces": [
     "nextjs",
     "nestjs"
-  ]
+  ],
+  "scripts": {
+    "test": "bun --filter '*' test",
+    "build": "bun --filter '*' build",
+    "lint": "bun --filter '*' lint",
+    "verify": "bun run test && bun run build"
+  }
 }
