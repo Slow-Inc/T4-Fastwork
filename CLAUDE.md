@@ -93,12 +93,23 @@ A row that reads *discipline only* needs no artifact; that is the honest case, n
 |---|---|---|
 | Issue referenced on PR creation | discipline only | no `PreToolUse` hook; no `.claude/t4.json` |
 | `code-review` + `scrutinize` before merge | discipline only | nothing verifies the review evidence |
-| `verify` / test run before merge | discipline only | no merge hook in this checkout |
-| Dangerous-git refusal (`reset --hard`, force-push, `branch -D`) | discipline only | no command-denial hook |
+| Tests + type-check run on every PR | enforced by CI | `.github/workflows/ci.yml`, asserted by `nestjs/test/ci-workflow-is-wired.spec.ts` |
+| Merge while CI is failing | blocked by a required check | the `gate` job in `.github/workflows/ci.yml`; evaluated by `nestjs/src/github/repo-guards.ts` |
+| Force-push or delete the default branch | blocked server-side | branch protection; evaluated by `nestjs/src/github/repo-guards.ts` |
+| Merge from a stale base | blocked server-side | branch protection `strict`; evaluated by `nestjs/src/github/repo-guards.ts` |
+| Committing a detected secret | blocked server-side | secret-scanning push protection; evaluated by `nestjs/src/github/repo-guards.ts` |
+| Dangerous-git refusal (`reset --hard`, `branch -D`) | discipline only | no command-denial hook |
 | Production DB write stop | discipline only | stated in this file; no mechanism |
-| Direct push to the default branch | not established here | branch protection is server-side — check GitHub, do not infer it |
+| Direct push to the default branch | discipline for admins | protection is on, but `enforce_admins` is deliberately off so a broken CI can still be fixed — see `nestjs/src/github/repo-guards.ts` |
 
 <!-- enforcement-table:end -->
+
+The server-side rows were verified by hand on **2026-07-28** — `required_status_checks.contexts = ["gate"]`,
+`strict = true`, force-pushes and deletions off, secret scanning and push protection on — and proved to
+actually block: a PR with a deliberately failing test reported `mergeStateStatus = BLOCKED` (#279).
+Re-check with `bun run scripts/check-repo-guards.ts` **from an interactive shell**; spawned from a child
+process, `gh` falls back to a token without admin rights and the script correctly answers *cannot verify*
+rather than guessing. Automating it needs an admin-scoped token, which is a decision, not a task.
 
 `.claude/settings.local.json` contains a `SessionStart` hook only. Any PR that adds or removes
 enforcement **updates this table in the same PR** and names the checked-in path plus a command that
