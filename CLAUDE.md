@@ -28,6 +28,19 @@ task in this repo — before writing or changing code, not after.**
 - **`karpathy-guidelines`** enforces: think before coding (state assumptions, surface
   tradeoffs, don't pick silently), simplicity first, surgical changes, goal-driven execution
   with verification.
+- 🔍 **Survey the whole surface first — the plan is written *from* the survey, never from memory of the
+  code.** A complete survey means: **every** call site, not the one you expected (grep the symbol and
+  read the list); **both** workspaces for any claim about the monorepo; the **prior art** in a sibling
+  repo, whose comments carry its scars; and a **verified** capability — a permission, a flag, how a tool
+  behaves under a different shell or from a child process — never an assumed one. Then **state what the
+  survey did not cover**, so a gap is a recorded limit instead of a later surprise.
+  - Measured cost of skipping it, all on 2026-07-28: a CI plan that would have left every docs-only PR
+    permanently unmergeable (only `Slow-Inc/MangaDock`'s `ci.yml` said so); "the test job needs no
+    environment" written into a commit after measuring one workspace of two; a guard checker that
+    reported four healthy guards as missing because nobody checked how `gh` behaves in a child process;
+    and "an agent cannot set branch protection" written into an issue by an agent whose token had
+    `admin: true`.
+  - **A surprise during implementation is usually a survey that stopped early, not bad luck.**
 - **Shared engineering knowledge:** `Obsidian-Fastwork/` is the committed cross-agent knowledge
   base. At the start of every session, read `Obsidian-Fastwork/Home.md` first, then open only the
   linked notes relevant to the task. Do not load the whole vault blindly. Keep `Home.md` and the
