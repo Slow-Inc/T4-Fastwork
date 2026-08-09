@@ -11,9 +11,10 @@
  *   carries.
  * - `supabase/migrations/*.sql` — the repository's DDL journal.
  *
- * Exit codes are a contract for the scheduled workflow: 0 = no drift, 1 = pending migrations or
- * untracked objects found, 2 = could not assess (no DATABASE_URL, or the read failed) — a 2 must never
- * be read as "clean".
+ * Exit codes are a contract for the scheduled workflow: 0 = no **provable** drift (migrations whose
+ * state is unverifiable are reported as a warning, never silently), 1 = verified-unapplied migrations
+ * or untracked objects, 2 = could not assess (no DATABASE_URL, or the read failed) — a 2 must never be
+ * read as "clean".
  *
  * Requires the `postgres` package (a workspace dependency). Compiled by `nest build`, so no Bun-only
  * globals and no top-level `await` (the same constraint as `gate-audit.ts`).
@@ -103,10 +104,11 @@ async function main(): Promise<void> {
   const stems = files.map((f) => f.replace(/\.sql$/, ''));
   const sqlTexts = files.map((f) => readFileSync(join(MIGRATIONS_DIR, f), 'utf8'));
 
+  const objects = [...new Set([...policyNames, ...functionNames])];
   const report = classifyMigrationDrift(
     stems,
     ledgerVersions,
-    [...new Set([...policyNames, ...functionNames])],
+    objects,
     sqlTexts,
     schemaColumns,
     policyNames,
@@ -115,7 +117,7 @@ async function main(): Promise<void> {
   console.log(`Migration drift report — DB host ${hostOf(databaseUrl)}`);
   console.log(
     `  ledger rows: ${ledgerVersions.length} · repo migrations: ${stems.length} · ` +
-      `public objects scanned: ${new Set([...policyNames, ...functionNames]).size}`,
+      `public objects scanned: ${objects.length}`,
   );
 
   if (report.unmatchedLedger.length > 0) {
@@ -127,13 +129,22 @@ async function main(): Promise<void> {
   }
 
   if (report.verifiedPending.length === 0 && report.untracked.length === 0) {
-    console.log('  no drift: every verifiable migration is applied and every public object is migration-tracked.');
     if (report.unverified.length > 0) {
+      // Unverified is not a false alarm, but it is not proof of drift either: the ledger cannot name
+      // renamed files and the footprint is undetectable, so absence of a row is not absence of an apply.
+      // Report it as a warning so a human reconciles the ledger without holding the cron red on an
+      // unprovable assertion (the "cannot cry wolf" rule).
       console.log(
-        `  note: ${report.unverified.length} migration(s) have no detectable schema footprint ` +
-          `(grants, seeds, buckets, defaults) and no ledger row — state unverified, not asserted.`,
+        `  unverified (no ledger row, no detectable footprint — pending per ledger): ${report.unverified.length}`,
       );
+      for (const p of report.unverified) console.log(`    ${p}`);
+      console.log(
+        `::warning::${report.unverified.length} migration(s) have no ledger row and no detectable ` +
+          'footprint — reconcile the ledger (`supabase migration repair`) to confirm or surface real drift.',
+      );
+      return;
     }
+    console.log('  no drift: every migration is applied and every public object is migration-tracked.');
     return;
   }
 
@@ -143,10 +154,7 @@ async function main(): Promise<void> {
   }
   if (report.unverified.length > 0) {
     console.log(
-      `  unverified (no detectable footprint, no ledger row): ${report.unverified.length}` +
-        (report.verifiedPending.length === 0
-          ? ' — reported, not counted as drift'
-          : ''),
+      `  unverified (no ledger row, no detectable footprint — pending per ledger): ${report.unverified.length}`,
     );
     for (const p of report.unverified) console.log(`    ${p}`);
   }

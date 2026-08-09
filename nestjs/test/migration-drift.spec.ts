@@ -1,17 +1,19 @@
-﻿/**
+/**
  * Migration/policy drift between the repository and production (#282).
  *
  * Two defects motivated this, both measured on 2026-07-27:
  * - `supabase/migrations/0032`, `0033`, `0034` were merged and **unapplied for over a week**, with no
  *   signal anywhere.
- * - Production carries authorization objects that exist in **no migration file** â€” created by hand,
+ * - Production carries authorization objects that exist in **no migration file** — created by hand,
  *   and both were found with permissions scoped to "logged in" rather than "is admin". The pattern is
  *   exact: the objects that never went through review are the objects that are wrong.
  *
  * Expected values below come from a principle, not from re-running the classifier: a repo migration is
- * `applied` only when the database's migration ledger names it (or its numeric prefix), `pending` when
- * the ledger has no row for it, and a database object is `untracked` when no migration's SQL mentions
- * it. That is what makes the corpus assertions more than a restatement of the implementation.
+ * `applied` when the database's migration ledger names it (stem or numeric prefix) **or** the schema
+ * carries its footprint (the columns it adds / the policies it creates), `verifiedPending` when that
+ * footprint is expected but absent, `unverified` when there is no ledger row and no detectable
+ * footprint, and a database object is `untracked` when no migration's SQL mentions it. That is what
+ * makes the corpus assertions more than a restatement of the implementation.
  */
 import { describe, expect, it } from 'bun:test';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -24,7 +26,7 @@ import {
   type MigrationDriftReport,
 } from '../src/github/migration-drift';
 
-describe('isAppliedLedgerMatch â€” a ledger row names its migration (#282)', () => {
+describe('isAppliedLedgerMatch — a ledger row names its migration (#282)', () => {
   it('matches a ledger row equal to the file stem', () => {
     expect(isAppliedLedgerMatch('0032_project_capture_trigger', '0032_project_capture_trigger')).toBe(
       true,
@@ -46,7 +48,7 @@ describe('isAppliedLedgerMatch â€” a ledger row names its migration (#282)'
   });
 });
 
-describe('migrationColumnEffects â€” the migration\'s provable footprint (#282)', () => {
+describe('migrationColumnEffects — the migration\'s provable footprint (#282)', () => {
   it('extracts a guarded column add with a schema prefix', () => {
     expect(
       migrationColumnEffects('alter table public.projects add column if not exists gh_private boolean;'),
@@ -81,7 +83,7 @@ describe('migrationColumnEffects â€” the migration\'s provable footprint (#
   });
 });
 
-describe('migrationPolicyPatterns â€” handles the %N$s loop templates (#282)', () => {
+describe('migrationPolicyPatterns — handles the %N$s loop templates (#282)', () => {
   it('turns an exact policy name into an exact matcher', () => {
     const [p] = migrationPolicyPatterns('create policy "members public read" on public.members');
     expect(p?.test('members public read')).toBe(true);
@@ -99,8 +101,8 @@ describe('migrationPolicyPatterns â€” handles the %N$s loop templates (#282
   });
 });
 
-describe('classifyMigrationDrift â€” three states, reported honestly (#282)', () => {
-  it('with an empty ledger, every repo migration is pending', () => {
+describe('classifyMigrationDrift — the states are reported honestly (#282)', () => {
+  it('with an empty ledger, every repo migration is unverified (no footprint)', () => {
     const report = classifyMigrationDrift(['0032_x', '0033_y', '0034_z'], [], [], ['', '', '']);
     expect(report.unverified).toEqual(['0032_x', '0033_y', '0034_z']);
     expect(report.applied).toEqual([]);
@@ -131,7 +133,7 @@ describe('classifyMigrationDrift â€” three states, reported honestly (#282)
 
   it('marks a migration applied when the schema carries its column, even with a ledger that cannot name it', () => {
     // The real production case: the ledger is timestamp-only, but 0033's column exists in the schema.
-    // Without this signal the checker would report every applied migration as pending â€” a false alarm.
+    // Without this signal the checker would report every applied migration as pending — a false alarm.
     const report = classifyMigrationDrift(
       ['0033_project_gh_private'],
       ['20260717222128'],
@@ -175,7 +177,7 @@ describe('classifyMigrationDrift â€” three states, reported honestly (#282)
   });
 
   it('does not flag a policy the migrations create through a %1$s loop', () => {
-    // The exact production name (`public read technologies`) never appears verbatim in 0016/0017 â€”
+    // The exact production name (`public read technologies`) never appears verbatim in 0016/0017 —
     // it is produced by `create policy "public read %1$s"`. Flagging it would cry wolf every run.
     const report = classifyMigrationDrift(
       ['0016_rls_admin_write_public_tables'],
@@ -188,7 +190,7 @@ describe('classifyMigrationDrift â€” three states, reported honestly (#282)
 
   it('flags a hand-created policy that no migration can produce', () => {
     // The issue's second defect: objects created by hand, in no migration file. The leads policies in
-    // production match this â€” no migration mentions `leads`.
+    // production match this — no migration mentions `leads`.
     const report = classifyMigrationDrift(
       ['0005_members_rls'],
       [],
@@ -213,7 +215,7 @@ describe('classifyMigrationDrift â€” three states, reported honestly (#282)
 });
 
 /**
- * The real corpus. Expected values come from the principle in the header â€” the ledger's documented
+ * The real corpus. Expected values come from the principle in the header — the ledger's documented
  * state (2026-07-23: rows up to 0022 only, the rest applied out-of-band or unapplied) applied to the
  * file names. Not read back out of the classifier, which would make this vacuous.
  */
@@ -225,7 +227,7 @@ describe('the drift classifier judged against every migration in this repo (#282
   const sqlOf = (f: string) => readFileSync(join(dir, f), 'utf8');
   const stems = files.map((f) => f.replace(/\.sql$/, ''));
 
-  it('finds the corpus â€” an empty scan would pass every assertion below', () => {
+  it('finds the corpus — an empty scan would pass every assertion below', () => {
     expect(files.length).toBeGreaterThan(30);
   });
 
@@ -253,7 +255,7 @@ describe('the drift classifier judged against every migration in this repo (#282
 
   it('matches a real policy name that a migration creates, so it is not flagged untracked', () => {
     // A real policy from 0005_members_rls.sql. If the DB names it and a migration creates it, the
-    // drift checker must NOT report it â€” reporting it would cry wolf on every run.
+    // drift checker must NOT report it — reporting it would cry wolf on every run.
     const report = classifyMigrationDrift(stems, [], ['members edit own row'], files.map(sqlOf));
     expect(report.untracked).toEqual([]);
   });
@@ -282,4 +284,3 @@ describe('the drift classifier judged against every migration in this repo (#282
   const _shape: MigrationDriftReport = { applied: [], verifiedPending: [], unverified: [], untracked: [], unmatchedLedger: [] };
   void _shape;
 });
-

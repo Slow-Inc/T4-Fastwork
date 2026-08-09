@@ -11,9 +11,12 @@
 # `BACKEND_REFRESH_SECRET` guard. Setting it is a human action (the string is a prod credential).
 #
 # ── Exit codes ─────────────────────────────────────────────────────────────────────────────────────
-# The script reports: 0 = no drift, 1 = pending migrations or untracked objects (the job fails and
-# the run is visibly red — drift is real and resolvable, unlike the gate-audit's historical gaps),
-# 2 = could not assess (also red, so "cannot look" is never mistaken for "clean").
+# The script reports: 0 = no provable drift (unverified migrations surface as a `::warning`, not a
+# failure — the ledger cannot name renamed files, so a missing row is not proof of an unapplied
+# migration, and a permanently-red cron on an unprovable assertion would get disabled), 1 = verified
+# unapplied migrations or untracked objects (the job fails and the run is visibly red — this is real
+# and resolvable drift), 2 = could not assess (also red, so "cannot look" is never mistaken for
+# "clean").
 name: migration-drift
 
 on:
