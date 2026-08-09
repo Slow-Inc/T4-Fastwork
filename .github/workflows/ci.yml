@@ -18,6 +18,18 @@ name: CI
 # ── Why test/build are not path-filtered ────────────────────────────────────────────────────────
 # The two workspaces are coupled: a change under nestjs/ alters what the frontend renders. Filtering
 # would buy a couple of minutes and re-introduce the deadlock class above. The whole run is short.
+#
+# The browser suite (the `e2e` job, #278) is the one exception: it runs a production build + real
+# Chromium against the PRODUCTION database, so it is slow and data-sensitive. It runs BY DEFAULT and
+# is skipped only for paths that provably cannot affect the rendered site (docs, the knowledge vault,
+# agent skills, workflow config). The trigger is inverted on purpose: `CLAUDE.md` requires E2E for
+# every frontend change, and a `paths: nextjs/**` include would miss a change under nestjs/ that
+# alters what the frontend renders. A spec (`nestjs/test/e2e-ci-is-wired.spec.ts`) holds the ignore
+# list to provably-unrelated entries.
+#
+# The e2e job reads the PRODUCTION database, so a content change can fail CI with no code defect —
+# documented, not silently tolerated. Fork PRs carry no secrets and cannot run it; the job detects
+# the missing secrets and skips with a warning.
 
 on:
   pull_request:
@@ -87,22 +99,94 @@ jobs:
       - name: Build both workspaces (root entry point)
         run: bun run build
 
+  # Real-browser suite against a production build + the PRODUCTION database (#278). Runs by default;
+  # skips (inside the job) only for provably-unrelated paths or when the Supabase secrets are missing.
+  e2e:
+    name: e2e (browser suite — production database)
+    runs-on: ubuntu-latest
+    env:
+      # The suite reads the PRODUCTION database through the frontend's client — a content change can
+      # fail CI with no code defect. That is documented, not silently tolerated (#278).
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_API_BASE_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
+      # Only paths that provably cannot affect the rendered site may skip E2E. NEVER add a
+      # site-affecting prefix here — nestjs/test/e2e-ci-is-wired.spec.ts fails if you do. Note the
+      # md entries are the root documentation files only, NOT a global `*.md` (which would also match
+      # site content under nextjs/).
+      E2E_IGNORE_PATHS: |
+        ^docs/
+        ^Obsidian-Fastwork/
+        ^\.agents/
+        ^\.claude/
+        ^\.github/
+        ^\.gitignore$
+        ^CLAUDE\.md$
+        ^AGENTS\.md$
+        ^README\.md$
+        ^Requirement\.MD$
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
+      - run: bun install --frozen-lockfile
+
+      - name: Skip when the Supabase secrets are not configured
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ] || [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+            echo "::warning::Supabase E2E secrets not configured — skipping the browser suite (fork PRs have no secrets; until the repo secrets are set this is a documented no-op, not a pass)."
+            echo "E2E_SKIPPED=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Skip when only unrelated paths changed
+        if: ${{ env.E2E_SKIPPED != 'true' }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.event.pull_request.head.sha }}"
+            if [ -n "$base" ] && [ -n "$head" ]; then
+              changed=$(git diff --name-only "$base...$head")
+              unrelated=$(printf '%s\n' "$changed" | grep -vE "$(printf '%s\n' "$E2E_IGNORE_PATHS")" || true)
+              if [ -z "$unrelated" ]; then
+                echo "Only unrelated paths changed — skipping the browser suite."
+                echo "E2E_SKIPPED=true" >> "$GITHUB_ENV"
+              fi
+            fi
+          fi
+
+      - name: Install Playwright chromium
+        if: ${{ env.E2E_SKIPPED != 'true' }}
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run the browser suite (production build, production database)
+        if: ${{ env.E2E_SKIPPED != 'true' }}
+        working-directory: nextjs
+        run: bun run e2e
+
   gate:
     name: gate
     # Must run even when a dependency failed or was skipped — otherwise a failed job leaves the
     # required check unreported, which is the deadlock this job exists to prevent.
     if: ${{ always() }}
-    needs: [test, build]
+    needs: [test, build, e2e]
     runs-on: ubuntu-latest
     steps:
-      # Both jobs above are unconditional, so anything other than success is a real problem —
-      # including `cancelled`. When a conditional job joins (the browser suite, #278), give it its own
-      # branch here that accepts `skipped`; do not relax this one.
+      # Both test and build are unconditional, so anything other than success is a real problem —
+      # including `cancelled`. The e2e job skips INSIDE its steps (missing secrets / only unrelated
+      # paths) and reports success; a real browser failure reports failure. `skipped` is accepted too,
+      # so a future job-level conditional on e2e cannot deadlock the required check.
       - name: Verify required jobs
         run: |
-          echo "test=${{ needs.test.result }} build=${{ needs.build.result }}"
+          echo "test=${{ needs.test.result }} build=${{ needs.build.result }} e2e=${{ needs.e2e.result }}"
           if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.build.result }}" != "success" ]; then
             echo "::error::A required CI job did not succeed"
+            exit 1
+          fi
+          if [ "${{ needs.e2e.result }}" != "success" ] && [ "${{ needs.e2e.result }}" != "skipped" ]; then
+            echo "::error::The browser suite did not succeed"
             exit 1
           fi
           echo "CI gate passed."
