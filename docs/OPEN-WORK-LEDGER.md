@@ -1,5 +1,41 @@
 # Open-Work Ledger
 
+## 2026-08-09 (AFK) — CI/CD epic children landed with full gates; two secrets are the remaining human steps
+
+The pre-merge gate held on every branch this session (code-review + scrutinize evidence posted per PR,
+CI green, squash merge, remote head verified deleted). This session also caught up the ledger on the
+CI/epic work that had merged since the last entry:
+
+| Issue | PR | What changed |
+|---|---|---|
+| #287 | `dbd1f4a` | One CI entry point a human and CI both call — root scripts are the entry point |
+| #288 | `abc4c74` | Tests + builds run on every pull request (the `ci.yml` test/build/gate jobs) |
+| #290 | `d291f7e` | Record the guards that are now actually enforced (enforcement table) |
+| #293 | `89a4b68` | `CLAUDE.md`: a plan is written from a complete survey, never from memory |
+
+Then this AFK run's four gated merges:
+
+| Issue | PR | What changed |
+|---|---|---|
+| #283 | [#295](https://github.com/Slow-Inc/T4-Fastwork/pull/295) `2221b4a` | The pre-merge gate audit now runs on a schedule (daily 03:37 UTC) and maintains a **single** tracking issue. `gate-audit.ts` gains `--fail-on-gaps` (exit contract: 0 clean / 1 gaps / 2 crash); the tracking-issue step is keyed off the exit code, not a grep. **Admin-override merges are covered by the evidence-based detector** — merge-method-agnostic, so an override that skipped the gates is reported. |
+| #282 | [#296](https://github.com/Slow-Inc/T4-Fastwork/pull/296) `e30fd6a` | Migration/policy drift checker: pure `classifyMigrationDrift` + thin read-only script (`sql.begin('read only')`) + daily workflow. **Verified against production (read-only): 5 verified-unapplied migrations** (`0002`'s cta_clicks policy missing, `0028` bilingual columns missing, `0032`/`0033`/`0034` — the issue's three, still unapplied) **and 2 hand-created policies** (`anon can submit a lead`, `authenticated can read leads`) that exist in no migration. `applied` is decided from the schema footprint (columns/policies), because the ledger is timestamp-only and cannot name this repo's renamed files. |
+| #278 | [#297](https://github.com/Slow-Inc/T4-Fastwork/pull/297) `65fc6e9` | The E2E browser suite is now a CI job that runs **by default**, skipped only for provably-unrelated paths (`nestjs/test/e2e-ci-is-wired.spec.ts` holds the `paths-ignore` list non-vacuously — proven by temporarily adding `^nestjs/`). Flakiness fixed first: `shouldRecordConsoleError` (third-party README-badge 429s no longer red the suite) and `networkidle` → `domcontentloaded` (59 sites). Suite: 70 passed against production. |
+| #280 (nestjs half) | [#298](https://github.com/Slow-Inc/T4-Fastwork/pull/298) `fb85ecc` | `lint` is now a check (no `--fix`) in both workspaces; `lint:fix` is the explicit mutation form; root `.prettierrc` is one formatter of record with `endOfLine: auto` so eslint and prettier agree; formatting debt cleared (67 files, no behavioural change). `bun run lint` exits 0 on a clean checkout with `git status` unchanged. |
+
+**Parked on the developer (all with the exact decision stated on the issue):**
+- **#280 stays OPEN (was briefly auto-closed by PR #298's "Closes #280", reopened here)** — nextjs is not prettier-formatted; adopting it would reformat ~177 files and change its quote style (a frontend-style call). Decision: adopt prettier for nextjs / keep eslint-config-next only / close+file separately.
+- **#284 not started, relabelled `ready-for-human` this session** — needs a canary repository to be created (repo creation is outside AFK scope).
+- **#285 not started, relabelled `ready-for-human` this session** — its own body says "do not start until the blocking pipeline is trusted"; the pipeline shipped this month but no PR has exercised it beyond this session's four.
+- **Two repo secrets would arm the shipped work:** `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (arms the e2e job — until then it skips with a documented warning, not a pass) and `DATABASE_URL` (arms the migration-drift workflow). Both are read-only-by-design in their consumers.
+
+**Lessons recorded (validated this session):**
+- **`.prettierignore` paths are relative to the ignore file, and prettier's cwd changes glob + ignore resolution.** Running the `format` script from `nestjs/` instead of the root made the `src/security/…` entry miss the actual `nestjs/src/security/…` path and silently reformatted the security boundary file. Fix: list **both** forms, and always run formatting from the root. The AFK boundary rule ("no boundary file touched unattended") is why this mattered.
+- **`String(x)` does not satisfy `no-base-to-string`, and `as string` inside `String()` trips `no-unnecessary-type-assertion`** (String accepts the original type). The pattern that satisfies both and preserves runtime coercion: cast the operand itself (`(x as string)`), letting the coercion happen at the use site.
+- **`waitUntil: "networkidle"` never settles on pages with retrying third-party embeds** — 20s+ stalls and intermittent timeouts. `domcontentloaded` + per-assertion auto-wait is the robust pattern; the suite went from 2.4 min / flaky to 70 pass / 47 s.
+- **`requestfailed`-based first-party failure tracking reddened 20 tests** in a heavily-mocked, heavily-navigating suite (aborts and expected-missing assets are indistinguishable) — reverted; console-message filtering + layout/content assertions cover the real breakage.
+
+**Also:** the working tree on `master` held uncommitted WIP (45 nestjs files) at session start — stashed as `AFK-baseline: user WIP on master` (restore: `git stash apply 'stash@{0}'`). The vault `Home.md` graph and the `using-t4` session-start audit (`bun run scripts/gate-audit.ts`) remain the standing entry points.
+
 ## 2026-07-27 (AFK) — four remediation items landed, one parked on a decision that is not an agent's
 
 Worked from [`docs/reports/2026-07-27-codebase-scrutiny.md`](reports/2026-07-27-codebase-scrutiny.md).
