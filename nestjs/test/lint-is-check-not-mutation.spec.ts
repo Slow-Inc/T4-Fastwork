@@ -58,6 +58,12 @@ describe('lint is a check, not a mutation (#280)', () => {
       existsSync(join(ROOT, '.prettierrc')),
       'a root .prettierrc is the single formatter config',
     ).toBe(true);
+    // A nestjs/.prettierrc would SHADOW the root config for every nestjs file (prettier uses the
+    // nearest config), silently re-introducing an endOfLine that disagrees with eslint's rule.
+    expect(
+      existsSync(join(ROOT, 'nestjs', '.prettierrc')),
+      'nestjs/.prettierrc must not exist — it would shadow the root formatter config',
+    ).toBe(false);
     const config = JSON.parse(
       readFileSync(join(ROOT, '.prettierrc'), 'utf8'),
     ) as {
