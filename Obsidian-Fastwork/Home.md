@@ -46,6 +46,8 @@ current behavior; this vault captures reusable reasoning and operating knowledge
   `*_owner=auto` or enrichment generators skip forever (audit #167).
 - [[Targeted GitHub Snapshot Repairs]] — repair one project's GitHub binding safely; verify partial
   writes after Vercel timeout instead of blindly retrying a broad refresh.
+- [[Formatter Passes Must Respect the Security Boundary]] — run formatting only from the root; never let
+  a mechanical formatter touch a security-boundary file unattended (the `.prettierignore` cwd trap, #280).
 - [[Knowledge Management Index]] — truth hierarchy, ADR lifecycle, vocabulary, surveys, and
   handoffs.
 - [[Security and Reliability Index]] — diagnosis, trust boundaries, authorization, privacy,
