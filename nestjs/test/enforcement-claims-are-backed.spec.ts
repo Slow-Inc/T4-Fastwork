@@ -90,7 +90,10 @@ describe('CLAUDE.md has one enforcement table, and it is the only place enforcem
       .filter((cells) => cells.length >= 4 && !/^:?-+:?$/.test(cells[2] ?? ''))
       .slice(1);
 
-    expect(rows.length, 'the enforcement table must have at least one row').toBeGreaterThan(0);
+    expect(
+      rows.length,
+      'the enforcement table must have at least one row',
+    ).toBeGreaterThan(0);
 
     const unbacked: string[] = [];
     for (const cells of rows) {
@@ -98,15 +101,19 @@ describe('CLAUDE.md has one enforcement table, and it is the only place enforcem
       // A row that admits it is discipline needs no artifact — that is the honest case.
       if (/discipline|manual|not established/i.test(status)) continue;
       // Anything else claims machinery, so the evidence cell must name a path that is really here.
-      const paths = (evidence.match(/`([^`]+)`/g) ?? []).map((m) => m.slice(1, -1));
+      const paths = (evidence.match(/`([^`]+)`/g) ?? []).map((m) =>
+        m.slice(1, -1),
+      );
       const found = paths.some((p) => existsSync(join(REPO_ROOT, p)));
-      if (!found) unbacked.push(`${control} → ${evidence || '(no evidence given)'}`);
+      if (!found)
+        unbacked.push(`${control} → ${evidence || '(no evidence given)'}`);
     }
 
     expect(
       unbacked,
       'These rows claim enforcement but name no artifact that exists in this checkout. Either add ' +
-        'the implementation, or set the status to "discipline only": ' + unbacked.join(' ; '),
+        'the implementation, or set the status to "discipline only": ' +
+        unbacked.join(' ; '),
     ).toEqual([]);
   });
 });

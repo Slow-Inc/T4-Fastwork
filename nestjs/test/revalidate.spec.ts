@@ -41,7 +41,9 @@ describe('postProjectRevalidation (#92 backend → frontend revalidate)', () => 
       'mangadock',
     );
     expect(ok).toBe(true);
-    expect(calls[0].url).toBe('https://t4labs.dev/api/revalidate?slug=mangadock');
+    expect(calls[0].url).toBe(
+      'https://t4labs.dev/api/revalidate?slug=mangadock',
+    );
   });
 
   it('targets the FIRST origin of a comma-separated FRONTEND_ORIGIN (the primary site)', async () => {

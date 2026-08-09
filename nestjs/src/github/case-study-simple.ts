@@ -124,10 +124,19 @@ export class CaseStudySimpleService {
     // language evidence is a follow-up if the tag quality matters.
     const guarded: GeneratedContent = {
       ...gen,
-      technologies: validateTechnologies(gen.technologies, ctx.languages, ctx.readme),
+      technologies: validateTechnologies(
+        gen.technologies,
+        ctx.languages,
+        ctx.readme,
+      ),
     };
 
-    await this.store.publishCaseStudy(project.id, project.slug, guarded, snap.sha);
+    await this.store.publishCaseStudy(
+      project.id,
+      project.slug,
+      guarded,
+      snap.sha,
+    );
     return { generated: true };
   }
 }

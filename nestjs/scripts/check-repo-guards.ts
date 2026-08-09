@@ -47,7 +47,10 @@ async function readProtection(): Promise<Read<ProtectionResponse>> {
   } catch (err) {
     const text = err instanceof Error ? err.message : String(err);
     if (/Branch not protected/i.test(text)) return { ok: true, value: null };
-    return { ok: false, why: `could not read branch protection: ${text.slice(0, 200)}` };
+    return {
+      ok: false,
+      why: `could not read branch protection: ${text.slice(0, 200)}`,
+    };
   }
 }
 
@@ -75,7 +78,10 @@ async function readSecurity(): Promise<Read<SecurityResponse>> {
     return { ok: true, value: repo.security_and_analysis };
   } catch (err) {
     const text = err instanceof Error ? err.message : String(err);
-    return { ok: false, why: `could not read repository settings: ${text.slice(0, 200)}` };
+    return {
+      ok: false,
+      why: `could not read repository settings: ${text.slice(0, 200)}`,
+    };
   }
 }
 
@@ -110,9 +116,13 @@ async function main(): Promise<void> {
     return;
   }
 
-  console.log(`\n${gaps.length} guard(s) no longer match what CLAUDE.md claims:`);
+  console.log(
+    `\n${gaps.length} guard(s) no longer match what CLAUDE.md claims:`,
+  );
   for (const g of gaps) {
-    console.log(`  ${g.guard}\n    expected: ${g.expected}\n    actual:   ${g.actual}`);
+    console.log(
+      `  ${g.guard}\n    expected: ${g.expected}\n    actual:   ${g.actual}`,
+    );
   }
   console.log(
     '\nEither restore the setting, or change the enforcement table to stop claiming it. A row that ' +

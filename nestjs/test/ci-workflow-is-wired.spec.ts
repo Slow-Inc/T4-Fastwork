@@ -95,7 +95,10 @@ describe('the CI workflow is wired to run (#277)', () => {
   it('has exactly one always-run gate job that summarizes the others', () => {
     const jobs = loadWorkflow().jobs ?? {};
     const gate = jobs.gate;
-    expect(gate, 'a job named "gate" must exist — it is the only required check').toBeTruthy();
+    expect(
+      gate,
+      'a job named "gate" must exist — it is the only required check',
+    ).toBeTruthy();
     expect(
       gate?.if ?? '',
       'gate must run even when a job it depends on failed or was skipped',
@@ -111,7 +114,7 @@ describe('the CI workflow is wired to run (#277)', () => {
     const versions = Object.values(jobs)
       .flatMap((j) => j.steps ?? [])
       .filter((s) => (s.uses ?? '').startsWith('oven-sh/setup-bun'))
-      .map((s) => String(s.with?.['bun-version'] ?? ''));
+      .map((s) => (s.with?.['bun-version'] ?? '') as string);
 
     expect(versions.length, 'at least one job must set up bun').toBeGreaterThan(
       0,

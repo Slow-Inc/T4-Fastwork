@@ -15,9 +15,9 @@ describe('parseTechUsedFor (#131)', () => {
   });
 
   it('rejects incomplete JSON', () => {
-    expect(() =>
-      parseTechUsedFor(JSON.stringify({ usedFor: 'x' })),
-    ).toThrow(/incomplete/);
+    expect(() => parseTechUsedFor(JSON.stringify({ usedFor: 'x' }))).toThrow(
+      /incomplete/,
+    );
   });
 });
 

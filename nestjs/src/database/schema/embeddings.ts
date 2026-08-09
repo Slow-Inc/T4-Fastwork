@@ -27,7 +27,9 @@ export const documentEmbeddings = pgTable(
     chunkIndex: integer('chunk_index').notNull().default(0),
     chunkText: text('chunk_text').notNull(),
     embedding: vector('embedding', { dimensions: EMBEDDING_DIM }).notNull(),
-    metadata: jsonb('metadata').notNull().default(sql`'{}'::jsonb`),
+    metadata: jsonb('metadata')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

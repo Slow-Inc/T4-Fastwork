@@ -1,10 +1,4 @@
-import {
-  pgTable,
-  serial,
-  text,
-  integer,
-  boolean,
-} from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, boolean } from 'drizzle-orm/pg-core';
 import { members } from './members';
 
 /**

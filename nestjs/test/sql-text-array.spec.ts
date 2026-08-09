@@ -11,7 +11,9 @@ describe('sqlTextArray (#126)', () => {
     expect(text.toLowerCase()).toContain('array[');
     expect(text.toLowerCase()).toContain(']::text[]');
     // Must NOT expand to a bare row/tuple in the VALUES list without array[].
-    expect(text.toLowerCase()).not.toMatch(/values\s*\(\s*\$\d+\s*,\s*\$\d+\s*,\s*\$\d+\s*\)/);
+    expect(text.toLowerCase()).not.toMatch(
+      /values\s*\(\s*\$\d+\s*,\s*\$\d+\s*,\s*\$\d+\s*\)/,
+    );
     expect(params).toEqual(['a', 'b', 'c']);
   });
 

@@ -14,9 +14,24 @@ import { buildSystemPrompt } from '../chat/system-prompt';
 const SYSTEM = buildSystemPrompt({
   language: 'th',
   retrieved: [
-    { kind: 'project', ref: 'fin-track', title: 'FinTrack', summary: 'SaaS dashboard การเงินสำหรับ startup' },
-    { kind: 'project', ref: 'book-easy', title: 'BookEasy', summary: 'ระบบจองโรงแรม' },
-    { kind: 'service', ref: '1', title: 'SaaS Platform', summary: 'พัฒนา SaaS Platform ครบวงจร' },
+    {
+      kind: 'project',
+      ref: 'fin-track',
+      title: 'FinTrack',
+      summary: 'SaaS dashboard การเงินสำหรับ startup',
+    },
+    {
+      kind: 'project',
+      ref: 'book-easy',
+      title: 'BookEasy',
+      summary: 'ระบบจองโรงแรม',
+    },
+    {
+      kind: 'service',
+      ref: '1',
+      title: 'SaaS Platform',
+      summary: 'พัฒนา SaaS Platform ครบวงจร',
+    },
   ],
 });
 

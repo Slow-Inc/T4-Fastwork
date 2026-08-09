@@ -33,7 +33,9 @@ export const messages = pgTable(
       .references(() => conversations.id, { onDelete: 'cascade' }),
     role: varchar('role', { length: 12 }).notNull(), // 'user' | 'assistant'
     content: text('content').notNull(),
-    cards: jsonb('cards').notNull().default(sql`'[]'::jsonb`),
+    cards: jsonb('cards')
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     model: varchar('model', { length: 64 }),
     latencyMs: integer('latency_ms'),
     createdAt: timestamp('created_at', { withTimezone: true })

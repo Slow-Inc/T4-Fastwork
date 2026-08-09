@@ -9,7 +9,9 @@ import type {
 
 class FakeStore implements RankStore {
   applied: { kind: RankKind; rows: RankRow[] }[] = [];
-  constructor(private readonly byKind: Partial<Record<RankKind, RankCandidate[]>>) {}
+  constructor(
+    private readonly byKind: Partial<Record<RankKind, RankCandidate[]>>,
+  ) {}
   async getCandidates(kind: RankKind): Promise<RankCandidate[]> {
     return this.byKind[kind] ?? [];
   }
@@ -26,7 +28,8 @@ describe('RankService.refresh', () => {
         { id: 'p2', title: 'Two' },
       ],
     });
-    const client = async () => '[{"id":"p2","rationale":"bigger impact"},{"id":"p1"}]';
+    const client = async () =>
+      '[{"id":"p2","rationale":"bigger impact"},{"id":"p1"}]';
     const svc = new RankService(store, client);
 
     await svc.refresh('projects');

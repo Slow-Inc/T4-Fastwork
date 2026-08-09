@@ -21,8 +21,7 @@ import type { PipelineSyncResult } from './pipeline-sync';
 
 /** What happened to one push. `ran: false` always carries a reason (#200). */
 export type PushRunOutcome =
-  | { ran: true; result: PipelineSyncResult }
-  | { ran: false; reason: string };
+  { ran: true; result: PipelineSyncResult } | { ran: false; reason: string };
 
 @Injectable()
 export class PipelinePushRunner implements PushPipelineRunner {
@@ -62,7 +61,9 @@ export class PipelinePushRunner implements PushPipelineRunner {
       }
 
       for (const f of outcome.result.failed) {
-        this.logger.error(`pipeline push ${id}: ${f.action} failed — ${f.error}`);
+        this.logger.error(
+          `pipeline push ${id}: ${f.action} failed — ${f.error}`,
+        );
       }
       return { ran: true, result: outcome.result };
     } catch (err) {

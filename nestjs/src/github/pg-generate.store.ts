@@ -37,8 +37,8 @@ export class PgGenerateStore implements GenerateStore, TaxonomyStore {
     return rows.map((r) => ({
       id: Number(r.id),
       slug: String(r.slug),
-      ghOwner: r.gh_owner == null ? null : String(r.gh_owner),
-      ghRepo: r.gh_repo == null ? null : String(r.gh_repo),
+      ghOwner: r.gh_owner == null ? null : (r.gh_owner as string),
+      ghRepo: r.gh_repo == null ? null : (r.gh_repo as string),
       description: typeof r.description === 'string' ? r.description : null,
       categoryId: r.category_id == null ? null : Number(r.category_id),
       categoryOwner: owner(r.category_owner),

@@ -25,9 +25,7 @@ export interface TechUsedForLlm {
   complete(messages: ChatMessage[]): Promise<string>;
 }
 
-export function buildUsedForPrompt(input: {
-  name: string;
-}): ChatMessage[] {
+export function buildUsedForPrompt(input: { name: string }): ChatMessage[] {
   const system =
     'You write a one-sentence portfolio blurb for a technology chip. ' +
     'Return ONLY one JSON object, no markdown fence. Schema: ' +
@@ -47,9 +45,7 @@ export class TechUsedForService {
     private readonly store: TechUsedForStore,
   ) {}
 
-  async generateForTech(
-    tech: TechUsedForRow,
-  ): Promise<{ generated: boolean }> {
+  async generateForTech(tech: TechUsedForRow): Promise<{ generated: boolean }> {
     if (tech.usedForOwner !== 'auto') return { generated: false };
     if (tech.usedFor) return { generated: false };
 

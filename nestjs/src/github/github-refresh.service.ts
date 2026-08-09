@@ -126,7 +126,10 @@ export class GithubRefreshService {
     let candidates: { owner: string; repo: string }[] = [...this.showcaseRepos];
     if (this.showcaseRepoProvider) {
       try {
-        candidates = [...candidates, ...(await this.showcaseRepoProvider.listShowcaseRepos())];
+        candidates = [
+          ...candidates,
+          ...(await this.showcaseRepoProvider.listShowcaseRepos()),
+        ];
       } catch {
         // Serve-stale: a DB read failure falls back to the constant repos.
       }
@@ -139,7 +142,11 @@ export class GithubRefreshService {
       seen.add(k);
       deduped.push(r);
     }
-    return selectReposForDetailSync(deduped, SHOWCASE_REPO_DETAIL_BUDGET, nowMs);
+    return selectReposForDetailSync(
+      deduped,
+      SHOWCASE_REPO_DETAIL_BUDGET,
+      nowMs,
+    );
   }
 
   async refreshAll(): Promise<RefreshSummary> {

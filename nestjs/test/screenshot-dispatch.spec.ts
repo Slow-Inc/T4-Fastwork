@@ -27,7 +27,7 @@ describe('dispatchScreenshotWorkflow (#190)', () => {
   it('POSTs workflow_dispatch with slug/force/trigger inputs', async () => {
     const bodies: string[] = [];
     const fetchImpl = async (_url: string, init?: RequestInit) => {
-      bodies.push(String(init?.body ?? ''));
+      bodies.push((init?.body ?? '') as string);
       return new Response(null, { status: 204 });
     };
 
@@ -58,10 +58,10 @@ describe('dispatch cannot hang the transaction it runs inside (#199)', () => {
       await dispatchScreenshotWorkflow({
         slug: 'alpha',
         trigger: 'push:abc',
-        fetchImpl: ((_url: string, i: RequestInit) => {
+        fetchImpl: (_url: string, i: RequestInit) => {
           init = i;
           return Promise.resolve(new Response('', { status: 204 }));
-        }) as unknown as typeof fetch,
+        },
       });
     } finally {
       if (prev === undefined) delete process.env.SCREENSHOT_DISPATCH_TOKEN;

@@ -10,6 +10,8 @@
 export function isMissingColumnError(err: unknown): boolean {
   const code = (err as { code?: unknown } | null)?.code;
   if (code === '42703') return true;
-  const message = err instanceof Error ? err.message : String(err ?? '');
-  return /column .* does not exist|unknown column|no such column/i.test(message);
+  const message = err instanceof Error ? err.message : ((err ?? '') as string);
+  return /column .* does not exist|unknown column|no such column/i.test(
+    message,
+  );
 }

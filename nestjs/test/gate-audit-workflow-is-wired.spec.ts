@@ -89,7 +89,7 @@ describe('the gate-audit workflow is wired to run (#283)', () => {
     ).toContain('date -u');
     expect(
       runs,
-      'it must pass --limit so the script\'s N-newest-then-filter window is not truncated by a busy period',
+      "it must pass --limit so the script's N-newest-then-filter window is not truncated by a busy period",
     ).toContain('--limit');
   });
 

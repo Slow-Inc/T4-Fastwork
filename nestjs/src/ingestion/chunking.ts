@@ -48,7 +48,9 @@ export interface FaqInput {
 const CONTENT_MAX = 1000; // keep content chunks small — retrieval, not storage
 
 function joinLines(parts: (string | undefined)[]): string {
-  return parts.filter((p): p is string => !!p && p.trim().length > 0).join('\n');
+  return parts
+    .filter((p): p is string => !!p && p.trim().length > 0)
+    .join('\n');
 }
 
 export function chunkProject(p: ProjectInput): Chunk[] {
@@ -64,11 +66,19 @@ export function chunkProject(p: ProjectInput): Chunk[] {
     p.description,
     p.category ? `หมวดหมู่: ${p.category}` : undefined,
     p.tags?.length ? `แท็ก: ${p.tags.join(', ')}` : undefined,
-    p.technologies?.length ? `เทคโนโลยี: ${p.technologies.join(', ')}` : undefined,
+    p.technologies?.length
+      ? `เทคโนโลยี: ${p.technologies.join(', ')}`
+      : undefined,
   ]);
 
   const chunks: Chunk[] = [
-    { sourceType: 'project', sourceId: p.id, chunkIndex: 0, text: summary, metadata },
+    {
+      sourceType: 'project',
+      sourceId: p.id,
+      chunkIndex: 0,
+      text: summary,
+      metadata,
+    },
   ];
 
   const content = p.content?.trim();

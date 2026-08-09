@@ -12,7 +12,7 @@
  * `ci-workflow-is-wired.spec.ts`.
  */
 import { describe, expect, it } from 'bun:test';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const WORKFLOW = join(
@@ -43,10 +43,13 @@ function loadWorkflow(): Workflow {
 
 describe('the e2e job is wired into CI (#278)', () => {
   it('defines an e2e job', () => {
-    expect(loadWorkflow().jobs?.e2e, 'ci.yml must define an e2e job').toBeTruthy();
+    expect(
+      loadWorkflow().jobs?.e2e,
+      'ci.yml must define an e2e job',
+    ).toBeTruthy();
   });
 
-  it('runs the repository\'s own browser suite command', () => {
+  it("runs the repository's own browser suite command", () => {
     const runs = (loadWorkflow().jobs?.e2e?.steps ?? [])
       .map((s) => s.run ?? '')
       .join('\n');
@@ -88,7 +91,10 @@ describe('the e2e job is wired into CI (#278)', () => {
       .split('\n')
       .map((p) => p.trim())
       .filter(Boolean);
-    expect(ignore.length, 'the paths-ignore list must be populated').toBeGreaterThan(0);
+    expect(
+      ignore.length,
+      'the paths-ignore list must be populated',
+    ).toBeGreaterThan(0);
 
     // The guard tests each ignore entry AS A PATTERN against representative site-affecting paths.
     // (A first draft tested a site-affecting regex against the entry string — both started with "^",
@@ -118,8 +124,9 @@ describe('the e2e job is wired into CI (#278)', () => {
   it('the gate job requires the e2e result', () => {
     const needs = loadWorkflow().jobs?.gate?.needs;
     const list = Array.isArray(needs) ? needs : [needs ?? ''];
-    expect(list, 'gate must depend on e2e so a browser failure blocks the merge').toContain(
-      'e2e',
-    );
+    expect(
+      list,
+      'gate must depend on e2e so a browser failure blocks the merge',
+    ).toContain('e2e');
   });
 });

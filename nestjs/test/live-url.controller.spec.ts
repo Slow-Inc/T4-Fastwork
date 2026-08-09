@@ -72,8 +72,6 @@ describe('LiveUrlController (#157)', () => {
     const res = await c.run('right', { apply: true });
     expect(res.applied).toBe(true);
     expect(res.filled).toBe(1);
-    expect(applied).toEqual([
-      { id: 1, liveUrl: 'https://resume.example' },
-    ]);
+    expect(applied).toEqual([{ id: 1, liveUrl: 'https://resume.example' }]);
   });
 });

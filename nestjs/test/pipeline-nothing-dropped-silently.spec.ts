@@ -86,12 +86,7 @@ describe('one failing action does not cancel the rest (#200)', () => {
   it('keeps going after a throw and still revalidates last', async () => {
     const { executor, calls } = executorFailing(['sync_taxonomy']);
 
-    const res = await runPipelineSync(
-      PUSH,
-      { apply: true },
-      loader,
-      executor,
-    );
+    const res = await runPipelineSync(PUSH, { apply: true }, loader, executor);
 
     // The failure is reported, not swallowed and not fatal.
     expect(res.failed.map((f) => f.action)).toEqual(['sync_taxonomy']);
@@ -124,13 +119,11 @@ describe('one failing action does not cancel the rest (#200)', () => {
 describe('losing the advisory lock is reported, not silence (#200)', () => {
   it('runPush returns a skipped outcome when another run holds the lock', async () => {
     const { executor, calls } = executorFailing([]);
-    const store = { runExclusive: () => Promise.resolve({ ran: false as const }) };
+    const store = {
+      runExclusive: () => Promise.resolve({ ran: false as const }),
+    };
 
-    const runner = new PipelinePushRunner(
-      store as never,
-      loader,
-      executor,
-    );
+    const runner = new PipelinePushRunner(store as never, loader, executor);
     const outcome = await runner.runPush(PUSH);
 
     expect(outcome.ran).toBe(false);

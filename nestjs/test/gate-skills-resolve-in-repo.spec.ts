@@ -74,7 +74,8 @@ describe('every mandatory gate skill resolves in the repo, or is declared extern
     const both = external.filter((s) => resolvesInRepo(s));
     expect(
       both,
-      'These are declared external AND present in .agents/skills/ — pick one: ' + both.join(', '),
+      'These are declared external AND present in .agents/skills/ — pick one: ' +
+        both.join(', '),
     ).toEqual([]);
   });
 });

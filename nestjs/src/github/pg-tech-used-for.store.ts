@@ -2,10 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../database/database.module';
 import type { TechUsedFor } from './tech-used-for';
-import type {
-  TechUsedForRow,
-  TechUsedForStore,
-} from './tech-used-for.service';
+import type { TechUsedForRow, TechUsedForStore } from './tech-used-for.service';
 
 /**
  * Postgres store for D4 tech "used for" blurbs (#131). Superuser pooler bypasses RLS.

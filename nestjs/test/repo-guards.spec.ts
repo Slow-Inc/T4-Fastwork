@@ -58,9 +58,9 @@ describe('findGuardGaps (#279)', () => {
       { ...GOOD_PROTECTION, required_status_checks: { strict: true } },
       GOOD_SECURITY,
     );
-    expect(
-      gaps.find((g) => g.guard === 'required status check')?.actual,
-    ).toBe('none required');
+    expect(gaps.find((g) => g.guard === 'required status check')?.actual).toBe(
+      'none required',
+    );
   });
 
   it('reports a stale-base merge being allowed', () => {

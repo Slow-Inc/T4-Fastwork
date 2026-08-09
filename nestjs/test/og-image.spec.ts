@@ -11,7 +11,9 @@ describe('extractOgImage', () => {
 
   it('resolves a relative og:image against the page URL', () => {
     const html = `<meta property="og:image" content="/assets/og.jpg">`;
-    expect(extractOgImage(html, base)).toBe('https://mangadock.com/assets/og.jpg');
+    expect(extractOgImage(html, base)).toBe(
+      'https://mangadock.com/assets/og.jpg',
+    );
   });
 
   it('accepts name="og:image" and twitter:image as fallbacks', () => {

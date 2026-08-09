@@ -8,15 +8,17 @@ import type {
   ProjectGithubSlugLookup,
 } from '../src/github/pg-showcase-repos.store';
 
-function makeController(over: {
-  listPublished?: MissingReadmeStore['listPublishedGithubForReadmeBackfill'];
-  listStates?: MissingReadmeStore['listReadmeSnapshotStates'];
-  refreshRepoDetail?: GithubRefreshService['refreshRepoDetail'];
-  exclusive?: (
-    name: string,
-    fn: () => Promise<unknown>,
-  ) => Promise<{ ran: boolean; result?: unknown }>;
-} = {}) {
+function makeController(
+  over: {
+    listPublished?: MissingReadmeStore['listPublishedGithubForReadmeBackfill'];
+    listStates?: MissingReadmeStore['listReadmeSnapshotStates'];
+    refreshRepoDetail?: GithubRefreshService['refreshRepoDetail'];
+    exclusive?: (
+      name: string,
+      fn: () => Promise<unknown>,
+    ) => Promise<{ ran: boolean; result?: unknown }>;
+  } = {},
+) {
   const detailCalls: string[] = [];
   const exclusiveNames: string[] = [];
 

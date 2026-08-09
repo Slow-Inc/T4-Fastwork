@@ -18,7 +18,9 @@ const ROOT = join(import.meta.dir, '..', '..');
 
 function scriptsOf(pkgDir: string): Record<string, string> {
   const raw = readFileSync(join(pkgDir, 'package.json'), 'utf8');
-  return (JSON.parse(raw) as { scripts?: Record<string, string> }).scripts ?? {};
+  return (
+    (JSON.parse(raw) as { scripts?: Record<string, string> }).scripts ?? {}
+  );
 }
 
 const root = scriptsOf(ROOT);
@@ -26,7 +28,10 @@ const root = scriptsOf(ROOT);
 describe('the repository has one entry point (#276)', () => {
   it('defines the scripts CI is allowed to call', () => {
     for (const name of ['test', 'build', 'lint', 'verify']) {
-      expect(root[name], `root package.json must define a "${name}" script`).toBeTruthy();
+      expect(
+        root[name],
+        `root package.json must define a "${name}" script`,
+      ).toBeTruthy();
     }
   });
 
@@ -42,9 +47,10 @@ describe('the repository has one entry point (#276)', () => {
     // A root script that reimplements `next build` would drift from the workspace the day either
     // changes. Filtering is the delegation; hand-written cd chains are the duplication.
     for (const name of ['test', 'build', 'lint']) {
-      expect(root[name] ?? '', `root "${name}" should delegate to the workspaces`).toContain(
-        '--filter',
-      );
+      expect(
+        root[name] ?? '',
+        `root "${name}" should delegate to the workspaces`,
+      ).toContain('--filter');
     }
   });
 

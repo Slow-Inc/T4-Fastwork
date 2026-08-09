@@ -59,7 +59,10 @@ function make(
     llmCalls++;
     return llm ? llm(c) : generated;
   };
-  return { c: new GithubGenerateController(store, client), llmCalls: () => llmCalls };
+  return {
+    c: new GithubGenerateController(store, client),
+    llmCalls: () => llmCalls,
+  };
 }
 
 describe('GithubGenerateController', () => {

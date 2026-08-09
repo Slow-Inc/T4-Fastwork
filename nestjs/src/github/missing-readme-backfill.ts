@@ -72,9 +72,7 @@ export function selectReposMissingReadme(
   existingReadmeKeys: ReadonlySet<string> | readonly string[],
   maxPerRun: number = Number.POSITIVE_INFINITY,
 ): ReadmeBackfillCandidate[] {
-  const existing = new Set(
-    [...existingReadmeKeys].map((k) => normalizeKey(k)),
-  );
+  const existing = new Set([...existingReadmeKeys].map((k) => normalizeKey(k)));
   const out: ReadmeBackfillCandidate[] = [];
   for (const c of candidates) {
     if (out.length >= maxPerRun) break;

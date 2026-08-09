@@ -4,17 +4,19 @@ import { GithubWriteController } from '../src/github/github-write.controller';
 import type { GithubRefreshService } from '../src/github/github-refresh.service';
 import type { ProjectGithubSlugLookup } from '../src/github/pg-showcase-repos.store';
 
-function makeController(over: {
-  refreshRepoDetail?: GithubRefreshService['refreshRepoDetail'];
-  findSlug?: ProjectGithubSlugLookup['findPublishedSlugByGithub'];
-  exclusive?: (
-    name: string,
-    fn: () => Promise<unknown>,
-  ) => Promise<{ ran: boolean; result?: unknown }>;
-  revalidateSlug?: (slug: string) => Promise<boolean>;
-  revalidateAll?: () => Promise<boolean>;
-  reingest?: () => Promise<void>;
-} = {}) {
+function makeController(
+  over: {
+    refreshRepoDetail?: GithubRefreshService['refreshRepoDetail'];
+    findSlug?: ProjectGithubSlugLookup['findPublishedSlugByGithub'];
+    exclusive?: (
+      name: string,
+      fn: () => Promise<unknown>,
+    ) => Promise<{ ran: boolean; result?: unknown }>;
+    revalidateSlug?: (slug: string) => Promise<boolean>;
+    revalidateAll?: () => Promise<boolean>;
+    reingest?: () => Promise<void>;
+  } = {},
+) {
   const listSyncCalls: string[] = [];
   const revalidateSlugs: string[] = [];
   const revalidateAllCalls: number[] = [];
@@ -51,8 +53,7 @@ function makeController(over: {
   };
 
   const projects: ProjectGithubSlugLookup = {
-    findPublishedSlugByGithub:
-      over.findSlug ?? (async () => 'mangadock'),
+    findPublishedSlugByGithub: over.findSlug ?? (async () => 'mangadock'),
   };
 
   const revalidate = {
@@ -112,33 +113,41 @@ describe('GithubWriteController.doRefreshRepoDetail (#143)', () => {
 
   it('rejects a wrong / missing secret (fail-closed)', async () => {
     const { c } = makeController();
-    await expect(c.doRefreshRepoDetail('wrong', 'Slow-Inc', 'MangaDock')).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(
+      c.doRefreshRepoDetail('wrong', 'Slow-Inc', 'MangaDock'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
     delete process.env.GITHUB_REFRESH_SECRET;
-    await expect(c.doRefreshRepoDetail('right', 'Slow-Inc', 'MangaDock')).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(
+      c.doRefreshRepoDetail('right', 'Slow-Inc', 'MangaDock'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('rejects unsafe owner/repo before any sync', async () => {
     const { c, exclusiveNames } = makeController();
-    await expect(c.doRefreshRepoDetail('right', 'foo/bar', 'MangaDock')).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(
+      c.doRefreshRepoDetail('right', 'foo/bar', 'MangaDock'),
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(exclusiveNames).toEqual([]);
   });
 
   it('refreshes one repo under a dedicated lock and revalidates only that slug', async () => {
-    const { c, listSyncCalls, revalidateSlugs, revalidateAllCalls, reingestCalls, exclusiveNames } =
-      makeController();
+    const {
+      c,
+      listSyncCalls,
+      revalidateSlugs,
+      revalidateAllCalls,
+      reingestCalls,
+      exclusiveNames,
+    } = makeController();
     const res = (await c.doRefreshRepoDetail(
       'right',
       'Slow-Inc',
       'MangaDock',
     )) as Record<string, unknown>;
 
-    expect(exclusiveNames).toEqual(['github-refresh-repo-detail:slow-inc/mangadock']);
+    expect(exclusiveNames).toEqual([
+      'github-refresh-repo-detail:slow-inc/mangadock',
+    ]);
     expect(listSyncCalls).toEqual([]);
     expect(revalidateSlugs).toEqual(['mangadock']);
     expect(revalidateAllCalls).toEqual([]);

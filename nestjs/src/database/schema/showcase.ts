@@ -31,7 +31,9 @@ export const blogPosts = pgTable('blog_posts', {
   publishedAt: date('published_at'),
   readTimeMin: integer('read_time_min').default(5),
   views: integer('views').default(0),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
   aiRank: integer('ai_rank'),
   aiRankRationale: text('ai_rank_rationale'),
   authorId: integer('author_id'),
@@ -91,7 +93,5 @@ export const generationJobs = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [
-    unique().on(t.projectId, t.inputManifestHash, t.promptVersion),
-  ],
+  (t) => [unique().on(t.projectId, t.inputManifestHash, t.promptVersion)],
 );

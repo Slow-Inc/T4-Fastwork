@@ -78,12 +78,10 @@ export class ConversationLogService {
         .where(eq(schema.messages.conversationId, conv.id))
         .orderBy(desc(schema.messages.createdAt))
         .limit(limit);
-      return rows
-        .reverse()
-        .map((r) => ({
-          role: r.role as 'user' | 'assistant',
-          content: r.content,
-        }));
+      return rows.reverse().map((r) => ({
+        role: r.role as 'user' | 'assistant',
+        content: r.content,
+      }));
     } catch (e) {
       this.logger.warn(`getRecentHistory failed: ${(e as Error).message}`);
       return [];

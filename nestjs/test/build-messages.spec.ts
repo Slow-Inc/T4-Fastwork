@@ -24,7 +24,7 @@ describe('buildChatMessages', () => {
 
   it('caps history to the most recent maxHistory messages', () => {
     const history = Array.from({ length: 20 }, (_, i) => ({
-      role: (i % 2 === 0 ? 'user' : 'assistant') as 'user' | 'assistant',
+      role: i % 2 === 0 ? 'user' : 'assistant',
       content: `m${i}`,
     }));
     const msgs = buildChatMessages('SYS', history, 'new', 6);

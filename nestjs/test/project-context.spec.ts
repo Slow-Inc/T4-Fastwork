@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'bun:test';
-import { formatProjectContext, type ProjectContextRecord } from '../src/chat/project-context';
+import {
+  formatProjectContext,
+  type ProjectContextRecord,
+} from '../src/chat/project-context';
 
 const FULL: ProjectContextRecord = {
   slug: 'mangadock',
@@ -26,7 +29,10 @@ describe('formatProjectContext', () => {
   });
 
   it('uses the English title when language is en and titleEn is set', () => {
-    const text = formatProjectContext({ ...FULL, title: 'ห้ามใช้', titleEn: 'MangaDock EN' }, 'en');
+    const text = formatProjectContext(
+      { ...FULL, title: 'ห้ามใช้', titleEn: 'MangaDock EN' },
+      'en',
+    );
     expect(text).toContain('MangaDock EN');
     expect(text).not.toContain('ห้ามใช้');
   });

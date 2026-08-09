@@ -104,8 +104,8 @@ export class PgPipelineSyncStore
           : 'published',
       source: r.source === 'cms' ? 'cms' : 'github',
       isPublicRepo,
-      ghOwner: String(r.gh_owner ?? owner),
-      ghRepo: String(r.gh_repo ?? repo),
+      ghOwner: (r.gh_owner ?? owner) as string,
+      ghRepo: (r.gh_repo ?? repo) as string,
       liveUrl: typeof r.live_url === 'string' ? r.live_url : null,
       snapshotImage:
         typeof r.snapshot_image === 'string' ? r.snapshot_image : null,

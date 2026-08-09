@@ -42,8 +42,8 @@ export class PgCaseStudySimpleStore implements CaseStudySimpleStore {
     return rows.map((r) => ({
       id: Number(r.id),
       slug: String(r.slug),
-      ghOwner: r.gh_owner == null ? null : String(r.gh_owner),
-      ghRepo: r.gh_repo == null ? null : String(r.gh_repo),
+      ghOwner: r.gh_owner == null ? null : (r.gh_owner as string),
+      ghRepo: r.gh_repo == null ? null : (r.gh_repo as string),
       readmeSha: typeof r.readme_sha === 'string' ? r.readme_sha : null,
       description: typeof r.description === 'string' ? r.description : null,
       content: typeof r.content === 'string' ? r.content : null,

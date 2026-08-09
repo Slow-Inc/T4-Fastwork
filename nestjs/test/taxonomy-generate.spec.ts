@@ -141,7 +141,7 @@ describe('TaxonomyGenerateService', () => {
         readmeSha: 'already-set',
       }),
       applyPatch: async (slug, patch) => {
-        applied.push({ slug, patch: patch as Record<string, unknown> });
+        applied.push({ slug, patch: patch });
       },
     };
     const readme: TaxonomyReadmeReader = {

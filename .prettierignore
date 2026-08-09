@@ -1,0 +1,19 @@
+# One formatter of record (#280) — files the formatting pass must never touch.
+#
+# The security boundary is excluded on purpose (AFK: a boundary file is not reformatted unattended —
+# the human who reviews it confirms the reformat is behavior-preserving). eslint's prettier/prettier
+# rule is also off for it in nestjs/eslint.config.mjs, so the lint check stays green on a clean checkout.
+src/security/turnstile.verifier.ts
+nestjs/src/security/turnstile.verifier.ts
+
+# nextjs is NOT prettier-formatted yet (#280, parked): its own eslint-config-next governs its style,
+# and pulling it into a prettier pass would reformat ~177 files and change its quote style — a
+# frontend-style decision for the developer, tracked on #280. Until decided, keep it out of the pass.
+nextjs/
+
+# Build artifacts / vendored output — never format these.
+.next/
+dist/
+out/
+build/
+node_modules/
