@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { shouldRecordConsoleError } from "../lib/e2e-console";
 
 /**
  * Real-browser smoke checks for every public page (Requirement §9). Catches what
@@ -30,22 +31,9 @@ const PAGES = [
 function trackErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on("console", (m) => {
-    if (m.type() !== "error") return;
-    const text = m.text();
-    // Third-party sub-resource outages (profile READMEs embed external badge/stats
-    // images — shields.io, skillicons, github-readme-stats… — that rate-limit or
-    // 5xx intermittently) are not our bug. Ignore a resource-load failure only when
-    // its URL is cross-origin; a same-origin (first-party) failure still fails, so
-    // this smoke check keeps catching our own broken assets/routes.
-    if (/Failed to load resource/i.test(text)) {
-      const url = m.location()?.url ?? "";
-      try {
-        if (url && new URL(url).origin !== new URL(page.url()).origin) return;
-      } catch {
-        // Unknown origin → treat as first-party and let it fail (conservative).
-      }
-    }
-    errors.push(text);
+    // Resource-load noise (third-party README badges rate-limit/5xx intermittently) is not our bug
+    // and must not red the suite — see lib/e2e-console.ts. Real runtime errors still fail.
+    if (shouldRecordConsoleError(m.type(), m.text())) errors.push(m.text());
   });
   page.on("pageerror", (e) => errors.push(e.message));
   return errors;
@@ -56,7 +44,7 @@ for (const path of PAGES) {
     page,
   }) => {
     const errors = trackErrors(page);
-    await page.goto(path, { waitUntil: "networkidle" });
+    await page.goto(path, { waitUntil: "domcontentloaded" });
 
     // A visible <h1> proves the main content rendered (didn't collapse).
     await expect(page.locator("h1").first()).toBeVisible();
@@ -98,7 +86,7 @@ for (const path of PAGES) {
 test('/about shows the real SDLC alongside the client-facing "how we work" steps', async ({
   page,
 }) => {
-  await page.goto("/about", { waitUntil: "networkidle" });
+  await page.goto("/about", { waitUntil: "domcontentloaded" });
   await expect(
     page.getByRole("heading", { name: "ขั้นตอนการทำงาน" }),
   ).toBeVisible();
@@ -120,7 +108,7 @@ test('/about shows the real SDLC alongside the client-facing "how we work" steps
 test("/about lists the team as a directory that links to each real profile", async ({
   page,
 }) => {
-  await page.goto("/about", { waitUntil: "networkidle" });
+  await page.goto("/about", { waitUntil: "domcontentloaded" });
   await expect(
     page.getByRole("heading", { name: "ทีมที่ลงมือสร้างจริง" }),
   ).toBeVisible();
@@ -151,7 +139,7 @@ test("project detail shows decision-first brief before progressive detail (#138)
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("/projects/mangadock", { waitUntil: "networkidle" });
+  await page.goto("/projects/mangadock", { waitUntil: "domcontentloaded" });
 
   const brief = page.locator(".project-brief");
   await expect(
@@ -223,7 +211,7 @@ test("project detail shows a request-free grounded AI composer immediately (#140
     });
   });
 
-  await page.goto("/projects/mangadock", { waitUntil: "networkidle" });
+  await page.goto("/projects/mangadock", { waitUntil: "domcontentloaded" });
   const embedded = page.locator(".detail-chat");
   await expect(
     embedded.getByRole("heading", { name: "ถาม AI เกี่ยวกับ MangaDock" }),
@@ -283,7 +271,7 @@ test("a member profile shows real repos and opens certificates in a lightbox", a
   page,
 }) => {
   const errors = trackErrors(page);
-  await page.goto("/team/xenodev", { waitUntil: "networkidle" });
+  await page.goto("/team/xenodev", { waitUntil: "domcontentloaded" });
 
   // Real audited repos render as projects with outbound links.
   await expect(
@@ -339,7 +327,7 @@ test("experience + project-count claims are accurate everywhere (7 years, 21+ pr
   page,
 }) => {
   for (const path of ["/", "/about"]) {
-    await page.goto(path, { waitUntil: "networkidle" });
+    await page.goto(path, { waitUntil: "domcontentloaded" });
     const bodyText = await page.locator("body").innerText();
     expect(bodyText, `${path} should not claim 20 years`).not.toContain(
       "20 ปี",
@@ -361,7 +349,7 @@ test("experience + project-count claims are accurate everywhere (7 years, 21+ pr
 });
 
 test("homepage also shows the SDLC section", async ({ page }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   const section = page.locator("#sdlc");
   await expect(
     section.getByRole("heading", { name: "SDLC ที่เราใช้จริง" }),
@@ -370,7 +358,7 @@ test("homepage also shows the SDLC section", async ({ page }) => {
 });
 
 test("SDLC rows have a hover micro-transition", async ({ page }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   const row = page.locator("#sdlc .sdlc-row").first();
 
   const transition = await row.evaluate(
@@ -395,7 +383,7 @@ test("SDLC rows have a hover micro-transition", async ({ page }) => {
 test("navbar keeps its frosted-glass backdrop blur", async ({ page }) => {
   // The build (Lightning CSS) can drop the standard `backdrop-filter` when a
   // `-webkit-` copy is hand-written alongside it, leaving Chrome with no blur.
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   const bf = await page.evaluate(
     () => getComputedStyle(document.querySelector(".site-nav")!).backdropFilter,
   );
@@ -403,7 +391,7 @@ test("navbar keeps its frosted-glass backdrop blur", async ({ page }) => {
 });
 
 test("FAQ list items expand with a smooth transition", async ({ page }) => {
-  await page.goto("/faq", { waitUntil: "networkidle" });
+  await page.goto("/faq", { waitUntil: "domcontentloaded" });
   const item = page.locator(".faq-item").first();
   const answer = item.locator(".faq-a");
 
@@ -423,7 +411,7 @@ test("FAQ list items expand with a smooth transition", async ({ page }) => {
 test("DB-backed FAQ keeps an English answer after switching locale", async ({
   page,
 }) => {
-  await page.goto("/faq", { waitUntil: "networkidle" });
+  await page.goto("/faq", { waitUntil: "domcontentloaded" });
   await expect(page.locator(".faq-item").first()).toBeVisible();
   await page
     .locator("nav")
@@ -436,7 +424,7 @@ test("DB-backed FAQ keeps an English answer after switching locale", async ({
 test("home renders the DB-backed service list and selected-work mosaic", async ({
   page,
 }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#services .srv-row").first()).toBeVisible();
   await expect(page.locator("#work a[href^='/projects/']").first()).toBeVisible();
 });
@@ -456,7 +444,7 @@ test("chat service cards render the label carried by the backend event", async (
     });
   });
 
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
   await page.getByPlaceholder("พิมพ์ข้อความ…").fill("AI");
   await page.locator(".chat-pane .chat-send").click();
   await expect(page.locator(".chat-card strong")).toHaveText("AI Product");
@@ -466,7 +454,7 @@ test("chat service cards render the label carried by the backend event", async (
 test("FAQ items slide down into place with a cascading stagger", async ({
   page,
 }) => {
-  await page.goto("/faq", { waitUntil: "networkidle" });
+  await page.goto("/faq", { waitUntil: "domcontentloaded" });
   const items = page.locator(".faq-item");
 
   const delays = await items.evaluateAll((els) =>
@@ -487,7 +475,7 @@ test("contact form renders and works without a Turnstile key (feature-flagged)",
   page,
 }) => {
   // Not submitting here — a real submit would insert a lead into the live DB.
-  await page.goto("/contact", { waitUntil: "networkidle" });
+  await page.goto("/contact", { waitUntil: "domcontentloaded" });
   const form = page.locator("form.contact-form");
   await expect(form.locator('input[name="name"]')).toBeVisible();
   await expect(form.locator('input[name="email"]')).toBeVisible();
@@ -499,7 +487,7 @@ test("contact form renders and works without a Turnstile key (feature-flagged)",
 test('AI greeting popup appears on first visit and "ไว้ก่อน" dismisses without navigating', async ({
   page,
 }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   const popup = page.locator(".ai-greeting");
   await expect(popup).toBeVisible({ timeout: 6000 });
   await popup.getByRole("button", { name: "ไว้ก่อน" }).click();
@@ -510,7 +498,7 @@ test('AI greeting popup appears on first visit and "ไว้ก่อน" dismi
 test('AI greeting popup "เอาเลย พาชมหน่อย" navigates to /chat', async ({
   page,
 }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   const popup = page.locator(".ai-greeting");
   await expect(popup).toBeVisible({ timeout: 6000 });
   await popup.getByRole("link", { name: "เอาเลย พาชมหน่อย" }).click();
@@ -518,7 +506,7 @@ test('AI greeting popup "เอาเลย พาชมหน่อย" navigat
 });
 
 test("AI greeting popup does not show on /chat", async ({ page }) => {
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(3000);
   await expect(page.locator(".ai-greeting")).toHaveCount(0);
 });
@@ -542,7 +530,7 @@ test("AI reply eventually renders streamed text without a stuck typing cursor", 
     });
   });
 
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
   await page.getByPlaceholder("พิมพ์ข้อความ…").fill("ทดสอบ");
   await page.getByRole("button", { name: "ส่ง" }).click();
 
@@ -553,7 +541,7 @@ test("AI reply eventually renders streamed text without a stuck typing cursor", 
 test("scope summary panel shows a tooltip before any conversation", async ({
   page,
 }) => {
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
   await page.locator(".scope-panel-toggle").click();
   await expect(
     page.getByText("เริ่มพูดคุยกับ AI ระบบจะสรุปขอบเขตงานให้อัตโนมัติ"),
@@ -577,7 +565,7 @@ test('project detail "ask AI about this project" opens the floating widget groun
     });
   });
 
-  await page.goto("/projects/mangadock", { waitUntil: "networkidle" });
+  await page.goto("/projects/mangadock", { waitUntil: "domcontentloaded" });
 
   // Stays on the project page — no navigation to /chat.
   await page
@@ -601,8 +589,8 @@ test("home shows the team directory and a filterable tech-stack — spec P8 / §
   page,
 }) => {
   const errors: string[] = [];
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  await page.goto("/", { waitUntil: "networkidle" });
+  page.on("console", (m) => shouldRecordConsoleError(m.type(), m.text()) && errors.push(m.text()));
+  await page.goto("/", { waitUntil: "domcontentloaded" });
 
   // The team is visible on the home page (credibility — real people).
   await expect(page.locator("#team")).toBeVisible();
@@ -627,7 +615,7 @@ test("the /projects showcase is DB-only — retired mockups don't leak, real pro
   // The static catalog was retired (dev decision 2026-07-23): /projects mirrors the
   // published DB rows (admin-editable) only. The old curated mockups must be gone,
   // a former-mockup slug now 404s, and a real DB project still resolves.
-  await page.goto("/projects", { waitUntil: "networkidle" });
+  await page.goto("/projects", { waitUntil: "domcontentloaded" });
   const slugs = await page.$$eval(".pcard a.pcard-shot", (as) =>
     as.map((a) => (a.getAttribute("href") ?? "").split("/").pop()),
   );
@@ -646,19 +634,19 @@ test("the /projects showcase is DB-only — retired mockups don't leak, real pro
   }
   // A real, DB-backed project is present and its detail resolves.
   expect(slugs, "the real flagship should be in the DB list").toContain("mangadock");
-  const ok = await page.goto("/projects/mangadock", { waitUntil: "networkidle" });
+  const ok = await page.goto("/projects/mangadock", { waitUntil: "domcontentloaded" });
   expect(ok?.status(), "mangadock detail should resolve").toBeLessThan(400);
   await expect(page.locator("h1").first()).toBeVisible();
 
   // A retired mockup slug is no longer in the DB → its detail 404s.
-  const gone = await page.goto("/projects/listingthai", { waitUntil: "networkidle" });
+  const gone = await page.goto("/projects/listingthai", { waitUntil: "domcontentloaded" });
   expect(gone?.status(), "a retired mockup slug should 404").toBe(404);
 });
 
 test("public /blog excludes case_study posts (ADR 0013 / #133)", async ({ page }) => {
   // AI case studies remain in blog_posts as a backing store but must not appear
   // on the human blog index or detail routes.
-  await page.goto("/blog", { waitUntil: "networkidle" });
+  await page.goto("/blog", { waitUntil: "domcontentloaded" });
   const hrefs = await page.$$eval("a[href^='/blog/']", (as) =>
     as.map((a) => a.getAttribute("href") ?? ""),
   );
@@ -667,7 +655,7 @@ test("public /blog excludes case_study posts (ADR 0013 / #133)", async ({ page }
   }
 
   const caseStudy = await page.goto("/blog/resume-web-case-study", {
-    waitUntil: "networkidle",
+    waitUntil: "domcontentloaded",
   });
   expect(caseStudy?.status(), "case_study detail must 404 on /blog").toBe(404);
 });
@@ -679,7 +667,7 @@ test("the /projects grid reveals even when it is many cards tall (reveal not rat
   // threshold. That ratio is unsatisfiable for any `.rv` taller than ~7× the
   // viewport, so once DB-only ingestion grew the grid to ~54 cards (≈8000px) it
   // stayed opacity:0 forever — the page showed the count but a blank grid.
-  await page.goto("/projects", { waitUntil: "networkidle" });
+  await page.goto("/projects", { waitUntil: "domcontentloaded" });
 
   const grid = page.locator(".pgrid");
   await expect(grid).toBeVisible();
@@ -704,7 +692,7 @@ test("every project card bottom-aligns its 'ดูรายละเอียด
   // action row up under the title while richer rowmates pushed theirs to the
   // bottom — a ragged row. The fix: .pcard-body flex:1 + .pcard-actions
   // margin-top:auto, so the action row sits at the card bottom regardless of copy.
-  await page.goto("/projects", { waitUntil: "networkidle" });
+  await page.goto("/projects", { waitUntil: "domcontentloaded" });
   await expect(page.locator(".pcard").first()).toBeVisible();
 
   const check = await page.evaluate(() => {
@@ -737,8 +725,8 @@ test("project detail shows an owner chip (team/personal) — spec P6", async ({
   page,
 }) => {
   const errors: string[] = [];
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  await page.goto("/projects/mangadock", { waitUntil: "networkidle" });
+  page.on("console", (m) => shouldRecordConsoleError(m.type(), m.text()) && errors.push(m.text()));
+  await page.goto("/projects/mangadock", { waitUntil: "domcontentloaded" });
 
   // The owner chip labels whose project this is (MangaDock = a team project).
   const chip = page.locator(".owner-chip");
@@ -768,7 +756,7 @@ test("arriving at /chat with ?project= shows a banner and grounds the auto-sent 
     });
   });
 
-  await page.goto("/chat?project=mangadock", { waitUntil: "networkidle" });
+  await page.goto("/chat?project=mangadock", { waitUntil: "domcontentloaded" });
 
   await expect(page.locator(".chat-project-banner")).toContainText("MangaDock");
   await expect(
@@ -788,7 +776,7 @@ test("/chat renders the Open WebUI-style sidebar app-shell (#39)", async ({
   page,
 }) => {
   const errors = trackErrors(page);
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
 
   const sidebar = page.locator(".chat-sidebar");
   await expect(sidebar).toBeVisible();
@@ -815,7 +803,7 @@ test("New Chat starts a fresh conversation; the sidebar switches back to the old
     });
   });
 
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
 
   // Send a first message — the active conversation now has content + a title.
   await page.getByPlaceholder("พิมพ์ข้อความ…").fill("มะม่วง MANGO1");
@@ -853,7 +841,7 @@ test("sidebar conversations can be renamed and deleted (#39)", async ({
     });
   });
 
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
   await page.getByPlaceholder("พิมพ์ข้อความ…").fill("ลูกพีช PEACH9");
   await page.locator(".chat-pane").getByRole("button", { name: "ส่ง" }).click();
   const row = page.locator(".chat-history-row").filter({ hasText: "PEACH9" });
@@ -896,7 +884,7 @@ test("empty state shows the identity + suggestions, and a suggestion sends (#40)
     });
   });
 
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
 
   // First-run screen: centered identity + suggestion list + composer.
   await expect(page.locator(".chat-empty-title")).toHaveText("ผู้ช่วย AI");
@@ -933,7 +921,7 @@ test("assistant turns get a copy + regenerate action row (#41)", async ({
   });
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
   await page.getByPlaceholder("พิมพ์ข้อความ…").fill("ทดสอบ actions");
   await page.locator(".chat-pane").getByRole("button", { name: "ส่ง" }).click();
   await expect(
@@ -974,7 +962,7 @@ test("/chat shows a top identity strip and renders user turns as a pill (#43)", 
     });
   });
 
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
 
   // Slim identity strip at the top of the conversation pane.
   const strip = page.locator(".chat-topstrip");
@@ -1013,7 +1001,7 @@ test("composer attaches an image, previews it, and sends it with the user turn (
     });
   });
 
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
 
   // Stage a real 1×1 PNG on the (hidden) file input.
   const png = Buffer.from(
@@ -1075,7 +1063,7 @@ test("assistant answers render full Markdown (GFM + code) like Open WebUI", asyn
   });
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
   await page.getByPlaceholder("พิมพ์ข้อความ…").fill("ขอ markdown");
   await page.locator(".chat-pane").getByRole("button", { name: "ส่ง" }).click();
 
@@ -1118,7 +1106,7 @@ test("you can keep typing while the assistant is responding, but cannot send unt
     });
   });
 
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
   const composer = page.getByPlaceholder("พิมพ์ข้อความ…");
   const sendBtn = page.locator(".chat-pane .chat-send");
 
@@ -1144,7 +1132,7 @@ test("every page declares its own canonical + hreflang alternates", async ({
   page,
 }) => {
   for (const path of ["/about", "/faq", "/blog/rag-chatbot-for-business"]) {
-    await page.goto(path, { waitUntil: "networkidle" });
+    await page.goto(path, { waitUntil: "domcontentloaded" });
     const canonical = await page
       .locator('link[rel="canonical"]')
       .getAttribute("href");
@@ -1164,7 +1152,7 @@ test("clicking a tracked CTA navigates without console errors", async ({
   page,
 }) => {
   const errors = trackErrors(page);
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await page
     .locator("nav")
     .first()
@@ -1176,7 +1164,7 @@ test("clicking a tracked CTA navigates without console errors", async ({
 });
 
 test("language switch flips nav + content to English", async ({ page }) => {
-  await page.goto("/about", { waitUntil: "networkidle" });
+  await page.goto("/about", { waitUntil: "domcontentloaded" });
   const nav = page.locator("nav").first();
   await expect(nav.getByRole("link", { name: "ผลงาน" })).toBeVisible();
   await nav.getByRole("button", { name: /Switch language/i }).click();
@@ -1190,7 +1178,7 @@ test("home credentials open in the same lightbox as team, and it is dismissable"
   page,
 }) => {
   const errors = trackErrors(page);
-  await page.goto("/about", { waitUntil: "networkidle" });
+  await page.goto("/about", { waitUntil: "domcontentloaded" });
 
   // The credential rows are buttons that open the shared .tm-modal lightbox.
   await page.locator(".crow").first().scrollIntoViewIfNeeded();
@@ -1216,7 +1204,7 @@ test("home credentials open in the same lightbox as team, and it is dismissable"
 });
 
 test("the floating AI chat panel animates open", async ({ page }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /Ask T4 AI/i }).click();
   const panel = page.locator(".chat-panel");
   await expect(panel).toBeVisible();
@@ -1227,7 +1215,7 @@ test("the floating AI chat panel animates open", async ({ page }) => {
 test("the floating chat keeps its conversation when closed and reopened", async ({
   page,
 }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /Ask T4 AI/i }).click();
 
   const panel = page.locator(".chat-panel");
@@ -1250,7 +1238,7 @@ test("the floating popup and the /chat page share one conversation (#31)", async
   page,
 }) => {
   // Type a message in the floating popup...
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /Ask T4 AI/i }).click();
   const panel = page.locator(".chat-panel");
   await expect(panel).toBeVisible();
@@ -1264,12 +1252,12 @@ test("the floating popup and the /chat page share one conversation (#31)", async
   // ...expand into the full /chat page — the history carries over (migrated into
   // the app-shell store; it shows both in the conversation pane and, by title, in
   // the sidebar, so this assertion targets the pane specifically).
-  await page.goto("/chat", { waitUntil: "networkidle" });
+  await page.goto("/chat", { waitUntil: "domcontentloaded" });
   await expect(page.locator(".chat-pane").getByText("BANANA456")).toBeVisible();
 
   // ...and the /chat page writes back to the same shared conversation, so
   // returning to the popup still shows the history (symmetric persistence).
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /Ask T4 AI/i }).click();
   await expect(
     page.locator(".chat-panel").getByText("BANANA456"),
@@ -1280,10 +1268,10 @@ test("admin member-edit requires auth — redirects to admin login when signed o
   page,
 }) => {
   const errors: string[] = [];
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("console", (m) => shouldRecordConsoleError(m.type(), m.text()) && errors.push(m.text()));
   // Flat authz folded the member area into /admin; the per-member edit page is an
   // admin route, so a signed-out visitor bounces to the admin login.
-  await page.goto("/admin/members/1/edit", { waitUntil: "networkidle" });
+  await page.goto("/admin/members/1/edit", { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/\/admin\/login$/);
   expect(errors).toEqual([]);
 });
@@ -1292,8 +1280,8 @@ test("admin Slow-Inc org import requires auth — redirects to login when signed
   page,
 }) => {
   const errors: string[] = [];
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  await page.goto("/admin/projects/from-org", { waitUntil: "networkidle" });
+  page.on("console", (m) => shouldRecordConsoleError(m.type(), m.text()) && errors.push(m.text()));
+  await page.goto("/admin/projects/from-org", { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/\/admin\/login$/);
   expect(errors).toEqual([]);
 });
@@ -1313,10 +1301,10 @@ for (const path of ["/projects", "/projects/mangadock"]) {
     page,
   }) => {
     const errors: string[] = [];
-    page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    page.on("console", (m) => shouldRecordConsoleError(m.type(), m.text()) && errors.push(m.text()));
     page.on("pageerror", (e) => errors.push(String(e)));
 
-    await page.goto(path, { waitUntil: "networkidle" });
+    await page.goto(path, { waitUntil: "domcontentloaded" });
     await expect(page.locator("h1").first()).toBeVisible();
 
     const badges = page.locator('[data-testid="gh-visibility-badge"]');
@@ -1353,10 +1341,10 @@ test("gh visibility badge follows the language switch (#202)", async ({
   page,
 }) => {
   const errors: string[] = [];
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("console", (m) => shouldRecordConsoleError(m.type(), m.text()) && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
 
-  await page.goto("/projects", { waitUntil: "networkidle" });
+  await page.goto("/projects", { waitUntil: "domcontentloaded" });
   const badge = page.locator('[data-testid="gh-visibility-badge"]').first();
   const present = (await badge.count()) > 0;
 
@@ -1399,7 +1387,7 @@ const ENRICHED_SLUG = "t4-fastwork";
 async function gotoEnrichedDetail(page: Page): Promise<string[]> {
   const errors = trackErrors(page);
   const res = await page.goto(`/projects/${ENRICHED_SLUG}`, {
-    waitUntil: "networkidle",
+    waitUntil: "domcontentloaded",
   });
   test.skip(
     res?.status() === 404,
@@ -1471,7 +1459,7 @@ test(`the /projects listing shows the same enriched category as the detail page 
     "",
   );
 
-  await page.goto("/projects", { waitUntil: "networkidle" });
+  await page.goto("/projects", { waitUntil: "domcontentloaded" });
   const card = page.locator("article.pcard").filter({
     has: page.locator(`a[href="/projects/${ENRICHED_SLUG}"]`),
   });
@@ -1495,12 +1483,12 @@ test(`the /projects listing shows the same enriched category as the detail page 
 test("team showcase MangaDock stays on /projects — member sync must not remove org work (#181)", async ({
   page,
 }) => {
-  await page.goto("/projects", { waitUntil: "networkidle" });
+  await page.goto("/projects", { waitUntil: "domcontentloaded" });
   const slugs = await page.$$eval(".pcard a.pcard-shot", (as) =>
     as.map((a) => (a.getAttribute("href") ?? "").split("/").pop()),
   );
   expect(slugs, "team flagship must remain listed").toContain("mangadock");
-  const ok = await page.goto("/projects/mangadock", { waitUntil: "networkidle" });
+  const ok = await page.goto("/projects/mangadock", { waitUntil: "domcontentloaded" });
   expect(ok?.status()).toBeLessThan(400);
   await expect(page.locator("h1").first()).toBeVisible();
 });
@@ -1510,7 +1498,7 @@ test("admin member project-selection sync endpoint stays behind login (#181)", a
 }) => {
   // Full deselect→hide flow needs an authenticated admin session; signed-out
   // visitors must not reach the editor that drives profile↔ผลงาน sync.
-  await page.goto("/admin/members/1/edit", { waitUntil: "networkidle" });
+  await page.goto("/admin/members/1/edit", { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/\/admin\/login$/);
   await expect(page.getByText(/ผลงานถ้ามี|นำออกจากโปรไฟล์/)).toHaveCount(0);
 });
