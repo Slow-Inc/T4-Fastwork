@@ -111,7 +111,9 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
       NEXT_PUBLIC_API_BASE_URL: ${{ vars.BACKEND_URL || 'https://t4-fastwork-nestjs.vercel.app' }}
       # Only paths that provably cannot affect the rendered site may skip E2E. NEVER add a
-      # site-affecting prefix here — nestjs/test/e2e-ci-is-wired.spec.ts fails if you do.
+      # site-affecting prefix here — nestjs/test/e2e-ci-is-wired.spec.ts fails if you do. Note the
+      # md entries are the root documentation files only, NOT a global `*.md` (which would also match
+      # site content under nextjs/).
       E2E_IGNORE_PATHS: |
         ^docs/
         ^Obsidian-Fastwork/
@@ -119,7 +121,10 @@ jobs:
         ^\.claude/
         ^\.github/
         ^\.gitignore$
-        \.md$
+        ^CLAUDE\.md$
+        ^AGENTS\.md$
+        ^README\.md$
+        ^Requirement\.MD$
     steps:
       - uses: actions/checkout@v4
 

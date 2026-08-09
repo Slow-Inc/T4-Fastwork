@@ -89,24 +89,27 @@ describe('the e2e job is wired into CI (#278)', () => {
       .map((p) => p.trim())
       .filter(Boolean);
     expect(ignore.length, 'the paths-ignore list must be populated').toBeGreaterThan(0);
-    // Patterns that CAN affect the rendered site — a future edit must not add one of these.
-    const siteAffecting = [
-      /^nestjs\//,
-      /^nextjs\/app/,
-      /^nextjs\/components/,
-      /^nextjs\/lib/,
-      /^nextjs\/content/,
-      /^nextjs\/e2e/,
-      /^nextjs\/public/,
-      /^nextjs\/scripts/,
-      /^nextjs\/package\.json/,
-      /^\.github\/workflows\//,
+
+    // The guard tests each ignore entry AS A PATTERN against representative site-affecting paths.
+    // (A first draft tested a site-affecting regex against the entry string — both started with "^",
+    // so it could never match and quietly adding `nestjs/**` would have passed. This cannot.)
+    const siteAffectingSamples = [
+      'nestjs/src/github/gate-audit.ts',
+      'nextjs/app/projects/page.tsx',
+      'nextjs/components/site/nav.tsx',
+      'nextjs/lib/public-db.ts',
+      'nextjs/content/blog.ts',
+      'nextjs/content/guide.md',
+      'nextjs/public/favicon.ico',
+      'nextjs/e2e/site.e2e.ts',
+      'nextjs/package.json',
     ];
     for (const entry of ignore) {
-      for (const re of siteAffecting) {
+      const pattern = new RegExp(entry);
+      for (const sample of siteAffectingSamples) {
         expect(
-          re.test(entry),
-          `ignore entry "${entry}" can affect the rendered site (matches ${re})`,
+          pattern.test(sample),
+          `ignore entry "${entry}" matches site-affecting "${sample}" — it is not provably unrelated`,
         ).toBe(false);
       }
     }

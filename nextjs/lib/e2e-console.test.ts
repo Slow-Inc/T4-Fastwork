@@ -1,12 +1,12 @@
 /**
  * `shouldRecordConsoleError` — which browser console messages fail an E2E test (#278).
  *
- * The suite's "no console errors" contract exists to catch hydration/runtime bugs, but it is
- * currently defeated by third-party resource-load noise: team profile pages and project READMEs
- * embed external badges (shields.io, github-readme-stats, skillicons…) that rate-limit or 5xx
- * intermittently, and Chrome logs `Failed to load resource: … 429` for each. A console message
- * carries the *document* URL in its location, not the failed resource's URL, so the old
- * "ignore if the URL is cross-origin" check compared the page to itself and never ignored anything.
+ * The suite's "no console errors" contract exists to catch hydration/runtime bugs, but it is defeated
+ * by third-party resource-load noise: team profile pages and project READMEs embed external badges
+ * (shields.io, github-readme-stats, skillicons…) that rate-limit or 5xx intermittently, and Chrome
+ * logs `Failed to load resource: … 429` for each. A console message carries the *document* URL in its
+ * location, not the failed resource's URL, so an "ignore if the URL is cross-origin" check compares
+ * the page to itself and never ignores anything.
  *
  * Expected values come from the contract in the function's comment: real runtime errors fail the
  * test; resource-load network noise does not (the layout/content assertions still catch a genuinely
@@ -46,17 +46,5 @@ describe('shouldRecordConsoleError (#278)', () => {
     expect(
       shouldRecordConsoleError('error', 'Failed to load resource: net::ERR_NAME_NOT_RESOLVED'),
     ).toBe(false);
-  });
-
-  it('still ignores a cross-origin error when a distinct location URL is available (best effort)', () => {
-    expect(
-      shouldRecordConsoleError('error', 'custom widget blew up', 'https://third-party.example/x.js', 'https://t4labs.dev/'),
-    ).toBe(false);
-  });
-
-  it('records a same-origin error even with a location URL', () => {
-    expect(
-      shouldRecordConsoleError('error', 'custom widget blew up', 'https://t4labs.dev/_next/x.js', 'https://t4labs.dev/'),
-    ).toBe(true);
   });
 });

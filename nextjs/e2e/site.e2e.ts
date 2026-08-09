@@ -588,8 +588,7 @@ test('project detail "ask AI about this project" opens the floating widget groun
 test("home shows the team directory and a filterable tech-stack — spec P8 / §4.1.8", async ({
   page,
 }) => {
-  const errors: string[] = [];
-  page.on("console", (m) => shouldRecordConsoleError(m.type(), m.text()) && errors.push(m.text()));
+  const errors = trackErrors(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
   // The team is visible on the home page (credibility — real people).
@@ -724,8 +723,7 @@ test("every project card bottom-aligns its 'ดูรายละเอียด
 test("project detail shows an owner chip (team/personal) — spec P6", async ({
   page,
 }) => {
-  const errors: string[] = [];
-  page.on("console", (m) => shouldRecordConsoleError(m.type(), m.text()) && errors.push(m.text()));
+  const errors = trackErrors(page);
   await page.goto("/projects/mangadock", { waitUntil: "domcontentloaded" });
 
   // The owner chip labels whose project this is (MangaDock = a team project).
@@ -1267,8 +1265,7 @@ test("the floating popup and the /chat page share one conversation (#31)", async
 test("admin member-edit requires auth — redirects to admin login when signed out (flat authz)", async ({
   page,
 }) => {
-  const errors: string[] = [];
-  page.on("console", (m) => shouldRecordConsoleError(m.type(), m.text()) && errors.push(m.text()));
+  const errors = trackErrors(page);
   // Flat authz folded the member area into /admin; the per-member edit page is an
   // admin route, so a signed-out visitor bounces to the admin login.
   await page.goto("/admin/members/1/edit", { waitUntil: "domcontentloaded" });
@@ -1279,8 +1276,7 @@ test("admin member-edit requires auth — redirects to admin login when signed o
 test("admin Slow-Inc org import requires auth — redirects to login when signed out", async ({
   page,
 }) => {
-  const errors: string[] = [];
-  page.on("console", (m) => shouldRecordConsoleError(m.type(), m.text()) && errors.push(m.text()));
+  const errors = trackErrors(page);
   await page.goto("/admin/projects/from-org", { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/\/admin\/login$/);
   expect(errors).toEqual([]);
@@ -1300,9 +1296,7 @@ for (const path of ["/projects", "/projects/mangadock"]) {
   test(`gh visibility badge renders sanely on ${path} (#202)`, async ({
     page,
   }) => {
-    const errors: string[] = [];
-    page.on("console", (m) => shouldRecordConsoleError(m.type(), m.text()) && errors.push(m.text()));
-    page.on("pageerror", (e) => errors.push(String(e)));
+    const errors = trackErrors(page);
 
     await page.goto(path, { waitUntil: "domcontentloaded" });
     await expect(page.locator("h1").first()).toBeVisible();
@@ -1340,9 +1334,7 @@ for (const path of ["/projects", "/projects/mangadock"]) {
 test("gh visibility badge follows the language switch (#202)", async ({
   page,
 }) => {
-  const errors: string[] = [];
-  page.on("console", (m) => shouldRecordConsoleError(m.type(), m.text()) && errors.push(m.text()));
-  page.on("pageerror", (e) => errors.push(String(e)));
+  const errors = trackErrors(page);
 
   await page.goto("/projects", { waitUntil: "domcontentloaded" });
   const badge = page.locator('[data-testid="gh-visibility-badge"]').first();
