@@ -5,10 +5,12 @@
  * gate that is only checked when someone feels like checking is not detected — it is trusted, which is
  * the failure mode the audit exists to remove. This spec holds the workflow that makes it a habit.
  *
- * Like `ci-workflow-is-wired.spec.ts`, this asserts structure parsed as YAML, not blessed strings:
- * the realistic regression is an edit that drops the schedule, loses the `issues: write` grant the
- * tracking-issue step needs, or inlines the window computation as a local date (which would audit
- * nothing for anything merged in the local morning — measured on #259).
+ * Like `ci-workflow-is-wired.spec.ts`, this asserts structure parsed as YAML. The structural checks
+ * (schedule trigger, permissions, job shape) guard against edits that silently break the mechanism;
+ * the run-text assertions are a deliberately pinned *contract* — the workflow MUST call the committed
+ * script with `--fail-on-gaps`, a UTC `date -u` window, and a `--limit` large enough that the rolling
+ * window is not truncated (the script fetches the N newest merges then filters by window). A wording
+ * edit that breaks one of those SHOULD fail this spec: that is the contract being held.
  */
 import { describe, expect, it } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
@@ -85,6 +87,10 @@ describe('the gate-audit workflow is wired to run (#283)', () => {
       runs,
       'the rolling window must be computed in UTC (date -u) — mergedAt is UTC and a local date silently audits nothing',
     ).toContain('date -u');
+    expect(
+      runs,
+      'it must pass --limit so the script\'s N-newest-then-filter window is not truncated by a busy period',
+    ).toContain('--limit');
   });
 
   it('uses no hyphen in any job id', () => {

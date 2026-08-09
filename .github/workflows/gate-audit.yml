@@ -1,20 +1,28 @@
 # Run the pre-merge gate audit on a schedule (#283). `CLAUDE.md` and `using-t4` already tell every
-# session to run `scripts/gate-audit.ts` by hand; a gate that is only checked when someone feels like
-# checking is trusted, not detected. This cron makes the check a habit.
+# session to run `nestjs/scripts/gate-audit.ts` by hand; a gate that is only checked when someone feels
+# like checking is trusted, not detected. This cron makes the check a habit.
 #
 # ── What it does ───────────────────────────────────────────────────────────────────────────────────
 # 1. Computes a rolling window in UTC (`date -u`). `mergedAt` is UTC (#259): a local date would
 #    silently audit nothing for anything merged in the local morning.
-# 2. Runs `scripts/gate-audit.ts --since <date> --fail-on-gaps`. Exit 1 means at least one PR merged
-#    without usable gate evidence — a machine signal, not a grep of prose.
-# 3. On gaps, maintains a SINGLE tracking issue (create if none, edit in place) so a historical
-#    backlog never spams the tracker. The issue is the durable record; the workflow does NOT back-fill
-#    evidence or modify any PR — evidence produced after a merge is documentation, not a gate.
-# 4. The job exits 0 either way. A permanently-red scheduled run would get disabled, which is the
-#    failure mode this epic exists to prevent; the tracking issue is the signal.
+# 2. Runs `nestjs/scripts/gate-audit.ts --since <date> --limit 200 --fail-on-gaps`. Exit codes are a
+#    contract: 0 = clean window, 1 = at least one PR merged without usable gate evidence, anything else
+#    = the audit itself failed (e.g. `gh`/network) and must NOT be mistaken for a gap report.
+# 3. On gaps, maintains a SINGLE tracking issue (create if none, edit in place) so a historical backlog
+#    never spams the tracker. The issue is a live tracker, not an archive — the durable record of a
+#    gap is the open-work ledger, which is where the audit itself tells you to record it. The workflow
+#    does NOT back-fill evidence or modify any PR — evidence produced after a merge is documentation,
+#    not a gate.
+# 4. The job exits 0 after surfacing the gaps (or clean). A permanently-red scheduled run would get
+#    disabled, which is the failure mode this epic exists to prevent; the tracking issue is the signal.
+#    The one exception is a crash while maintaining the issue — that means the gap went unrecorded, so
+#    the run fails on purpose.
 #
-# An administrator-override merge is covered with no extra code: the audit is evidence-based and
-# merge-method-agnostic, so any merge that landed without both gates on the merged head is reported.
+# Administrator-override merges (#279's emergency path): the audit is evidence-based and
+# merge-method-agnostic, so the override itself needs no extra code — a merge that landed without both
+# gates on the merged head is reported whatever the method. That is correlation, not mechanism: an
+# override that still carried the evidence is treated as compliant (the gate was honoured), which is
+# the correct reading of "the owner may override, and doing so is expected to be recorded".
 name: gate-audit
 
 on:
@@ -50,39 +58,31 @@ jobs:
           TITLE: 'Gate audit: PRs merged without pre-merge gate evidence'
         run: |
           # Rolling window, UTC. `mergedAt` is UTC; 14 days covers every session cadence here.
+          # --limit 200: the script fetches the N newest merged PRs then filters by window, so the
+          # limit must comfortably exceed what this repo merges in 14 days or in-window gaps would
+          # silently drop out (review finding on #295).
           SINCE=$(date -u -d '14 days ago' +%Y-%m-%d)
 
           set +e
-          report=$(bun run nestjs/scripts/gate-audit.ts --since "$SINCE" --fail-on-gaps 2>&1)
+          report=$(bun run nestjs/scripts/gate-audit.ts --since "$SINCE" --limit 200 --fail-on-gaps 2>&1)
           code=$?
           set -e
           echo "$report"
 
-          # Gaps: maintain ONE tracking issue, identified by title so a rename or a manual close is
-          # handled on the next run (a closed issue stops matching, a new one is created). The issue
-          # is updated on EVERY run so it always reflects the latest audit — a clean window must not
-          # leave stale gaps on the record.
-          existing=$(gh issue list --state open \
-            --search "in:title \"$TITLE\"" \
-            --json number --jq '.[0].number // empty' 2>/dev/null || true)
-
           if [ "$code" -eq 0 ]; then
-            if [ -n "$existing" ]; then
-              gh issue edit "$existing" --body "## EN — Gate audit clean for the window
-
-          No PRs merged without gate evidence in the audited window (since $SINCE UTC).
-
-          ### TH — เกตผ่านสำหรับหน้าต่างนี้
-
-          ไม่พบ PR ที่ merge โดยไม่มีหลักฐานเกต ในหน้าต่างที่ตรวจ (ตั้งแต่ $SINCE UTC)
-
-          ---
-          _อัปเดตอัตโนมัติโดย workflow \`gate-audit\`_"
-              echo "Updated tracking issue #$existing: window clean."
-            fi
             echo "No gate gaps in the window (since $SINCE UTC)."
             exit 0
           fi
+          if [ "$code" -ne 1 ]; then
+            echo "::error::gate audit failed unexpectedly (exit $code) — not a gap report."
+            exit "$code"
+          fi
+
+          # code == 1: gaps. Maintain ONE tracking issue, identified by title so a rename or a manual
+          # close is handled on the next run (a closed issue stops matching, a new one is created).
+          existing=$(gh issue list --state open \
+            --search "in:title \"$TITLE\"" \
+            --json number --jq '.[0].number // empty' 2>/dev/null || true)
 
           body="## EN — Process incident: merged PRs missing pre-merge gate evidence
 
@@ -94,7 +94,7 @@ jobs:
           หากช่องว่างนี้เป็นของเดิมที่บันทึกไว้แล้ว ให้ถือว่าเป็นบันทึกถาวร
 
           ---
-          _รายงานนี้สร้างอัตโนมัติโดย workflow \`gate-audit\` · อัปเดตทุกครั้งที่รันพบช่องว่างใหม่ในหน้าต่างเลื่อน 14 วัน (UTC)_"
+          _รายงานนี้สร้างอัตโนมัติโดย workflow \`gate-audit\` · อัปเดตเมื่อรันพบช่องว่างใหม่ในหน้าต่างเลื่อน 14 วัน (UTC)_"
 
           if [ -z "$existing" ]; then
             created=$(gh issue create \

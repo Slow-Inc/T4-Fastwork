@@ -11,9 +11,10 @@
  * morning (UTC+7 here) carries the previous UTC date, so passing today's local date can legitimately
  * audit nothing — the report says so rather than implying a clean day (#259).
  *
- * `--fail-on-gaps` is the machine contract the scheduled workflow keys off: it exits non-zero when a
- * gap is reported, so a runner can decide to act without parsing the prose — and a wording edit to
- * this report cannot silently disable the gate. Without it, the exit code is always 0.
+ * `--fail-on-gaps` is the machine contract the scheduled workflow keys off: it exits **1** when a gap
+ * is reported, so a runner can decide to act without parsing the prose — and a wording edit to this
+ * report cannot silently disable the gate. An unexpected failure (e.g. `gh`/network) exits **2**, so a
+ * crash can never be mistaken for a gap report. Without `--fail-on-gaps`, the exit code is always 0.
  *
  * Run this at session start. A non-empty report is a process incident: record it before starting new
  * delivery, and do **not** back-fill evidence onto the offending PR — evidence produced after the merge
@@ -114,8 +115,9 @@ async function main(): Promise<void> {
 }
 
 // Not top-level `await`: the production build emits CommonJS and rejects it (TS1309). Mirrors
-// `setup-vercel-webhook.ts`.
+// `setup-vercel-webhook.ts`. Exit 2 (not 1): 1 is the `--fail-on-gaps` contract for "gaps found", so
+// a crash must not route a scheduled run into the tracking-issue branch as if it were a gap report.
 main().catch((err: unknown) => {
   console.error(err instanceof Error ? err.message : String(err));
-  process.exit(1);
+  process.exit(2);
 });
