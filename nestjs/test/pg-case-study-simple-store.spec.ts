@@ -36,7 +36,12 @@ const gen: GeneratedContent = {
 describe('PgCaseStudySimpleStore', () => {
   it('publishCaseStudy upserts the business case_study post + mirrors projects.content in one txn', async () => {
     const { db, calls } = fakeDb();
-    await new PgCaseStudySimpleStore(db).publishCaseStudy(7, 'proj', gen, 'sha9');
+    await new PgCaseStudySimpleStore(db).publishCaseStudy(
+      7,
+      'proj',
+      gen,
+      'sha9',
+    );
 
     expect(calls).toHaveLength(2); // two writes, one transaction
 

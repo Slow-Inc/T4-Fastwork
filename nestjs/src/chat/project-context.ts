@@ -35,7 +35,9 @@ export function formatProjectContext(
     );
   }
   if (p.tags.length > 0) {
-    lines.push(en ? `Tags: ${p.tags.join(', ')}` : `แท็ก: ${p.tags.join(', ')}`);
+    lines.push(
+      en ? `Tags: ${p.tags.join(', ')}` : `แท็ก: ${p.tags.join(', ')}`,
+    );
   }
   if (p.description) {
     lines.push(en ? `Summary: ${p.description}` : `คำอธิบาย: ${p.description}`);

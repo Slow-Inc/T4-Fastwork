@@ -61,16 +61,22 @@ async function main(): Promise<void> {
   try {
     // `begin('read only')` guarantees the whole assessment is a single read-only transaction.
     await sql.begin('read only', async (tx) => {
-      const ledger = await tx<{ version: string }[]>`select version from supabase_migrations.schema_migrations`;
+      const ledger = await tx<
+        { version: string }[]
+      >`select version from supabase_migrations.schema_migrations`;
       ledgerVersions = ledger.map((r) => r.version);
 
-      const policies = await tx<{ policyname: string }[]>`select policyname from pg_policies where schemaname = 'public'`;
+      const policies = await tx<
+        { policyname: string }[]
+      >`select policyname from pg_policies where schemaname = 'public'`;
       policyNames = policies.map((r) => r.policyname);
 
       // Exclude extension-owned functions (pgvector etc.): they are installed by `create extension`
       // and tracked by the extension, not by a migration file, so they would flood the untracked list.
       // Extension membership is via `pg_depend` — there is no `proext` column on this server.
-      const functions = await tx<{ proname: string }[]>`select p.proname from pg_proc p
+      const functions = await tx<
+        { proname: string }[]
+      >`select p.proname from pg_proc p
         where p.pronamespace = 'public'::regnamespace
           and not exists (
             select 1 from pg_depend d
@@ -83,7 +89,9 @@ async function main(): Promise<void> {
 
       // The migration's column footprint — used to tell applied from pending without trusting a
       // timestamp-only ledger (this repo renamed its migrations after applying them).
-      const columns = await tx<{ table_name: string; column_name: string }[]>`select table_name, column_name
+      const columns = await tx<
+        { table_name: string; column_name: string }[]
+      >`select table_name, column_name
         from information_schema.columns
         where table_schema = 'public'`;
       schemaColumns = columns.map((c) => `${c.table_name}.${c.column_name}`);
@@ -102,7 +110,9 @@ async function main(): Promise<void> {
     .filter((f) => f.endsWith('.sql'))
     .sort();
   const stems = files.map((f) => f.replace(/\.sql$/, ''));
-  const sqlTexts = files.map((f) => readFileSync(join(MIGRATIONS_DIR, f), 'utf8'));
+  const sqlTexts = files.map((f) =>
+    readFileSync(join(MIGRATIONS_DIR, f), 'utf8'),
+  );
 
   const objects = [...new Set([...policyNames, ...functionNames])];
   const report = classifyMigrationDrift(
@@ -144,12 +154,16 @@ async function main(): Promise<void> {
       );
       return;
     }
-    console.log('  no drift: every migration is applied and every public object is migration-tracked.');
+    console.log(
+      '  no drift: every migration is applied and every public object is migration-tracked.',
+    );
     return;
   }
 
   if (report.verifiedPending.length > 0) {
-    console.log(`  verified pending (footprint expected but absent — not applied): ${report.verifiedPending.length}`);
+    console.log(
+      `  verified pending (footprint expected but absent — not applied): ${report.verifiedPending.length}`,
+    );
     for (const p of report.verifiedPending) console.log(`    ${p}`);
   }
   if (report.unverified.length > 0) {
@@ -158,7 +172,9 @@ async function main(): Promise<void> {
     );
     for (const p of report.unverified) console.log(`    ${p}`);
   }
-  console.log(`  untracked (in DB, in no migration): ${report.untracked.length}`);
+  console.log(
+    `  untracked (in DB, in no migration): ${report.untracked.length}`,
+  );
   for (const u of report.untracked) console.log(`    ${u}`);
   process.exitCode = 1;
 }

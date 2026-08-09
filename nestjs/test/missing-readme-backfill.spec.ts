@@ -35,9 +35,9 @@ describe('selectReposMissingReadme', () => {
 
   it('compares keys case-insensitively', () => {
     const existing = new Set(['repo:slow-inc/mangadock:readme']);
-    expect(
-      selectReposMissingReadme(candidates.slice(0, 1), existing),
-    ).toEqual([]);
+    expect(selectReposMissingReadme(candidates.slice(0, 1), existing)).toEqual(
+      [],
+    );
   });
 
   it('respects maxPerRun and preserves candidate order', () => {

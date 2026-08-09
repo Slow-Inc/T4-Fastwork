@@ -29,7 +29,7 @@ function fetchReturning(status: number) {
 }
 
 const DEPS = (fn: (url: string) => Promise<Response>) => ({
-  fetchImpl: fn as unknown as typeof fetch,
+  fetchImpl: fn,
   frontendOrigin: 'https://t4labs.dev',
   secret: 's3cr3t',
 });
@@ -79,8 +79,8 @@ describe('RevalidateService makes a real failure findable (#272)', () => {
   it('warns when a configured revalidation is rejected', async () => {
     process.env.GITHUB_REFRESH_SECRET = 's3cr3t';
     process.env.FRONTEND_ORIGIN = 'https://t4labs.dev';
-    globalThis.fetch = (() =>
-      Promise.resolve(new Response(null, { status: 401 }))) as typeof fetch;
+    globalThis.fetch = () =>
+      Promise.resolve(new Response(null, { status: 401 }));
     const warn = spyOn(Logger.prototype, 'warn');
 
     const ok = await new RevalidateService().revalidateProjects();

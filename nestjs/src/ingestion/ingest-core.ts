@@ -112,7 +112,8 @@ export async function runIngest(
   // RAG; an insert failure rolls the delete back.
   await db.transaction(async (tx) => {
     await tx.delete(schema.documentEmbeddings);
-    if (rows.length > 0) await tx.insert(schema.documentEmbeddings).values(rows);
+    if (rows.length > 0)
+      await tx.insert(schema.documentEmbeddings).values(rows);
   });
 
   return { chunks: chunks.length, dim: vectors[0]?.length };

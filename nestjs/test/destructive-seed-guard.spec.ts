@@ -14,7 +14,6 @@
 import { describe, expect, it } from 'bun:test';
 import { assertDestructiveSeedAllowed } from '../src/database/destructive-seed-guard';
 
-const LOCAL = 'postgresql://postgres:pw@localhost:5432/postgres';
 const REMOTE =
   'postgresql://postgres.example:pw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres';
 
@@ -65,13 +64,19 @@ describe('assertDestructiveSeedAllowed (#269)', () => {
 
   it('fails closed on a URL it cannot parse, rather than assuming local', () => {
     expect(() =>
-      assertDestructiveSeedAllowed({ databaseUrl: 'not a url', allow: undefined }),
+      assertDestructiveSeedAllowed({
+        databaseUrl: 'not a url',
+        allow: undefined,
+      }),
     ).toThrow();
   });
 
   it('fails closed when DATABASE_URL is missing entirely', () => {
     expect(() =>
-      assertDestructiveSeedAllowed({ databaseUrl: undefined, allow: undefined }),
+      assertDestructiveSeedAllowed({
+        databaseUrl: undefined,
+        allow: undefined,
+      }),
     ).toThrow(/DATABASE_URL/);
   });
 

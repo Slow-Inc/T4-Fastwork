@@ -35,8 +35,8 @@ describe('enrichCard (#69)', () => {
   });
 
   it('does not alter project cards', () => {
-    expect(enrichCard({ kind: 'project', slug: 'mangadock' }, retrieved)).toEqual(
-      { kind: 'project', slug: 'mangadock' },
-    );
+    expect(
+      enrichCard({ kind: 'project', slug: 'mangadock' }, retrieved),
+    ).toEqual({ kind: 'project', slug: 'mangadock' });
   });
 });

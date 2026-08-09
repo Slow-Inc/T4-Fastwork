@@ -5,7 +5,6 @@ import type { ChatEvent } from '../src/chat/chat.types';
 // Fakes: no network, no DB. The LLM yields text with a marker split across
 // deltas; retrieval returns nothing (its output only feeds the system prompt).
 const fakeLlm = {
-  // eslint-disable-next-line require-yield
   async *streamChat() {
     yield { kind: 'content', value: 'สวัสดี ' };
     yield { kind: 'content', value: '[PROJECT:fin-' };
@@ -40,7 +39,7 @@ describe('ChatService.streamChat', () => {
   it('emits session first, tokens + card in order, then done', async () => {
     const svc = new ChatService(
       fakeLlm as never,
-      emptyRetrieval as never,
+      emptyRetrieval,
       fakeLog() as never,
       fakeProjectContext() as never,
     );
@@ -63,7 +62,7 @@ describe('ChatService.streamChat', () => {
       (e): e is Extract<ChatEvent, { type: 'card' }> => e.type === 'card',
     );
     expect(cards).toHaveLength(1);
-    expect(cards[0]!.card).toEqual({ kind: 'project', slug: 'fin-track' });
+    expect(cards[0].card).toEqual({ kind: 'project', slug: 'fin-track' });
   });
 
   it('emits reasoning events, strips the leading blank line, and reports reasoningMs', async () => {
@@ -80,7 +79,7 @@ describe('ChatService.streamChat', () => {
     };
     const svc = new ChatService(
       thinkingLlm as never,
-      emptyRetrieval as never,
+      emptyRetrieval,
       fakeLog() as never,
       fakeProjectContext() as never,
     );
@@ -106,8 +105,7 @@ describe('ChatService.streamChat', () => {
     expect(answer).toBe('สวัสดีครับ'); // no leading blank line
 
     // no token is emitted for the whitespace-only "\n\n" prefix
-    const firstToken = events.find((e) => e.type === 'token') as
-      Extract<ChatEvent, { type: 'token' }> | undefined;
+    const firstToken = events.find((e) => e.type === 'token');
     expect(firstToken?.text).toBe('สวัสดี');
 
     // reasoning events come before any answer token
@@ -138,7 +136,7 @@ describe('ChatService.streamChat', () => {
     };
     const svc = new ChatService(
       serviceLlm as never,
-      retrieval as never,
+      retrieval,
       fakeLog() as never,
       fakeProjectContext() as never,
     );
@@ -160,7 +158,7 @@ describe('ChatService.streamChat', () => {
   it('sets no reasoningMs when the model does not think (content only)', async () => {
     const svc = new ChatService(
       fakeLlm as never,
-      emptyRetrieval as never,
+      emptyRetrieval,
       fakeLog() as never,
       fakeProjectContext() as never,
     );
@@ -181,7 +179,7 @@ describe('ChatService.streamChat', () => {
     };
     const svc = new ChatService(
       throwingLlm as never,
-      emptyRetrieval as never,
+      emptyRetrieval,
       fakeLog() as never,
       fakeProjectContext() as never,
     );
@@ -200,7 +198,7 @@ describe('ChatService.streamChat', () => {
     const log = fakeLog();
     const svc = new ChatService(
       fakeLlm as never,
-      emptyRetrieval as never,
+      emptyRetrieval,
       log as never,
       fakeProjectContext() as never,
     );
@@ -238,7 +236,7 @@ describe('ChatService.streamChat', () => {
     };
     const svc = new ChatService(
       capturingLlm as never,
-      emptyRetrieval as never,
+      emptyRetrieval,
       fakeLog() as never,
       fakeProjectContext(record) as never,
     );
@@ -259,7 +257,7 @@ describe('ChatService.streamChat', () => {
     const projectContext = fakeProjectContext();
     const svc = new ChatService(
       fakeLlm as never,
-      emptyRetrieval as never,
+      emptyRetrieval,
       fakeLog() as never,
       projectContext as never,
     );
@@ -277,7 +275,7 @@ describe('ChatService.streamChat', () => {
     };
     const svc = new ChatService(
       fakeLlm as never,
-      emptyRetrieval as never,
+      emptyRetrieval,
       fakeLog() as never,
       throwingProjectContext as never,
     );

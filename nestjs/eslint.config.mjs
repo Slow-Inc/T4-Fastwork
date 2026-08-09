@@ -38,7 +38,13 @@ export default tseslint.config(
       // async methods kept async for interface conformance / test doubles are
       // legitimate here; don't fail the build on a missing await.
       '@typescript-eslint/require-await': 'warn',
-      "prettier/prettier": ["error", { endOfLine: "auto" }],
+      // `_`-prefixed args are the codebase's "intentionally unused" convention
+      // (e.g. interface-conformant pipeline actions that ignore the state).
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_' },
+      ],
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
   {
@@ -52,6 +58,16 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
+    },
+  },
+  {
+    // The security boundary is excluded from the formatting pass on purpose (#280): a boundary file
+    // is not reformatted unattended, so the human who reviews it confirms the reformat is
+    // behavior-preserving. Keep its formatting from failing the lint check; keep every other lint
+    // rule on it.
+    files: ['src/security/turnstile.verifier.ts'],
+    rules: {
+      'prettier/prettier': 'off',
     },
   },
 );

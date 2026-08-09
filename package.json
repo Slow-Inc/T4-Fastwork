@@ -9,6 +9,9 @@
     "test": "bun --filter '*' test",
     "build": "bun --filter '*' build",
     "lint": "bun --filter '*' lint",
+    "lint:fix": "bun --filter '*' lint:fix",
+    "format": "bunx prettier --write \"nestjs/**/*.{ts,js,mjs}\"",
+    "format:check": "bunx prettier --check \"nestjs/**/*.{ts,js,mjs}\"",
     "verify": "bun run test && bun run build"
   }
 }

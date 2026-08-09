@@ -37,7 +37,9 @@ export interface MigrationDriftReport {
  * the migration's provable footprint on the schema, so the drift checker can tell whether it ran
  * without trusting a ledger that cannot name it.
  */
-export function migrationColumnEffects(sql: string): { table: string; column: string }[] {
+export function migrationColumnEffects(
+  sql: string,
+): { table: string; column: string }[] {
   const effects: { table: string; column: string }[] = [];
   // One `alter table ... add column` can carry several comma-separated columns (0028 adds three),
   // each with a type (`title_en text, add column if not exists excerpt_en text`), so the trailing
@@ -46,7 +48,12 @@ export function migrationColumnEffects(sql: string): { table: string; column: st
     /alter\s+table\s+(?:if\s+exists\s+)?(?:(?:[\w."]+)\s*\.\s*)?([\w]+)\s+add\s+column\s+if\s+not\s+exists\s+([\w"]+)(?:[^,;]*)((?:,\s*add\s+column\s+if\s+not\s+exists\s+([\w"]+)(?:[^,;]*))*)/gi;
   for (const m of sql.matchAll(pattern)) {
     const table = m[1].toLowerCase();
-    const columns = [m[2], ...Array.from(m[3]?.matchAll(/add\s+column\s+if\s+not\s+exists\s+([\w"]+)/gi) ?? [])]
+    const columns = [
+      m[2],
+      ...Array.from(
+        m[3]?.matchAll(/add\s+column\s+if\s+not\s+exists\s+([\w"]+)/gi) ?? [],
+      ),
+    ]
       .map((c) => (typeof c === 'string' ? c : c[1]))
       .map((c) => c.replace(/"/g, '').toLowerCase());
     for (const column of columns) effects.push({ table, column });
@@ -69,7 +76,9 @@ export function migrationPolicyPatterns(sql: string): RegExp[] {
     const placeholder = name.match(/%\d+\$s/);
     if (placeholder) {
       const [pre, post] = name.split(placeholder[0]);
-      patterns.push(new RegExp(`^${escapeRegExp(pre)}\\S+${escapeRegExp(post)}$`, 'i'));
+      patterns.push(
+        new RegExp(`^${escapeRegExp(pre)}\\S+${escapeRegExp(post)}$`, 'i'),
+      );
     } else {
       patterns.push(new RegExp(`^${escapeRegExp(name)}$`, 'i'));
     }
@@ -82,7 +91,10 @@ export function migrationPolicyPatterns(sql: string): RegExp[] {
  * (`0032_project_capture_trigger`) or the bare numeric prefix (`0032`). A 14-digit timestamp never
  * names a file, so it never matches.
  */
-export function isAppliedLedgerMatch(fileStem: string, ledgerVersion: string): boolean {
+export function isAppliedLedgerMatch(
+  fileStem: string,
+  ledgerVersion: string,
+): boolean {
   const stem = fileStem.toLowerCase();
   const version = ledgerVersion.toLowerCase();
   if (version === stem) return true;
@@ -115,18 +127,24 @@ export function classifyMigrationDrift(
   const verifiedPending: string[] = [];
   const unverified: string[] = [];
   const presentColumns = new Set(schemaColumns.map((c) => c.toLowerCase()));
-  const existingPolicies = new Set(existingPolicyNames.map((p) => p.toLowerCase()));
+  const existingPolicies = new Set(
+    existingPolicyNames.map((p) => p.toLowerCase()),
+  );
   for (let i = 0; i < repoMigrations.length; i++) {
     const file = repoMigrations[i];
     const sql = migrationSql[i] ?? '';
-    const ledgerMatched = ledgerVersions.some((v) => isAppliedLedgerMatch(file, v));
+    const ledgerMatched = ledgerVersions.some((v) =>
+      isAppliedLedgerMatch(file, v),
+    );
     const effects = migrationColumnEffects(sql);
     const policyPatterns = migrationPolicyPatterns(sql);
     const hasFootprint = effects.length > 0 || policyPatterns.length > 0;
     const effectsPresent =
-      effects.length > 0 && effects.every((e) => presentColumns.has(`${e.table}.${e.column}`));
+      effects.length > 0 &&
+      effects.every((e) => presentColumns.has(`${e.table}.${e.column}`));
     const policiesPresent =
-      policyPatterns.length > 0 && policyPatterns.some((p) => [...existingPolicies].some((n) => p.test(n)));
+      policyPatterns.length > 0 &&
+      policyPatterns.some((p) => [...existingPolicies].some((n) => p.test(n)));
     if (ledgerMatched || effectsPresent || policiesPresent) {
       applied.push(file);
     } else if (hasFootprint) {
@@ -137,7 +155,9 @@ export function classifyMigrationDrift(
   }
 
   const matchedLedger = new Set(
-    ledgerVersions.filter((v) => repoMigrations.some((f) => isAppliedLedgerMatch(f, v))),
+    ledgerVersions.filter((v) =>
+      repoMigrations.some((f) => isAppliedLedgerMatch(f, v)),
+    ),
   );
   const unmatchedLedger = ledgerVersions.filter((v) => !matchedLedger.has(v));
 

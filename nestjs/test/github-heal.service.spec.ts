@@ -45,7 +45,10 @@ describe('GithubHealService.heal', () => {
 
   it('reports changed:false when the resource was unchanged (304)', async () => {
     const svc = new GithubHealService(fakeSyncer(false), fakeFlight(1));
-    expect(await svc.heal('k', 'u')).toEqual({ healing: false, changed: false });
+    expect(await svc.heal('k', 'u')).toEqual({
+      healing: false,
+      changed: false,
+    });
   });
 
   it('single-flight: a losing concurrent heal skips the GitHub call', async () => {

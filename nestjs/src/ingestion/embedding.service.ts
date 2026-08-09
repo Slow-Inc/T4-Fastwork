@@ -33,7 +33,7 @@ export class EmbeddingService {
       model: this.model,
       input: text,
     });
-    return res.data[0]!.embedding;
+    return res.data[0].embedding;
   }
 
   async embedMany(texts: string[]): Promise<number[][]> {

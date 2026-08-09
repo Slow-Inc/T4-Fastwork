@@ -19,16 +19,26 @@ describe('chunkToDelta', () => {
   });
 
   it('preserves leading newlines in content (trimming happens downstream)', () => {
-    expect(chunkToDelta({ choices: [{ delta: { content: '\n\n' } }] })).toEqual({
-      kind: 'content',
-      value: '\n\n',
-    });
+    expect(chunkToDelta({ choices: [{ delta: { content: '\n\n' } }] })).toEqual(
+      {
+        kind: 'content',
+        value: '\n\n',
+      },
+    );
   });
 
   it('returns null for a role-only / empty / finish chunk', () => {
-    expect(chunkToDelta({ choices: [{ delta: { role: 'assistant', content: '' } }] })).toBeNull();
+    expect(
+      chunkToDelta({
+        choices: [{ delta: { role: 'assistant', content: '' } }],
+      }),
+    ).toBeNull();
     expect(chunkToDelta({ choices: [{ delta: {} }] })).toBeNull();
-    expect(chunkToDelta({ choices: [{ delta: { content: '' }, finish_reason: 'stop' }] })).toBeNull();
+    expect(
+      chunkToDelta({
+        choices: [{ delta: { content: '' }, finish_reason: 'stop' }],
+      }),
+    ).toBeNull();
     expect(chunkToDelta({ choices: [] })).toBeNull();
   });
 });

@@ -28,30 +28,44 @@ import {
 
 describe('isAppliedLedgerMatch — a ledger row names its migration (#282)', () => {
   it('matches a ledger row equal to the file stem', () => {
-    expect(isAppliedLedgerMatch('0032_project_capture_trigger', '0032_project_capture_trigger')).toBe(
-      true,
-    );
+    expect(
+      isAppliedLedgerMatch(
+        '0032_project_capture_trigger',
+        '0032_project_capture_trigger',
+      ),
+    ).toBe(true);
   });
 
   it('matches a ledger row equal to the bare numeric prefix', () => {
-    expect(isAppliedLedgerMatch('0032_project_capture_trigger', '0032')).toBe(true);
+    expect(isAppliedLedgerMatch('0032_project_capture_trigger', '0032')).toBe(
+      true,
+    );
   });
 
   it('does not match a timestamp ledger row against a renamed file', () => {
     // The 2026-07-23 ledger note: `schema_migrations` holds timestamps for the early files that were
     // later renamed to NNNN_name. A timestamp cannot name a file, so it must never be read as "applied".
-    expect(isAppliedLedgerMatch('0022_project_documents_extract_cache', '20260717222128')).toBe(false);
+    expect(
+      isAppliedLedgerMatch(
+        '0022_project_documents_extract_cache',
+        '20260717222128',
+      ),
+    ).toBe(false);
   });
 
   it('does not match an unrelated prefix', () => {
-    expect(isAppliedLedgerMatch('0032_project_capture_trigger', '0031')).toBe(false);
+    expect(isAppliedLedgerMatch('0032_project_capture_trigger', '0031')).toBe(
+      false,
+    );
   });
 });
 
-describe('migrationColumnEffects — the migration\'s provable footprint (#282)', () => {
+describe("migrationColumnEffects — the migration's provable footprint (#282)", () => {
   it('extracts a guarded column add with a schema prefix', () => {
     expect(
-      migrationColumnEffects('alter table public.projects add column if not exists gh_private boolean;'),
+      migrationColumnEffects(
+        'alter table public.projects add column if not exists gh_private boolean;',
+      ),
     ).toEqual([{ table: 'projects', column: 'gh_private' }]);
   });
 
@@ -79,13 +93,19 @@ describe('migrationColumnEffects — the migration\'s provable footprint (#282)'
   });
 
   it('ignores statements that add no column', () => {
-    expect(migrationColumnEffects('create table x (id bigint); grant select on x to anon;')).toEqual([]);
+    expect(
+      migrationColumnEffects(
+        'create table x (id bigint); grant select on x to anon;',
+      ),
+    ).toEqual([]);
   });
 });
 
 describe('migrationPolicyPatterns — handles the %N$s loop templates (#282)', () => {
   it('turns an exact policy name into an exact matcher', () => {
-    const [p] = migrationPolicyPatterns('create policy "members public read" on public.members');
+    const [p] = migrationPolicyPatterns(
+      'create policy "members public read" on public.members',
+    );
     expect(p?.test('members public read')).toBe(true);
     expect(p?.test('admin writes categories')).toBe(false);
   });
@@ -93,7 +113,9 @@ describe('migrationPolicyPatterns — handles the %N$s loop templates (#282)', (
   it('turns a %1$s template into a prefix+suffix matcher', () => {
     // 0016_rls_admin_write_public_tables builds policies in a loop; the production name never appears
     // verbatim. Without this, every loop-created policy would read as untracked.
-    const patterns = migrationPolicyPatterns('create policy "admin writes %1$s" on public.%1$I');
+    const patterns = migrationPolicyPatterns(
+      'create policy "admin writes %1$s" on public.%1$I',
+    );
     const matches = (n: string) => patterns.some((p) => p.test(n));
     expect(matches('admin writes categories')).toBe(true);
     expect(matches('admin writes services')).toBe(true);
@@ -103,7 +125,12 @@ describe('migrationPolicyPatterns — handles the %N$s loop templates (#282)', (
 
 describe('classifyMigrationDrift — the states are reported honestly (#282)', () => {
   it('with an empty ledger, every repo migration is unverified (no footprint)', () => {
-    const report = classifyMigrationDrift(['0032_x', '0033_y', '0034_z'], [], [], ['', '', '']);
+    const report = classifyMigrationDrift(
+      ['0032_x', '0033_y', '0034_z'],
+      [],
+      [],
+      ['', '', ''],
+    );
     expect(report.unverified).toEqual(['0032_x', '0033_y', '0034_z']);
     expect(report.applied).toEqual([]);
   });
@@ -183,7 +210,9 @@ describe('classifyMigrationDrift — the states are reported honestly (#282)', (
       ['0016_rls_admin_write_public_tables'],
       [],
       ['public read technologies', 'admin writes categories'],
-      ['create policy "public read %1$s" on public.%1$I; create policy "admin writes %1$s" on public.%1$I;'],
+      [
+        'create policy "public read %1$s" on public.%1$I; create policy "admin writes %1$s" on public.%1$I;',
+      ],
     );
     expect(report.untracked).toEqual([]);
   });
@@ -197,7 +226,10 @@ describe('classifyMigrationDrift — the states are reported honestly (#282)', (
       ['anon can submit a lead', 'authenticated can read leads'],
       ['create policy "members public read" on public.members'],
     );
-    expect(report.untracked).toEqual(['anon can submit a lead', 'authenticated can read leads']);
+    expect(report.untracked).toEqual([
+      'anon can submit a lead',
+      'authenticated can read leads',
+    ]);
   });
 
   it('marks a policy-creating migration applied when its policy exists in the DB', () => {
@@ -236,8 +268,15 @@ describe('the drift classifier judged against every migration in this repo (#282
     // 0032/0033/0034 are the three this issue exists because of — their column footprint is expected
     // but (with an empty schema snapshot) not present.
     const report = classifyMigrationDrift(stems, [], [], files.map(sqlOf));
-    for (const f of ['0032_project_capture_trigger', '0033_project_gh_private', '0034_project_sync_health']) {
-      expect(report.verifiedPending, `${f} must read verifiedPending with an empty ledger`).toContain(f);
+    for (const f of [
+      '0032_project_capture_trigger',
+      '0033_project_gh_private',
+      '0034_project_sync_health',
+    ]) {
+      expect(
+        report.verifiedPending,
+        `${f} must read verifiedPending with an empty ledger`,
+      ).toContain(f);
     }
   });
 
@@ -248,22 +287,39 @@ describe('the drift classifier judged against every migration in this repo (#282
       [],
       files.map(sqlOf),
     );
-    for (const f of ['0032_project_capture_trigger', '0033_project_gh_private', '0034_project_sync_health']) {
-      expect(report.applied, `${f} must read applied when the ledger holds 0032/0033/0034`).toContain(f);
+    for (const f of [
+      '0032_project_capture_trigger',
+      '0033_project_gh_private',
+      '0034_project_sync_health',
+    ]) {
+      expect(
+        report.applied,
+        `${f} must read applied when the ledger holds 0032/0033/0034`,
+      ).toContain(f);
     }
   });
 
   it('matches a real policy name that a migration creates, so it is not flagged untracked', () => {
     // A real policy from 0005_members_rls.sql. If the DB names it and a migration creates it, the
     // drift checker must NOT report it — reporting it would cry wolf on every run.
-    const report = classifyMigrationDrift(stems, [], ['members edit own row'], files.map(sqlOf));
+    const report = classifyMigrationDrift(
+      stems,
+      [],
+      ['members edit own row'],
+      files.map(sqlOf),
+    );
     expect(report.untracked).toEqual([]);
   });
 
   it('flags an authorization object that exists in no migration', () => {
     // The issue's second defect: hand-created objects with no migration. A name that no migration
     // mentions must surface as untracked so the follow-up is actionable without a second investigation.
-    const report = classifyMigrationDrift(stems, [], ['anon can do anything'], files.map(sqlOf));
+    const report = classifyMigrationDrift(
+      stems,
+      [],
+      ['anon can do anything'],
+      files.map(sqlOf),
+    );
     expect(report.untracked).toEqual(['anon can do anything']);
   });
 
@@ -274,13 +330,21 @@ describe('the drift classifier judged against every migration in this repo (#282
     const report = classifyMigrationDrift(stems, [], [], files.map(sqlOf));
     expect(report.applied).toEqual([]);
     expect(
-      report.applied.length + report.verifiedPending.length + report.unverified.length,
+      report.applied.length +
+        report.verifiedPending.length +
+        report.unverified.length,
     ).toBe(files.length);
     expect(report.untracked).toEqual([]);
     expect(report.unmatchedLedger).toEqual([]);
   });
 
   // typed guard: the report fields are what the script consumes
-  const _shape: MigrationDriftReport = { applied: [], verifiedPending: [], unverified: [], untracked: [], unmatchedLedger: [] };
+  const _shape: MigrationDriftReport = {
+    applied: [],
+    verifiedPending: [],
+    unverified: [],
+    untracked: [],
+    unmatchedLedger: [],
+  };
   void _shape;
 });

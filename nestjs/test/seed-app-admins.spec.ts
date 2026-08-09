@@ -6,7 +6,10 @@ import {
 
 describe('reconcileAdmins', () => {
   it('inserts newly-desired and deletes stale (a de-provisioned admin is removed)', () => {
-    const r = reconcileAdmins(['a@x.com', 'old@x.com'], ['a@x.com', 'new@x.com']);
+    const r = reconcileAdmins(
+      ['a@x.com', 'old@x.com'],
+      ['a@x.com', 'new@x.com'],
+    );
     expect(r.toInsert).toEqual(['new@x.com']);
     expect(r.toDelete).toEqual(['old@x.com']);
   });

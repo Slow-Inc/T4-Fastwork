@@ -70,11 +70,16 @@ function executorThatThrows(err: Error | null): PipelineActionExecutor {
     rank: noop,
     revalidate: noop,
     recaptureCover: () => (err ? Promise.reject(err) : Promise.resolve()),
-  } as unknown as PipelineActionExecutor;
+  };
 }
 
 async function run(err: Error | null) {
-  return runPipelineSync(PUSH, { apply: true }, loader, executorThatThrows(err));
+  return runPipelineSync(
+    PUSH,
+    { apply: true },
+    loader,
+    executorThatThrows(err),
+  );
 }
 
 describe('pipeline outcome classification (#267)', () => {
@@ -91,9 +96,9 @@ describe('pipeline outcome classification (#267)', () => {
     );
 
     expect(res.failed.map((f) => f.action)).toContain('recapture_cover');
-    expect(res.failed.find((f) => f.action === 'recapture_cover')?.error).toContain(
-      'http-403',
-    );
+    expect(
+      res.failed.find((f) => f.action === 'recapture_cover')?.error,
+    ).toContain('http-403');
     expect(res.executed).not.toContain('recapture_cover');
     expect(res.deferred).not.toContain('recapture_cover');
   });

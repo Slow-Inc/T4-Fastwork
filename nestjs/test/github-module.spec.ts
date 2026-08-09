@@ -30,6 +30,8 @@ describe('GithubModule wiring', () => {
   it('resolves the read service and the write controller', async () => {
     mod = await compile();
     expect(mod.get(GithubReadService)).toBeDefined();
-    expect(mod.get(GithubWriteController)).toBeInstanceOf(GithubWriteController);
+    expect(mod.get(GithubWriteController)).toBeInstanceOf(
+      GithubWriteController,
+    );
   });
 });
