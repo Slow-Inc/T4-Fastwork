@@ -18,13 +18,14 @@ security-boundary file without a human review.
 
 The `format` pass for the formatting-debt PR excluded `nestjs/src/security/turnstile.verifier.ts` via
 `.prettierignore` (a deliberate AFK boundary decision — a boundary file is not reformatted unattended).
-Yet the file **was** reformatted on the first pass. Verified cause:
-
-- `.prettierignore` patterns are **relative to the directory of the `.prettierignore` file** (the repo
-  root), so an entry `src/security/turnstile.verifier.ts` matches `<root>/src/security/…`, which does not
-  exist — the real path is `<root>/nestjs/src/security/…`.
-- Running `bun run format` from `nestjs/` (instead of the root) changed prettier's cwd, so the glob and
-  the ignore resolution both shifted, and the exclusion missed.
+Yet the file **was** reformatted during the session. Observed: running the formatting pass from `nestjs/`
+instead of the repository root produced a reformat of the boundary file (reverted, then verified the
+pass from the root leaves it byte-identical to HEAD). The mechanism is inferred, not controlled:
+`.prettierignore` patterns are **relative to the directory of the `.prettierignore` file** (the repo
+root), so an entry `src/security/turnstile.verifier.ts` matches `<root>/src/security/…`, which does not
+exist — the real path is `<root>/nestjs/src/security/…` — and running from a different cwd shifts both
+the glob and the ignore resolution. Whatever the precise trigger, the prevention below removes the
+failure class.
 
 ## The prevention rule
 

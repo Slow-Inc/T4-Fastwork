@@ -4,7 +4,16 @@
 
 The pre-merge gate held on every branch this session (code-review + scrutinize evidence posted per PR,
 CI green, squash merge, remote head verified deleted). This session also caught up the ledger on the
-CI/epic work that had merged since the last entry (#287/#288/#290/#293).
+CI/epic work that had merged since the last entry:
+
+| Issue | PR | What changed |
+|---|---|---|
+| #287 | `dbd1f4a` | One CI entry point a human and CI both call — root scripts are the entry point |
+| #288 | `abc4c74` | Tests + builds run on every pull request (the `ci.yml` test/build/gate jobs) |
+| #290 | `d291f7e` | Record the guards that are now actually enforced (enforcement table) |
+| #293 | `89a4b68` | `CLAUDE.md`: a plan is written from a complete survey, never from memory |
+
+Then this AFK run's four gated merges:
 
 | Issue | PR | What changed |
 |---|---|---|
@@ -14,9 +23,9 @@ CI/epic work that had merged since the last entry (#287/#288/#290/#293).
 | #280 (nestjs half) | [#298](https://github.com/Slow-Inc/T4-Fastwork/pull/298) `fb85ecc` | `lint` is now a check (no `--fix`) in both workspaces; `lint:fix` is the explicit mutation form; root `.prettierrc` is one formatter of record with `endOfLine: auto` so eslint and prettier agree; formatting debt cleared (67 files, no behavioural change). `bun run lint` exits 0 on a clean checkout with `git status` unchanged. |
 
 **Parked on the developer (all with the exact decision stated on the issue):**
-- **#280 stays OPEN** — nextjs is not prettier-formatted; adopting it would reformat ~177 files and change its quote style (a frontend-style call). Decision: adopt prettier for nextjs / keep eslint-config-next only / close+file separately.
-- **#284 not started** — needs a canary repository to be created (repo creation is outside AFK scope).
-- **#285 not started** — its own body says "do not start until the blocking pipeline is trusted"; the pipeline shipped this month but no PR has exercised it beyond this session's four.
+- **#280 stays OPEN (was briefly auto-closed by PR #298's "Closes #280", reopened here)** — nextjs is not prettier-formatted; adopting it would reformat ~177 files and change its quote style (a frontend-style call). Decision: adopt prettier for nextjs / keep eslint-config-next only / close+file separately.
+- **#284 not started, relabelled `ready-for-human` this session** — needs a canary repository to be created (repo creation is outside AFK scope).
+- **#285 not started, relabelled `ready-for-human` this session** — its own body says "do not start until the blocking pipeline is trusted"; the pipeline shipped this month but no PR has exercised it beyond this session's four.
 - **Two repo secrets would arm the shipped work:** `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (arms the e2e job — until then it skips with a documented warning, not a pass) and `DATABASE_URL` (arms the migration-drift workflow). Both are read-only-by-design in their consumers.
 
 **Lessons recorded (validated this session):**
