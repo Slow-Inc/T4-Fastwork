@@ -58,16 +58,31 @@ jobs:
           set -e
           echo "$report"
 
+          # Gaps: maintain ONE tracking issue, identified by title so a rename or a manual close is
+          # handled on the next run (a closed issue stops matching, a new one is created). The issue
+          # is updated on EVERY run so it always reflects the latest audit — a clean window must not
+          # leave stale gaps on the record.
+          existing=$(gh issue list --state open \
+            --search "in:title \"$TITLE\"" \
+            --json number --jq '.[0].number // empty' 2>/dev/null || true)
+
           if [ "$code" -eq 0 ]; then
+            if [ -n "$existing" ]; then
+              gh issue edit "$existing" --body "## EN — Gate audit clean for the window
+
+          No PRs merged without gate evidence in the audited window (since $SINCE UTC).
+
+          ### TH — เกตผ่านสำหรับหน้าต่างนี้
+
+          ไม่พบ PR ที่ merge โดยไม่มีหลักฐานเกต ในหน้าต่างที่ตรวจ (ตั้งแต่ $SINCE UTC)
+
+          ---
+          _อัปเดตอัตโนมัติโดย workflow \`gate-audit\`_"
+              echo "Updated tracking issue #$existing: window clean."
+            fi
             echo "No gate gaps in the window (since $SINCE UTC)."
             exit 0
           fi
-
-          # Gaps: maintain ONE tracking issue. `gh` search by title so a rename or a manual close is
-          # handled on the next run (a closed issue stops matching, a new one is created).
-          existing=$(gh issue list --state open \
-            --search "in:title \"$TITLE\"" \
-            --json number --jq '.[0].number' 2>/dev/null || true)
 
           body="## EN — Process incident: merged PRs missing pre-merge gate evidence
 
