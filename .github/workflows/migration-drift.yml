@@ -1,0 +1,63 @@
+# Report migration/policy drift between the repository and production (#282). Nothing compares what
+# the repo says the database should be against what production actually is — and that silence hid two
+# real defects (measured 2026-07-27): `0032`/`0033`/`0034` merged but unapplied for over a week, and
+# hand-created authorization objects present in production that exist in no migration file.
+#
+# This workflow is the signal. It runs on a schedule because it describes production, not a diff.
+#
+# ── Credentials ────────────────────────────────────────────────────────────────────────────────────
+# Gated: needs the repo Actions secret `DATABASE_URL` (a READ-ONLY Postgres connection string for the
+# pooler). Until it is set the job no-ops with a clear message, exactly like the refresh cron's
+# `BACKEND_REFRESH_SECRET` guard. Setting it is a human action (the string is a prod credential).
+#
+# ── Exit codes ─────────────────────────────────────────────────────────────────────────────────────
+# The script reports: 0 = no drift, 1 = pending migrations or untracked objects (the job fails and
+# the run is visibly red — drift is real and resolvable, unlike the gate-audit's historical gaps),
+# 2 = could not assess (also red, so "cannot look" is never mistaken for "clean").
+name: migration-drift
+
+on:
+  # Daily at 03:47 UTC — odd minute, clear of the :00 product crons and the 03:37 gate-audit.
+  schedule:
+    - cron: '47 3 * * *'
+  workflow_dispatch: {} # manual "check now"
+
+concurrency:
+  group: migration-drift
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
+      - run: bun install --frozen-lockfile
+
+      - name: Assess migration and policy drift (read-only)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "DATABASE_URL not set — drift check disabled (no-op). Set the repo Actions secret to arm it."
+            exit 0
+          fi
+
+          set +e
+          output=$(bun run nestjs/scripts/migration-drift.ts 2>&1)
+          code=$?
+          set -e
+          echo "$output"
+
+          case "$code" in
+            0) echo "No migration/policy drift." ;;
+            1) echo "::error::migration or policy drift found — see the report above." ; exit 1 ;;
+            *) echo "::error::drift check could not assess production — not a clean bill of health." ; exit 1 ;;
+          esac
