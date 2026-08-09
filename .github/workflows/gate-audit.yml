@@ -1,0 +1,93 @@
+# Run the pre-merge gate audit on a schedule (#283). `CLAUDE.md` and `using-t4` already tell every
+# session to run `scripts/gate-audit.ts` by hand; a gate that is only checked when someone feels like
+# checking is trusted, not detected. This cron makes the check a habit.
+#
+# ── What it does ───────────────────────────────────────────────────────────────────────────────────
+# 1. Computes a rolling window in UTC (`date -u`). `mergedAt` is UTC (#259): a local date would
+#    silently audit nothing for anything merged in the local morning.
+# 2. Runs `scripts/gate-audit.ts --since <date> --fail-on-gaps`. Exit 1 means at least one PR merged
+#    without usable gate evidence — a machine signal, not a grep of prose.
+# 3. On gaps, maintains a SINGLE tracking issue (create if none, edit in place) so a historical
+#    backlog never spams the tracker. The issue is the durable record; the workflow does NOT back-fill
+#    evidence or modify any PR — evidence produced after a merge is documentation, not a gate.
+# 4. The job exits 0 either way. A permanently-red scheduled run would get disabled, which is the
+#    failure mode this epic exists to prevent; the tracking issue is the signal.
+#
+# An administrator-override merge is covered with no extra code: the audit is evidence-based and
+# merge-method-agnostic, so any merge that landed without both gates on the merged head is reported.
+name: gate-audit
+
+on:
+  # Daily at 03:37 UTC — an odd minute, so this never shares a burst with the :00 product crons.
+  schedule:
+    - cron: '37 3 * * *'
+  workflow_dispatch: {} # manual "audit now"
+
+concurrency:
+  group: gate-audit
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
+      - run: bun install --frozen-lockfile
+
+      - name: Run the pre-merge gate audit (rolling UTC window)
+        env:
+          # Fixed title is the tracking issue's identity — one open issue at a time.
+          TITLE: 'Gate audit: PRs merged without pre-merge gate evidence'
+        run: |
+          # Rolling window, UTC. `mergedAt` is UTC; 14 days covers every session cadence here.
+          SINCE=$(date -u -d '14 days ago' +%Y-%m-%d)
+
+          set +e
+          report=$(bun run nestjs/scripts/gate-audit.ts --since "$SINCE" --fail-on-gaps 2>&1)
+          code=$?
+          set -e
+          echo "$report"
+
+          if [ "$code" -eq 0 ]; then
+            echo "No gate gaps in the window (since $SINCE UTC)."
+            exit 0
+          fi
+
+          # Gaps: maintain ONE tracking issue. `gh` search by title so a rename or a manual close is
+          # handled on the next run (a closed issue stops matching, a new one is created).
+          existing=$(gh issue list --state open \
+            --search "in:title \"$TITLE\"" \
+            --json number --jq '.[0].number' 2>/dev/null || true)
+
+          body="## EN — Process incident: merged PRs missing pre-merge gate evidence
+
+          $report
+
+          ### TH — เหตุการณ์ข้ามเกต: PR ที่ merge โดยไม่มีหลักฐานเกตก่อน merge
+
+          บันทึกนี้คือข้อเท็จจริง — ห้ามเติมหลักฐานย้อนหลังลง PR (หลักฐานที่เกิดหลัง merge คือเอกสาร ไม่ใช่เกต)
+          หากช่องว่างนี้เป็นของเดิมที่บันทึกไว้แล้ว ให้ถือว่าเป็นบันทึกถาวร
+
+          ---
+          _รายงานนี้สร้างอัตโนมัติโดย workflow \`gate-audit\` · อัปเดตทุกครั้งที่รันพบช่องว่างใหม่ในหน้าต่างเลื่อน 14 วัน (UTC)_"
+
+          if [ -z "$existing" ]; then
+            created=$(gh issue create \
+              --title "$TITLE" \
+              --body "$body" \
+              --json number --jq '.number')
+            echo "Created tracking issue #$created for the gate audit gaps."
+          else
+            gh issue edit "$existing" --body "$body"
+            echo "Updated tracking issue #$existing."
+          fi

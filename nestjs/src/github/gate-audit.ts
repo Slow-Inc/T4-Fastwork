@@ -31,6 +31,16 @@ export type GateGap =
   | { number: number; reason: 'stale-evidence'; reviewedSha: string }
   | { number: number; reason: 'incomplete-evidence'; missing: string[] };
 
+/**
+ * The exit code a caller should carry when it asked the audit to be a machine signal (#283). The
+ * scheduled workflow runs `gate-audit.ts --fail-on-gaps` and keys its tracking-issue step off this,
+ * so a gap report is detected without grepping prose — an edit to the report's wording cannot silently
+ * disable the gate. A non-empty report is a process incident; that is what exit 1 means here.
+ */
+export function auditExitCode(gaps: GateGap[]): number {
+  return gaps.length > 0 ? 1 : 0;
+}
+
 /** Full 40-char SHAs quoted anywhere in a comment. Short SHAs are deliberately not accepted: the gate
  * asks for the reviewed HEAD, and an abbreviation cannot be matched against the merged head without
  * guessing how many characters the author felt like typing. */

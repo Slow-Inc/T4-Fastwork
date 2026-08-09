@@ -5,10 +5,15 @@
  *   bun run scripts/gate-audit.ts             # the default window (30 most recent merged PRs)
  *   bun run scripts/gate-audit.ts --limit 60
  *   bun run scripts/gate-audit.ts --since 2026-07-26   # a UTC date, not a local one
+ *   bun run scripts/gate-audit.ts --fail-on-gaps       # exit 1 when any gap is found (#283)
  *
  * `--since` is compared against GitHub's `mergedAt`, which is **UTC**. A PR merged in your local
  * morning (UTC+7 here) carries the previous UTC date, so passing today's local date can legitimately
  * audit nothing — the report says so rather than implying a clean day (#259).
+ *
+ * `--fail-on-gaps` is the machine contract the scheduled workflow keys off: it exits non-zero when a
+ * gap is reported, so a runner can decide to act without parsing the prose — and a wording edit to
+ * this report cannot silently disable the gate. Without it, the exit code is always 0.
  *
  * Run this at session start. A non-empty report is a process incident: record it before starting new
  * delivery, and do **not** back-fill evidence onto the offending PR — evidence produced after the merge
@@ -19,6 +24,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
+  auditExitCode,
   describeAuditWindow,
   findUnreviewedMerges,
   inMergeWindow,
@@ -39,6 +45,10 @@ function arg(name: string): string | undefined {
   return i === -1 ? undefined : process.argv[i + 1];
 }
 
+function flag(name: string): boolean {
+  return process.argv.includes(`--${name}`);
+}
+
 /**
  * `node:child_process`, not `Bun.spawn`: `tsconfig.build.json` excludes only tests, so this file is
  * type-checked by the production Nest build, which has no Bun types and emits CommonJS. Using the Bun
@@ -53,6 +63,7 @@ async function gh(args: string[]): Promise<string> {
 async function main(): Promise<void> {
   const limit = arg('limit') ?? '30';
   const since = arg('since');
+  const failOnGaps = flag('fail-on-gaps');
 
   const listed = JSON.parse(
     await gh([
@@ -99,6 +110,7 @@ async function main(): Promise<void> {
   console.log(
     '\nThis is a process incident, not a chore. Record it; do not back-fill evidence onto the PR.',
   );
+  if (failOnGaps) process.exitCode = auditExitCode(gaps);
 }
 
 // Not top-level `await`: the production build emits CommonJS and rejects it (TS1309). Mirrors
